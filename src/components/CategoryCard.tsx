@@ -25,13 +25,13 @@ export const CategoryCard = ({
         className
       )}
     >
-      <div className="p-6 flex flex-col items-center text-center gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform duration-300">
-          <Icon className="h-8 w-8" />
+      <div className="p-3 md:p-6 flex flex-col items-center text-center gap-2 md:gap-4">
+        <div className="h-10 w-10 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform duration-300">
+          <Icon className="h-5 w-5 md:h-8 md:w-8" />
         </div>
         <div>
-          <h3 className="font-bold text-lg mb-1">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <h3 className="font-bold text-xs md:text-lg mb-0 md:mb-1">{title}</h3>
+          <p className="text-xs text-muted-foreground hidden md:block">{description}</p>
         </div>
       </div>
     </Card>

@@ -8,6 +8,8 @@ import Saved from "./pages/Saved";
 import Bookings from "./pages/Bookings";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Vlog from "./pages/Vlog";
+import CategoryDetail from "./pages/CategoryDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
+          <Route path="/vlog" element={<Vlog />} />
+          <Route path="/category/:category" element={<CategoryDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

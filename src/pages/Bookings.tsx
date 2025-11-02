@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Footer } from "@/components/Footer";
 
 const Bookings = () => {
   return (
@@ -15,6 +16,7 @@ const Bookings = () => {
         </div>
       </main>
 
+      <Footer />
       <MobileBottomBar />
     </div>
   );

@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { CategoryCard } from "@/components/CategoryCard";
 import { SearchBar } from "@/components/SearchBar";
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { ListingCard } from "@/components/ListingCard";
+import { VlogSection } from "@/components/VlogSection";
+import { Footer } from "@/components/Footer";
 import { Calendar, Hotel, Mountain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [trips, setTrips] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -110,16 +114,19 @@ const Index = () => {
       icon: Calendar,
       title: "Events & Trips",
       description: "Discover exciting experiences",
+      path: "/category/trips",
     },
     {
       icon: Hotel,
       title: "Hotels & Accommodation",
       description: "Find your perfect stay",
+      path: "/category/hotels",
     },
     {
       icon: Mountain,
       title: "Adventure Places",
       description: "Explore thrilling destinations",
+      path: "/category/adventure",
     },
   ];
 
@@ -128,22 +135,6 @@ const Index = () => {
       <Header />
       
       <main className="container px-4 py-8 space-y-12">
-        {/* Categories */}
-        <section>
-          <h2 className="text-3xl font-bold mb-6 text-center">What are you looking for?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.title}
-                icon={category.icon}
-                title={category.title}
-                description={category.description}
-                onClick={() => {}}
-              />
-            ))}
-          </div>
-        </section>
-
         {/* Search */}
         <section>
           <SearchBar
@@ -151,6 +142,23 @@ const Index = () => {
             onChange={setSearchQuery}
             onSubmit={handleSearch}
           />
+        </section>
+
+        {/* Categories */}
+        <section>
+          <h2 className="text-3xl font-bold mb-6 text-center md:block hidden">What are you looking for?</h2>
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
+            {categories.map((category) => (
+              <CategoryCard
+                key={category.title}
+                icon={category.icon}
+                title={category.title}
+                description={category.description}
+                onClick={() => navigate(category.path)}
+                className="md:p-6"
+              />
+            ))}
+          </div>
         </section>
 
         {/* Hero Carousel */}
@@ -249,8 +257,12 @@ const Index = () => {
             </div>
           </section>
         )}
+
+        {/* Vlog Section */}
+        <VlogSection />
       </main>
 
+      <Footer />
       <MobileBottomBar />
     </div>
   );

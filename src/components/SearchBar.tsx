@@ -16,14 +16,14 @@ export const SearchBar = ({ value, onChange, onSubmit }: SearchBarProps) => {
 
   return (
     <div className="relative w-full max-w-3xl mx-auto">
-      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
       <Input
         type="text"
         placeholder="Search for trips, events, hotels, places, or countries..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyPress={handleKeyPress}
-        className="pl-12 pr-4 h-14 text-lg rounded-2xl border-2 focus-visible:border-primary shadow-md"
+        className="pl-10 md:pl-12 pr-3 md:pr-4 h-10 md:h-14 text-sm md:text-lg rounded-xl md:rounded-2xl border-2 focus-visible:border-primary shadow-md"
       />
     </div>
   );

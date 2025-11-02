@@ -1,4 +1,4 @@
-import { Home, Ticket, Heart, Phone, Info } from "lucide-react";
+import { Home, Ticket, Heart, Phone, Info, Video } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NavigationDrawerProps {
@@ -9,6 +9,7 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Ticket, label: "My Bookings", path: "/bookings" },
+    { icon: Video, label: "Vlog", path: "/vlog" },
     { icon: Heart, label: "Saved", path: "/saved" },
     { icon: Phone, label: "Contact", path: "/contact" },
     { icon: Info, label: "About", path: "/about" },
