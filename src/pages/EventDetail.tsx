@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Share2, Calendar } from "lucide-react";
 import { BookEventDialog } from "@/components/booking/BookEventDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Event {
   id: string;
@@ -17,6 +19,7 @@ interface Event {
   country: string;
   image_url: string;
   images: string[];
+  gallery_images: string[];
   description: string;
   price: number;
   price_vip: number;
@@ -27,6 +30,7 @@ interface Event {
   available_tickets: number;
   phone_number: string;
   email: string;
+  map_link: string;
 }
 
 const EventDetail = () => {
@@ -83,8 +87,12 @@ const EventDetail = () => {
   };
 
   const openInMaps = () => {
-    const query = encodeURIComponent(`${event?.name}, ${event?.location}, ${event?.country}`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    if (event?.map_link) {
+      window.open(event.map_link, '_blank');
+    } else {
+      const query = encodeURIComponent(`${event?.name}, ${event?.location}, ${event?.country}`);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    }
   };
 
   if (loading) {
@@ -95,9 +103,11 @@ const EventDetail = () => {
     return <div className="min-h-screen bg-background">Event not found</div>;
   }
 
-  const displayImages = event.images?.length > 0 
+  const displayImages = event.gallery_images?.length > 0 
+    ? event.gallery_images 
+    : event.images?.length > 0 
     ? event.images 
-    : [event.image_url, event.image_url, event.image_url, event.image_url];
+    : [event.image_url];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -112,26 +122,26 @@ const EventDetail = () => {
           <Share2 className="h-5 w-5" />
         </Button>
 
-        {/* Image Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6">
-          <div className="md:col-span-1 md:order-1 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
-            {displayImages.slice(1, 4).map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`${event.name} ${idx + 2}`}
-                className="w-24 h-24 md:w-full md:h-32 object-cover flex-shrink-0"
-              />
+        {/* Image Gallery Carousel */}
+        <Carousel
+          opts={{ loop: true }}
+          plugins={[Autoplay({ delay: 3000 })]}
+          className="w-full mb-6"
+        >
+          <CarouselContent>
+            {displayImages.map((img, idx) => (
+              <CarouselItem key={idx}>
+                <img
+                  src={img}
+                  alt={`${event.name} ${idx + 1}`}
+                  className="w-full h-64 md:h-96 object-cover rounded-lg"
+                />
+              </CarouselItem>
             ))}
-          </div>
-          <div className="md:col-span-3 md:order-2">
-            <img
-              src={displayImages[0]}
-              alt={event.name}
-              className="w-full h-64 md:h-96 object-cover"
-            />
-          </div>
-        </div>
+          </CarouselContent>
+          <CarouselPrevious className="left-2" />
+          <CarouselNext className="right-2" />
+        </Carousel>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">

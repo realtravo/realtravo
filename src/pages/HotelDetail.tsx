@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Share2, Mail, Wifi, Users } from "lucide-react";
 import { BookHotelDialog } from "@/components/booking/BookHotelDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Facility {
   name: string;
@@ -23,6 +25,7 @@ interface Hotel {
   country: string;
   image_url: string;
   images: string[];
+  gallery_images: string[];
   description: string;
   amenities: string[];
   phone_numbers: string[];
@@ -102,9 +105,11 @@ const HotelDetail = () => {
     return <div className="min-h-screen bg-background">Hotel not found</div>;
   }
 
-  const displayImages = hotel.images?.length > 0 
+  const displayImages = hotel.gallery_images?.length > 0 
+    ? hotel.gallery_images 
+    : hotel.images?.length > 0 
     ? hotel.images 
-    : [hotel.image_url, hotel.image_url, hotel.image_url, hotel.image_url];
+    : [hotel.image_url];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -113,36 +118,34 @@ const HotelDetail = () => {
       <main className="container px-4 py-6 max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-4">{hotel.name}</h1>
 
-        <div className="relative">
-          <Button
-            variant="ghost"
-            onClick={handleShare}
-            className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur-sm"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
+        <Button
+          variant="ghost"
+          onClick={handleShare}
+          className="absolute top-20 right-4 z-10 bg-background/80 backdrop-blur-sm"
+        >
+          <Share2 className="h-5 w-5" />
+        </Button>
 
-          {/* Image Gallery */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6">
-            <div className="md:col-span-1 md:order-1 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
-              {displayImages.slice(1, 4).map((img, idx) => (
+        {/* Image Gallery Carousel */}
+        <Carousel
+          opts={{ loop: true }}
+          plugins={[Autoplay({ delay: 3000 })]}
+          className="w-full mb-6"
+        >
+          <CarouselContent>
+            {displayImages.map((img, idx) => (
+              <CarouselItem key={idx}>
                 <img
-                  key={idx}
                   src={img}
-                  alt={`${hotel.name} ${idx + 2}`}
-                  className="w-24 h-24 md:w-full md:h-32 object-cover flex-shrink-0"
+                  alt={`${hotel.name} ${idx + 1}`}
+                  className="w-full h-64 md:h-96 object-cover rounded-lg"
                 />
-              ))}
-            </div>
-            <div className="md:col-span-3 md:order-2">
-              <img
-                src={displayImages[0]}
-                alt={hotel.name}
-                className="w-full h-64 md:h-96 object-cover"
-              />
-            </div>
-          </div>
-        </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="left-2" />
+          <CarouselNext className="right-2" />
+        </Carousel>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">

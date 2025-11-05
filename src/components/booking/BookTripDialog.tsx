@@ -14,6 +14,7 @@ interface Trip {
   price: number;
   price_child: number;
   date: string;
+  date_type?: string;
   available_tickets: number;
 }
 
@@ -41,17 +42,20 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
   const totalAmount = (adults * trip.price) + (children * (trip.price_child || 0));
 
   const handleStepOne = () => {
-    const tripDate = new Date(trip.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (tripDate < today) {
-      toast({
-        title: "Trip date has passed",
-        description: "Cannot book trips with past dates",
-        variant: "destructive",
-      });
-      return;
+    // Only check date for fixed date trips
+    if (trip.date_type === 'fixed' || !trip.date_type) {
+      const tripDate = new Date(trip.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (tripDate < today) {
+        toast({
+          title: "Trip date has passed",
+          description: "Cannot book trips with past dates unless they have custom date option",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (totalPeople > trip.available_tickets) {

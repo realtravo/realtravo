@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, DollarSign, Users, Upload } from "lucide-react";
+import { Calendar, MapPin, DollarSign, Users, Upload, Navigation } from "lucide-react";
 
 const CreateTripEvent = () => {
   const navigate = useNavigate();
@@ -48,6 +48,35 @@ const CreateTripEvent = () => {
 
   const removeImage = (index: number) => {
     setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          setFormData({...formData, map_link: mapUrl});
+          toast({
+            title: "Location Added",
+            description: "Your current location has been added to the map link.",
+          });
+        },
+        (error) => {
+          toast({
+            title: "Location Error",
+            description: "Unable to get your location. Please add the link manually.",
+            variant: "destructive"
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "Not Supported",
+        description: "Geolocation is not supported by your browser.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -318,13 +347,18 @@ const CreateTripEvent = () => {
 
             <div className="space-y-2">
               <Label htmlFor="map_link">Map Location Link</Label>
-              <Input
-                id="map_link"
-                value={formData.map_link}
-                onChange={(e) => setFormData({...formData, map_link: e.target.value})}
-                placeholder="https://maps.google.com/..."
-              />
-              <p className="text-sm text-muted-foreground">Add Google Maps or other map link</p>
+              <div className="flex gap-2">
+                <Input
+                  id="map_link"
+                  value={formData.map_link}
+                  onChange={(e) => setFormData({...formData, map_link: e.target.value})}
+                  placeholder="https://maps.google.com/..."
+                />
+                <Button type="button" variant="outline" onClick={getCurrentLocation}>
+                  <Navigation className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">Add Google Maps link or use your current location</p>
             </div>
 
             <div className="space-y-2">

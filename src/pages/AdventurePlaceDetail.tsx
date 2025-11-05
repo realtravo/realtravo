@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Share2, Mail, DollarSign } from "lucide-react";
 import { BookAdventureDialog } from "@/components/booking/BookAdventureDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Facility {
   name: string;
@@ -27,6 +29,7 @@ interface AdventurePlace {
   country: string;
   image_url: string;
   images: string[];
+  gallery_images: string[];
   description: string;
   entry_fee: number;
   entry_fee_type: string;
@@ -109,9 +112,11 @@ const AdventurePlaceDetail = () => {
     return <div className="min-h-screen bg-background">Place not found</div>;
   }
 
-  const displayImages = place.images?.length > 0 
+  const displayImages = place.gallery_images?.length > 0 
+    ? place.gallery_images 
+    : place.images?.length > 0 
     ? place.images 
-    : [place.image_url, place.image_url, place.image_url, place.image_url];
+    : [place.image_url];
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -128,26 +133,26 @@ const AdventurePlaceDetail = () => {
           </Button>
         </div>
 
-        {/* Image Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6">
-          <div className="md:col-span-1 md:order-1 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
-            {displayImages.slice(1, 4).map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`${place.name} ${idx + 2}`}
-                className="w-24 h-24 md:w-full md:h-32 object-cover flex-shrink-0"
-              />
+        {/* Image Gallery Carousel */}
+        <Carousel
+          opts={{ loop: true }}
+          plugins={[Autoplay({ delay: 3000 })]}
+          className="w-full mb-6"
+        >
+          <CarouselContent>
+            {displayImages.map((img, idx) => (
+              <CarouselItem key={idx}>
+                <img
+                  src={img}
+                  alt={`${place.name} ${idx + 1}`}
+                  className="w-full h-64 md:h-96 object-cover rounded-lg"
+                />
+              </CarouselItem>
             ))}
-          </div>
-          <div className="md:col-span-3 md:order-2">
-            <img
-              src={displayImages[0]}
-              alt={place.name}
-              className="w-full h-64 md:h-96 object-cover"
-            />
-          </div>
-        </div>
+          </CarouselContent>
+          <CarouselPrevious className="left-2" />
+          <CarouselNext className="right-2" />
+        </Carousel>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
