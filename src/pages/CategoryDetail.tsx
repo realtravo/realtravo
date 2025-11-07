@@ -213,7 +213,7 @@ const CategoryDetail = () => {
         />
 
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {loading ? (
+          {loading || filteredItems.length === 0 ? (
             <>
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="border rounded-lg overflow-hidden">
@@ -246,18 +246,6 @@ const CategoryDetail = () => {
             ))
           )}
         </div>
-
-        {!loading && filteredItems.length === 0 && items.length > 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No items match your filters. Try adjusting the criteria.</p>
-          </div>
-        )}
-
-        {!loading && items.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No items found. Try a different search.</p>
-          </div>
-        )}
       </main>
 
       <Footer />

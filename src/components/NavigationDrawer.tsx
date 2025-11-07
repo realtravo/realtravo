@@ -44,45 +44,47 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
 
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          <li className="mb-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" className="w-full flex items-center justify-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to={user ? "/create-trip-event" : "/auth"} 
-                    onClick={onClose} 
-                    className="cursor-pointer"
-                  >
-                    Trip & Event
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to={user ? "/create-hotel" : "/auth"} 
-                    onClick={onClose} 
-                    className="cursor-pointer"
-                  >
-                    Hotel & Accommodation
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link 
-                    to={user ? "/create-adventure" : "/auth"} 
-                    onClick={onClose} 
-                    className="cursor-pointer"
-                  >
-                    Place to Adventure
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </li>
+          {user && (
+            <li className="mb-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="default" className="w-full flex items-center justify-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/create-trip-event" 
+                      onClick={onClose} 
+                      className="cursor-pointer"
+                    >
+                      Trip & Event
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/create-hotel" 
+                      onClick={onClose} 
+                      className="cursor-pointer"
+                    >
+                      Hotel & Accommodation
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/create-adventure" 
+                      onClick={onClose} 
+                      className="cursor-pointer"
+                    >
+                      Place to Adventure
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </li>
+          )}
 
           {user && (
             <li>

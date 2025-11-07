@@ -169,7 +169,7 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold mb-6">Featured Trips</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading ? (
+            {loading || trips.length === 0 ? (
               <>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
@@ -183,7 +183,7 @@ const Index = () => {
                   </div>
                 ))}
               </>
-            ) : trips.length > 0 ? (
+            ) : (
               trips.map((trip) => (
                 <ListingCard
                   key={trip.id}
@@ -199,7 +199,7 @@ const Index = () => {
                   isSaved={savedItems.has(trip.id)}
                 />
               ))
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -207,7 +207,7 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading ? (
+            {loading || events.length === 0 ? (
               <>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
@@ -221,7 +221,7 @@ const Index = () => {
                   </div>
                 ))}
               </>
-            ) : events.length > 0 ? (
+            ) : (
               events.map((event) => (
                 <ListingCard
                   key={event.id}
@@ -237,7 +237,7 @@ const Index = () => {
                   isSaved={savedItems.has(event.id)}
                 />
               ))
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -245,7 +245,7 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold mb-6">Amazing Hotels</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading ? (
+            {loading || hotels.length === 0 ? (
               <>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
@@ -258,7 +258,7 @@ const Index = () => {
                   </div>
                 ))}
               </>
-            ) : hotels.length > 0 ? (
+            ) : (
               hotels.map((hotel) => (
                 <ListingCard
                   key={hotel.id}
@@ -272,7 +272,7 @@ const Index = () => {
                   isSaved={savedItems.has(hotel.id)}
                 />
               ))
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -280,7 +280,7 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold mb-6">Adventure Awaits</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading ? (
+            {loading || adventurePlaces.length === 0 ? (
               <>
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
@@ -293,7 +293,7 @@ const Index = () => {
                   </div>
                 ))}
               </>
-            ) : adventurePlaces.length > 0 ? (
+            ) : (
               adventurePlaces.map((place) => (
                 <ListingCard
                   key={place.id}
@@ -307,7 +307,7 @@ const Index = () => {
                   isSaved={savedItems.has(place.id)}
                 />
               ))
-            ) : null}
+            )}
           </div>
         </section>
 
