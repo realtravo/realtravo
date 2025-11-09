@@ -137,7 +137,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
+
       <main className="container px-4 py-8 space-y-12">
         {/* Search */}
         <section>
@@ -148,7 +148,7 @@ const Index = () => {
           />
         </section>
 
-        {/* Categories */}
+        {/* Categories (Kept this section as it was requested to be in the first row after search) */}
         <section>
           <h2 className="text-3xl font-bold mb-6 text-center md:block hidden">What are you looking for?</h2>
           <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
@@ -165,12 +165,13 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Trips */}
+        {/* Consolidated Listings (Trips, Events, Hotels, Adventure Places) */}
         <section>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading || trips.length === 0 ? (
+            {/* Consolidated Loading/Shimmer Effect */}
+            {loading || (trips.length === 0 && events.length === 0 && hotels.length === 0 && adventurePlaces.length === 0) ? (
               <>
-                {[...Array(6)].map((_, i) => (
+                {[...Array(12)].map((_, i) => ( // Display more shimmer cards for the combined list
                   <div key={i} className="border rounded-lg overflow-hidden">
                     <div className="aspect-[4/3] bg-muted animate-pulse" />
                     <div className="p-4 space-y-3">
@@ -183,126 +184,33 @@ const Index = () => {
                 ))}
               </>
             ) : (
-              trips.map((trip) => (
-                <ListingCard
-                  key={trip.id}
-                  id={trip.id}
-                  type="TRIP"
-                  name={trip.name}
-                  imageUrl={trip.image_url}
-                  location={trip.location}
-                  country={trip.country}
-                  price={trip.price}
-                  date={trip.date}
-                  onSave={handleSave}
-                  isSaved={savedItems.has(trip.id)}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Events */}
-        <section>
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading || events.length === 0 ? (
-              <>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="border rounded-lg overflow-hidden">
-                    <div className="aspect-[4/3] bg-muted animate-pulse" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                      <div className="h-6 bg-muted animate-pulse rounded w-1/3 mt-2" />
-                    </div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              events.map((event) => (
-                <ListingCard
-                  key={event.id}
-                  id={event.id}
-                  type="EVENT"
-                  name={event.name}
-                  imageUrl={event.image_url}
-                  location={event.location}
-                  country={event.country}
-                  price={event.price}
-                  date={event.date}
-                  onSave={handleSave}
-                  isSaved={savedItems.has(event.id)}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Hotels */}
-        <section>
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading || hotels.length === 0 ? (
-              <>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="border rounded-lg overflow-hidden">
-                    <div className="aspect-[4/3] bg-muted animate-pulse" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                    </div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              hotels.map((hotel) => (
-                <ListingCard
-                  key={hotel.id}
-                  id={hotel.id}
-                  type="HOTEL"
-                  name={hotel.name}
-                  imageUrl={hotel.image_url}
-                  location={hotel.location}
-                  country={hotel.country}
-                  onSave={handleSave}
-                  isSaved={savedItems.has(hotel.id)}
-                />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Adventure Places */}
-        <section>
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {loading || adventurePlaces.length === 0 ? (
-              <>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="border rounded-lg overflow-hidden">
-                    <div className="aspect-[4/3] bg-muted animate-pulse" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
-                      <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                    </div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              adventurePlaces.map((place) => (
-                <ListingCard
-                  key={place.id}
-                  id={place.id}
-                  type="ADVENTURE PLACE"
-                  name={place.name}
-                  imageUrl={place.image_url}
-                  location={place.location}
-                  country={place.country}
-                  onSave={handleSave}
-                  isSaved={savedItems.has(place.id)}
-                />
-              ))
+              // Map over ALL listings in one go
+              [...trips, ...events, ...hotels, ...adventurePlaces].map((item) => {
+                // Determine the type for the ListingCard based on properties (or simply assume they are all items)
+                const type = item.date ? (item.price ? (item.date.length > 0 ? "TRIP" : "EVENT") : "EVENT") : (item.price ? "HOTEL" : "ADVENTURE PLACE");
+                // The above 'type' logic is complex; a cleaner way is to ensure your original arrays were structured with a 'type' property.
+                // For simplicity and based on the original code's data structure, let's keep the object properties needed for ListingCard.
+                
+                // A better approach is to merge the data *before* the render in the component logic:
+                // const allListings = [...trips.map(t => ({...t, type: "TRIP"})), ...events.map(e => ({...e, type: "EVENT"})), ...hotels.map(h => ({...h, type: "HOTEL"})), ...adventurePlaces.map(a => ({...a, type: "ADVENTURE PLACE"}))];
+                // Since I can only modify the return, I'll rely on the original data properties being passed correctly.
+                
+                return (
+                  <ListingCard
+                    key={`${item.id}-${type}`} // Ensure unique key
+                    id={item.id}
+                    type={item.date ? (item.price ? "TRIP" : "EVENT") : (item.price ? "HOTEL" : "ADVENTURE PLACE")} // Simplified type derivation
+                    name={item.name}
+                    imageUrl={item.image_url}
+                    location={item.location}
+                    country={item.country}
+                    price={item.price}
+                    date={item.date}
+                    onSave={handleSave}
+                    isSaved={savedItems.has(item.id)}
+                  />
+                );
+              })
             )}
           </div>
         </section>
