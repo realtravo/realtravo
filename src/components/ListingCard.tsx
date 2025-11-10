@@ -103,7 +103,7 @@ export const ListingCard = ({
           <Heart
             className={cn(
               "h-4 w-4 transition-all",
-              saved ? "fill-red-500 text-red-500" : "text-white"
+              saved ? "fill-red-500 text-red-500" : "text-red"
             )}
           />
         </Button>
