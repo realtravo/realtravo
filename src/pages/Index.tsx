@@ -10,81 +10,6 @@ import { Calendar, Hotel, Mountain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// MOCK Slideshow Component (Replace with your actual implementation)
-const ImageSlideshow = () => {
-  // Mock data for the slideshow
-  const slides = [
-    {
-      name: "Bali's Sunrise Temples",
-      description: "Witness the breathtaking dawn at the most sacred sites.",
-      imageUrl: "https://images.unsplash.com/photo-1544439169-d4c399c5608d",
-    },
-    {
-      name: "European Alps Adventure",
-      description: "Hike and bike through stunning mountain landscapes this summer.",
-      imageUrl: "https://images.unsplash.com/photo-1549877452-9c3132629b3c",
-    },
-    {
-      name: "Luxury Maldives Retreat",
-      description: "Seven days of pure relaxation in an overwater bungalow.",
-      imageUrl: "https://images.unsplash.com/photo-1540306786884-2977f0cc34e2",
-    },
-  ];
-
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(timer);
-  }, [slides.length]);
-
-  const slide = slides[currentSlide];
-
-  return (
-    // Simple mock structure using Tailwind classes
-    <div className="relative w-full aspect-video rounded-xl shadow-2xl overflow-hidden bg-gray-200">
-      {/* Background Image */}
-      <img
-        src={slide.imageUrl}
-        alt={slide.name}
-        className="w-full h-full object-cover transition-opacity duration-1000"
-      />
-      
-      {/* Overlay Content (Dark Navy theme style) */}
-      <div className="absolute inset-0 bg-blue-900/60 flex flex-col justify-end p-6 md:p-8">
-        <h3 className="text-3xl font-extrabold text-white mb-2 leading-tight">
-          {slide.name}
-        </h3>
-        <p className="text-lg text-blue-200 mb-4">
-          {slide.description}
-        </p>
-        <button 
-            onClick={() => { /* Navigate to the slide's detail page */ }}
-            className="w-fit px-5 py-2 text-sm font-semibold rounded-full bg-white text-blue-900 hover:bg-gray-100 transition-colors"
-        >
-            View Deal
-        </button>
-      </div>
-
-      {/* Navigation Dots (Optional: for a full implementation) */}
-      <div className="absolute bottom-4 right-4 flex space-x-2">
-        {slides.map((_, index) => (
-          <div
-            key={index}
-            className={`h-2 w-2 rounded-full transition-all duration-300 ${
-              index === currentSlide ? "bg-white scale-125" : "bg-white/50 hover:bg-white"
-            }`}
-            onClick={() => setCurrentSlide(index)}
-          ></div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const Index = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -208,7 +133,80 @@ const Index = () => {
       path: "/category/adventure",
     },
   ];
+// MOCK Slideshow Component (Replace with your actual implementation)
+const ImageSlideshow = () => {
+  // Mock data for the slideshow
+  const slides = [
+    {
+      name: "Bali's Sunrise Temples",
+      description: "Witness the breathtaking dawn at the most sacred sites.",
+      imageUrl: "https://images.unsplash.com/photo-1544439169-d4c399c5608d",
+    },
+    {
+      name: "European Alps Adventure",
+      description: "Hike and bike through stunning mountain landscapes this summer.",
+      imageUrl: "https://images.unsplash.com/photo-1549877452-9c3132629b3c",
+    },
+    {
+      name: "Luxury Maldives Retreat",
+      description: "Seven days of pure relaxation in an overwater bungalow.",
+      imageUrl: "https://images.unsplash.com/photo-1540306786884-2977f0cc34e2",
+    },
+  ];
 
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const slide = slides[currentSlide];
+
+  return (
+    // Simple mock structure using Tailwind classes
+    <div className="relative w-full aspect-video rounded-xl shadow-2xl overflow-hidden bg-gray-200">
+      {/* Background Image */}
+      <img
+        src={slide.imageUrl}
+        alt={slide.name}
+        className="w-full h-full object-cover transition-opacity duration-1000"
+      />
+      
+      {/* Overlay Content (Dark Navy theme style) */}
+      <div className="absolute inset-0 bg-blue-900/60 flex flex-col justify-end p-6 md:p-8">
+        <h3 className="text-3xl font-extrabold text-white mb-2 leading-tight">
+          {slide.name}
+        </h3>
+        <p className="text-lg text-blue-200 mb-4">
+          {slide.description}
+        </p>
+        <button 
+            onClick={() => { /* Navigate to the slide's detail page */ }}
+            className="w-fit px-5 py-2 text-sm font-semibold rounded-full bg-white text-blue-900 hover:bg-gray-100 transition-colors"
+        >
+            View Deal
+        </button>
+      </div>
+
+      {/* Navigation Dots (Optional: for a full implementation) */}
+      <div className="absolute bottom-4 right-4 flex space-x-2">
+        {slides.map((_, index) => (
+          <div
+            key={index}
+            className={`h-2 w-2 rounded-full transition-all duration-300 ${
+              index === currentSlide ? "bg-white scale-125" : "bg-white/50 hover:bg-white"
+            }`}
+            onClick={() => setCurrentSlide(index)}
+          ></div>
+        ))}
+      </div>
+    </div>
+  );
+};
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
