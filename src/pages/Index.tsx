@@ -247,8 +247,8 @@ const Index = () => {
 
         </section>
 
-        <hr className="border-t border-gray-200 mt-8 mb-0" />
-
+        <hr className="border-t border-gray-200 mt-8 mb-0" />  
+        
         {/* COMBINED LISTINGS: Trips, Events, Hotels, and Adventure Places */}
         <section>
         <div className="bg-blue-900 text-white w-full flex items-center py-1 lg:py-3">
