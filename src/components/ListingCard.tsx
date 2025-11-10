@@ -62,6 +62,16 @@ export const ListingCard = ({
     navigate(`/${typeMap[type]}/${id}`);
   };
 
+  // Function to format the date as 'Month Day, Year'
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
   return (
     <Card 
       onClick={handleCardClick}
@@ -73,11 +83,14 @@ export const ListingCard = ({
           alt={name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
+        
+        {/* Category Badge - now with rgba black background */}
         <div className="absolute top-3 left-3">
-          <Badge className="bg-primary/90 text-primary-foreground backdrop-blur">
+          <Badge className="bg-[rgba(0,0,0,0.6)] text-white backdrop-blur">
             {type}
           </Badge>
         </div>
+        
         <Button
           variant="ghost"
           size="icon"
@@ -94,6 +107,22 @@ export const ListingCard = ({
             )}
           />
         </Button>
+
+        {/* Price and Date Overlay - positioned at the bottom */}
+        {(price !== undefined || date) && (
+          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex justify-between items-end">
+            {price !== undefined && (
+              <p className="font-bold text-xl text-white">
+                ${price}
+              </p>
+            )}
+            {date && (
+              <p className="font-bold text-base text-white">
+                {formatDate(date)}
+              </p>
+            )}
+          </div>
+        )}
       </div>
       
       <div className="p-4">
@@ -104,13 +133,9 @@ export const ListingCard = ({
           <p className="font-medium text-foreground">{country}</p>
         </div>
 
+        {/* Removed price and date from here as they are now on the image overlay */}
         <div className="flex items-center justify-between pt-2 border-t">
-          {price !== undefined && (
-            <p className="font-bold text-lg text-primary">${price}</p>
-          )}
-          {date && (
-            <p className="text-sm text-muted-foreground">{new Date(date).toLocaleDateString()}</p>
-          )}
+          {/* You can add other elements here if needed, or remove the div if it's no longer necessary */}
         </div>
         
         {amenities && amenities.length > 0 && (
