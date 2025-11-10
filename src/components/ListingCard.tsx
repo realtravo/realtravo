@@ -105,7 +105,7 @@ export const ListingCard = ({
               "h-4 w-4 transition-all",
               saved ? "fill-red-500 text-red-500" : "text-red"
             )}
-          />
+           />
         </Button>
 
         {/* Price and Date Overlay - Still at bottom for high visibility */}
