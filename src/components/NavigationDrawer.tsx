@@ -89,8 +89,8 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
                       className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-primary/10 transition-all duration-200 group"
                     >
                       <item.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      {/* Applied BOLDING and removed 'group-hover' transition for primary text color */}
-                      <span className="font-bold text-sm text-primary transition-colors"> 
+                      {/* UPDATED: Changed from font-bold text-primary to font-medium text-foreground with hover effect */}
+                      <span className="font-medium text-foreground group-hover:text-primary transition-colors"> 
                         {item.label}
                       </span>
                     </Link>
