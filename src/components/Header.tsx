@@ -73,7 +73,7 @@ export const Header = () => {
         <div className="flex items-center gap-3">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-800 lg:hidden">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-blue-800">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>

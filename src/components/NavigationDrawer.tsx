@@ -150,8 +150,8 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
             </li>
           ))}
 
-          {/* AUTHENTICATION BUTTONS - below About */}
-          {user ? (
+          {/* LOGOUT BUTTON - below About, only for logged in users */}
+          {user && (
             <li>
               <Button
                 onClick={handleLogout}
@@ -160,14 +160,6 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
                 <LogOut className="h-5 w-5" />
                 <span className="font-medium">Logout</span>
               </Button>
-            </li>
-          ) : (
-            <li>
-              <Link to="/auth" onClick={onClose}>
-                <Button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg">
-                  <span className="font-medium">Login</span>
-                </Button>
-              </Link>
             </li>
           )}
         </ul>
