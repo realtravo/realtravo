@@ -32,8 +32,7 @@ const CreateTripEvent = () => {
     available_tickets: "",
     email: "",
     phone_number: "",
-    map_link: "",
-    date_type: "fixed"
+    map_link: ""
   });
   
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
@@ -117,20 +116,22 @@ const CreateTripEvent = () => {
 
       const table = isTrip ? "trips" : "events";
       const insertData: any = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        location: formData.location,
+        place: formData.place,
+        country: formData.country,
+        date: formData.date,
         image_url: uploadedUrls[0] || "",
         gallery_images: uploadedUrls,
         price: parseFloat(formData.price),
         price_child: parseFloat(formData.price_child) || 0,
         available_tickets: parseInt(formData.available_tickets) || 0,
+        email: formData.email || null,
+        phone_number: formData.phone_number || null,
         map_link: formData.map_link || null,
         created_by: user.id
       };
-
-      // Only add date_type for trips
-      if (isTrip) {
-        insertData.date_type = formData.date_type;
-      }
 
       const { error } = await supabase
         .from(table)
@@ -230,38 +231,19 @@ const CreateTripEvent = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date">{isTrip && formData.date_type === 'fixed' ? 'Fixed Date *' : 'Date *'}</Label>
+                <Label htmlFor="date">Date *</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="date"
                     type="date"
-                    required={!isTrip || formData.date_type === 'fixed'}
+                    required
                     className="pl-10"
                     value={formData.date}
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    disabled={isTrip && formData.date_type === 'custom'}
                   />
                 </div>
               </div>
-
-              {isTrip && (
-                <div className="space-y-2">
-                  <Label htmlFor="date_type">Date Type *</Label>
-                  <select
-                    id="date_type"
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={formData.date_type}
-                    onChange={(e) => setFormData({...formData, date_type: e.target.value})}
-                  >
-                    <option value="fixed">Fixed Date</option>
-                    <option value="custom">Custom Date (User chooses)</option>
-                  </select>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.date_type === 'fixed' ? 'Trip will occur on a specific date' : 'Users can choose their preferred date'}
-                  </p>
-                </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="price">Price (Adult) *</Label>

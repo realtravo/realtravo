@@ -271,9 +271,13 @@ const EventDetail = () => {
               <Button 
                 className="w-full" 
                 onClick={() => setBookingOpen(true)}
-                disabled={event.available_tickets === 0}
+                disabled={event.available_tickets === 0 || new Date(event.date) < new Date()}
               >
-                {event.available_tickets === 0 ? 'Sold Out' : 'Book Now'}
+                {new Date(event.date) < new Date() 
+                  ? 'Event Passed' 
+                  : event.available_tickets === 0 
+                  ? 'Sold Out' 
+                  : 'Book Now'}
               </Button>
             </div>
 

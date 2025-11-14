@@ -42,6 +42,7 @@ export const Footer = () => {
             <h3 className="font-bold mb-3">My Account</h3>
             <ul className="space-y-2 text-sm">
               {/* Links use text-blue-200 with hover:text-white */}
+              <li><Link to="/my-content" className="text-blue-200 hover:text-white transition-colors">My Content</Link></li>
               <li><Link to="/bookings" className="text-blue-200 hover:text-white transition-colors">My Bookings</Link></li>
               <li><Link to="/saved" className="text-blue-200 hover:text-white transition-colors">Saved</Link></li>
               <li><Link to="/vlog" className="text-blue-200 hover:text-white transition-colors">Vlog</Link></li>

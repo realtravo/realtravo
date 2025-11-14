@@ -30,7 +30,6 @@ interface Trip {
   price: number;
   price_child: number;
   date: string;
-  date_type: string;
   available_tickets: number;
   phone_number: string;
   email: string;
@@ -256,9 +255,13 @@ const TripDetail = () => {
               <Button 
                 className="w-full" 
                 onClick={() => setBookingOpen(true)}
-                disabled={trip.available_tickets === 0}
+                disabled={trip.available_tickets === 0 || new Date(trip.date) < new Date()}
               >
-                {trip.available_tickets === 0 ? 'Sold Out' : 'Book Now'}
+                {new Date(trip.date) < new Date() 
+                  ? 'Trip Passed' 
+                  : trip.available_tickets === 0 
+                  ? 'Sold Out' 
+                  : 'Book Now'}
               </Button>
             </div>
           </div>

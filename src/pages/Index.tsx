@@ -185,7 +185,8 @@ const Index = () => {
       await supabase.from("saved_items").insert([{
         user_id: userId,
         item_id: itemId,
-        item_type: itemType
+        item_type: itemType,
+        session_id: null
       }]);
 
       setSavedItems(prev => new Set([...prev, itemId]));

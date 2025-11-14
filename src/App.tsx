@@ -57,7 +57,7 @@ const App = () => (
               <Route path="/CreateHotel" element={<CreateHotel />} />
               <Route path="/CreateAdventure" element={<CreateAdventure />} />
               <Route path="/profile/edit" element={<ProfileEdit />} />
-              <Route path="/mycontent" element={<MyContent />} />
+              <Route path="/my-content" element={<MyContent />} />
               <Route path="/edit-listing/:type/:id" element={<EditListing />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

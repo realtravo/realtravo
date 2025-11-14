@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, Heart, Ticket, Video, Shield, Home } from "lucide-react";
+import { Menu, Heart, Ticket, Video, Shield, Home, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -101,6 +101,12 @@ export const Header = () => {
             <Home className="h-4 w-4" />
             Home
           </Link>
+          {user && (
+            <Link to="/my-content" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
+              <FolderOpen className="h-4 w-4" />
+              My Content
+            </Link>
+          )}
           <Link to="/bookings" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
             <Ticket className="h-4 w-4" />
             My Bookings
