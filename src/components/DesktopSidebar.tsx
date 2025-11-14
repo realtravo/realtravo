@@ -34,8 +34,23 @@ export const DesktopSidebar = () => {
   ];
 
   return (
-    <aside className="hidden lg:flex lg:flex-col fixed left-0 top-16 w-72 bg-blue-950 border-r border-blue-800 z-40" style={{ height: 'calc(90vh - 4rem)' }}>
-      {/* Navigation content - no header, positioned below main header */}
+    <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 w-72 bg-blue-950 border-r border-blue-800 z-40 h-screen">
+      {/* Header section with logo, name, and paragraph */}
+      <div className="p-4 border-b border-blue-800">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-blue-900 font-bold text-lg">
+            T
+          </div>
+          <div>
+            <span className="font-bold text-base text-white block">
+              TripTrac
+            </span>
+            <p className="text-xs text-blue-200">Explore the world</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Navigation content */}
       <nav className="flex-1 p-4 pt-6 overflow-y-auto">
         <ul className="space-y-2">
           {/* Partner Links */}

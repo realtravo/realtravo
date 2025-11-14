@@ -61,8 +61,23 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
 
   return (
     <div className="flex flex-col h-full bg-blue-950">
-      {/* Navigation links section - no header */}
-      <nav className="flex-1 p-4 pt-6">
+      {/* Header section with logo, name, and paragraph */}
+      <div className="p-4 border-b border-blue-800">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-blue-900 font-bold text-lg">
+            T
+          </div>
+          <div>
+            <span className="font-bold text-base text-white block">
+              TripTrac
+            </span>
+            <p className="text-xs text-blue-200">Explore the world</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Navigation links section */}
+      <nav className="flex-1 p-4 pt-6 overflow-y-auto">
         <ul className="space-y-2">
           {/* PARTNER LINKS - Visible to all users */}
           <li className="mb-4 pt-2 border-t border-blue-800">
