@@ -30,7 +30,10 @@ const CreateHotel = () => {
     phone_numbers: "",
     map_link: "",
     registrationNumber: "",
-    amenities: ""
+    accessPin: "",
+    establishmentType: "hotel",
+    amenities: "",
+    allowedAdminEmails: ""
   });
   
   const [facilities, setFacilities] = useState<Array<{name: string, price: string, capacity: string}>>([
@@ -151,6 +154,11 @@ const CreateHotel = () => {
         capacity: parseInt(f.capacity)
       }));
 
+      const allowedAdminsArray = formData.allowedAdminEmails
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => e && e.includes('@'));
+
       const { error } = await supabase
         .from("hotels")
         .insert([{
@@ -163,6 +171,9 @@ const CreateHotel = () => {
           gallery_images: uploadedUrls,
           map_link: formData.map_link || null,
           registration_number: formData.registrationNumber,
+          access_pin: formData.accessPin,
+          establishment_type: formData.establishmentType,
+          allowed_admin_emails: allowedAdminsArray.length > 0 ? allowedAdminsArray : null,
           email: formData.email || null,
           phone_numbers: phoneArray.length > 0 ? phoneArray : null,
           facilities: facilitiesArray,
@@ -257,6 +268,45 @@ const CreateHotel = () => {
                   onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
                   placeholder="Enter registration number"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accessPin">Access PIN *</Label>
+                <Input
+                  id="accessPin"
+                  type="password"
+                  required
+                  value={formData.accessPin}
+                  onChange={(e) => setFormData({...formData, accessPin: e.target.value})}
+                  placeholder="Enter secure access PIN"
+                />
+                <p className="text-sm text-muted-foreground">This PIN will be required to manage this listing</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="establishmentType">Type of Establishment *</Label>
+                <select
+                  id="establishmentType"
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={formData.establishmentType}
+                  onChange={(e) => setFormData({...formData, establishmentType: e.target.value})}
+                >
+                  <option value="hotel">Hotel</option>
+                  <option value="accommodation">Accommodation</option>
+                </select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="allowedAdminEmails">Allowed Administrator Emails</Label>
+                <Input
+                  id="allowedAdminEmails"
+                  type="text"
+                  value={formData.allowedAdminEmails}
+                  onChange={(e) => setFormData({...formData, allowedAdminEmails: e.target.value})}
+                  placeholder="admin1@example.com, admin2@example.com"
+                />
+                <p className="text-sm text-muted-foreground">Comma-separated email addresses of users who can manage this listing</p>
               </div>
 
               <div className="space-y-2">

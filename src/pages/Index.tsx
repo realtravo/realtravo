@@ -116,8 +116,8 @@ const Index = () => {
   }, []);
   
   // Helper to fetch and tag data from a single table
-  const fetchTableData = async (tableName: string, type: ListingItem['type'], query?: string) => {
-    let selectQuery = supabase.from(tableName).select("*, created_at");
+  const fetchTableData = async (tableName: 'trips' | 'events' | 'hotels' | 'adventure_places', type: ListingItem['type'], query?: string) => {
+    let selectQuery = supabase.from(tableName).select("*");
     
     if (query) {
       // Assuming 'name', 'location', 'country', 'place' are common search fields
@@ -127,15 +127,18 @@ const Index = () => {
       selectQuery = selectQuery.limit(6); 
     }
     
-    const { data } = await selectQuery;
+    const { data, error } = await selectQuery;
+    
+    if (error) {
+      console.error(`Error fetching ${tableName}:`, error);
+      return [];
+    }
     
     if (data) {
       // Add the 'type' to each item for rendering
       return data.map(item => ({
         ...item,
         type: type,
-        // Ensure id is a string if it's not already
-        id: String(item.id), 
       })) as ListingItem[];
     }
     return [];

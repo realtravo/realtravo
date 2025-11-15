@@ -16,8 +16,10 @@ export type Database = {
     Tables: {
       adventure_places: {
         Row: {
+          access_pin: string | null
           activities: Json | null
           admin_notes: string | null
+          allowed_admin_emails: string[] | null
           amenities: Json | null
           approval_status: string
           approved_at: string | null
@@ -34,6 +36,7 @@ export type Database = {
           id: string
           image_url: string
           images: string[] | null
+          is_hidden: boolean | null
           location: string
           map_link: string | null
           name: string
@@ -42,8 +45,10 @@ export type Database = {
           registration_number: string | null
         }
         Insert: {
+          access_pin?: string | null
           activities?: Json | null
           admin_notes?: string | null
+          allowed_admin_emails?: string[] | null
           amenities?: Json | null
           approval_status?: string
           approved_at?: string | null
@@ -60,6 +65,7 @@ export type Database = {
           id?: string
           image_url: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location: string
           map_link?: string | null
           name: string
@@ -68,8 +74,10 @@ export type Database = {
           registration_number?: string | null
         }
         Update: {
+          access_pin?: string | null
           activities?: Json | null
           admin_notes?: string | null
+          allowed_admin_emails?: string[] | null
           amenities?: Json | null
           approval_status?: string
           approved_at?: string | null
@@ -86,6 +94,7 @@ export type Database = {
           id?: string
           image_url?: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location?: string
           map_link?: string | null
           name?: string
@@ -172,6 +181,7 @@ export type Database = {
           id: string
           image_url: string
           images: string[] | null
+          is_hidden: boolean | null
           location: string
           map_link: string | null
           name: string
@@ -199,6 +209,7 @@ export type Database = {
           id?: string
           image_url: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location: string
           map_link?: string | null
           name: string
@@ -226,6 +237,7 @@ export type Database = {
           id?: string
           image_url?: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location?: string
           map_link?: string | null
           name?: string
@@ -241,7 +253,9 @@ export type Database = {
       }
       hotels: {
         Row: {
+          access_pin: string | null
           admin_notes: string | null
+          allowed_admin_emails: string[] | null
           amenities: string[] | null
           approval_status: string
           approved_at: string | null
@@ -251,11 +265,13 @@ export type Database = {
           created_by: string | null
           description: string | null
           email: string | null
+          establishment_type: string | null
           facilities: Json | null
           gallery_images: string[] | null
           id: string
           image_url: string
           images: string[] | null
+          is_hidden: boolean | null
           location: string
           map_link: string | null
           name: string
@@ -264,7 +280,9 @@ export type Database = {
           registration_number: string | null
         }
         Insert: {
+          access_pin?: string | null
           admin_notes?: string | null
+          allowed_admin_emails?: string[] | null
           amenities?: string[] | null
           approval_status?: string
           approved_at?: string | null
@@ -274,11 +292,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           email?: string | null
+          establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
           id?: string
           image_url: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location: string
           map_link?: string | null
           name: string
@@ -287,7 +307,9 @@ export type Database = {
           registration_number?: string | null
         }
         Update: {
+          access_pin?: string | null
           admin_notes?: string | null
+          allowed_admin_emails?: string[] | null
           amenities?: string[] | null
           approval_status?: string
           approved_at?: string | null
@@ -297,11 +319,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           email?: string | null
+          establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
           id?: string
           image_url?: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location?: string
           map_link?: string | null
           name?: string
@@ -347,7 +371,7 @@ export type Database = {
           id: string
           item_id: string
           item_type: string
-          session_id: string
+          session_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -355,7 +379,7 @@ export type Database = {
           id?: string
           item_id: string
           item_type: string
-          session_id: string
+          session_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -363,7 +387,7 @@ export type Database = {
           id?: string
           item_id?: string
           item_type?: string
-          session_id?: string
+          session_id?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -379,13 +403,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           date: string
-          date_type: string | null
           description: string | null
           email: string | null
           gallery_images: string[] | null
           id: string
           image_url: string
           images: string[] | null
+          is_hidden: boolean | null
           location: string
           map_link: string | null
           name: string
@@ -404,13 +428,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date: string
-          date_type?: string | null
           description?: string | null
           email?: string | null
           gallery_images?: string[] | null
           id?: string
           image_url: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location: string
           map_link?: string | null
           name: string
@@ -429,13 +453,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           date?: string
-          date_type?: string | null
           description?: string | null
           email?: string | null
           gallery_images?: string[] | null
           id?: string
           image_url?: string
           images?: string[] | null
+          is_hidden?: boolean | null
           location?: string
           map_link?: string | null
           name?: string

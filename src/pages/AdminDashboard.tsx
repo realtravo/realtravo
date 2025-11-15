@@ -61,39 +61,39 @@ const AdminDashboard = () => {
   };
 
   const fetchPendingListings = async () => {
-    const [trips, events, hotels, places] = await Promise.all([
+    const [trips, events, hotels, adventures] = await Promise.all([
       supabase.from("trips").select("*").eq("approval_status", "pending"),
       supabase.from("events").select("*").eq("approval_status", "pending"),
       supabase.from("hotels").select("*").eq("approval_status", "pending"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "pending"),
+      supabase.from("adventure_places").select("*").eq("approval_status", "pending")
     ]);
 
-    const allListings = [
-      ...(trips.data || []).map((item) => ({ ...item, type: "trip" })),
-      ...(events.data || []).map((item) => ({ ...item, type: "event" })),
-      ...(hotels.data || []).map((item) => ({ ...item, type: "hotel" })),
-      ...(places.data || []).map((item) => ({ ...item, type: "adventure" })),
+    const all = [
+      ...(trips.data?.map(t => ({ ...t, type: "trip", created_at: t.created_at })) || []),
+      ...(events.data?.map(e => ({ ...e, type: "event", created_at: e.created_at })) || []),
+      ...(hotels.data?.map(h => ({ ...h, type: "hotel", created_at: h.created_at })) || []),
+      ...(adventures.data?.map(a => ({ ...a, type: "adventure", created_at: a.created_at })) || [])
     ];
 
-    setPendingListings(allListings);
+    setPendingListings(all);
   };
 
   const fetchApprovedListings = async () => {
-    const [trips, events, hotels, places] = await Promise.all([
+    const [trips, events, hotels, adventures] = await Promise.all([
       supabase.from("trips").select("*").eq("approval_status", "approved"),
       supabase.from("events").select("*").eq("approval_status", "approved"),
       supabase.from("hotels").select("*").eq("approval_status", "approved"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "approved"),
+      supabase.from("adventure_places").select("*").eq("approval_status", "approved")
     ]);
 
-    const allListings = [
-      ...(trips.data || []).map((item) => ({ ...item, type: "trip" })),
-      ...(events.data || []).map((item) => ({ ...item, type: "event" })),
-      ...(hotels.data || []).map((item) => ({ ...item, type: "hotel" })),
-      ...(places.data || []).map((item) => ({ ...item, type: "adventure" })),
+    const all = [
+      ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
+      ...(events.data?.map(e => ({ ...e, type: "event" })) || []),
+      ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
+      ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
     ];
 
-    setApprovedListings(allListings);
+    setApprovedListings(all);
   };
 
   const fetchAllBookings = async () => {

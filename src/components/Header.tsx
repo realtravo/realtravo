@@ -101,22 +101,18 @@ export const Header = () => {
             <Home className="h-4 w-4" />
             Home
           </Link>
-          {user && (
-            <Link to="/my-content" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
-              <FolderOpen className="h-4 w-4" />
-              My Content
-            </Link>
-          )}
+          <Link to="/my-content" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
+            <FolderOpen className="h-4 w-4" />
+            My Content
+          </Link>
           <Link to="/bookings" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
             <Ticket className="h-4 w-4" />
             My Bookings
           </Link>
-          {user && (
-            <Link to="/saved" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
-              <Heart className="h-4 w-4" />
-              Saved
-            </Link>
-          )}
+          <Link to="/saved" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
+            <Heart className="h-4 w-4" />
+            Saved
+          </Link>
           <Link to="/vlog" className="flex items-center gap-2 font-bold hover:text-blue-200 transition-colors">
             <Video className="h-4 w-4" />
             Vlog

@@ -32,7 +32,9 @@ const CreateAdventure = () => {
     entry_fee: "",
     map_link: "",
     registrationNumber: "",
-    amenities: ""
+    accessPin: "",
+    amenities: "",
+    allowedAdminEmails: ""
   });
   
   const [facilities, setFacilities] = useState<Array<{name: string, price: string}>>([{name: "", price: ""}]);
@@ -150,6 +152,11 @@ const CreateAdventure = () => {
         .filter(f => f.name.trim())
         .map(f => ({ name: f.name.trim(), price: parseFloat(f.price) || 0 }));
 
+      const allowedAdminsArray = formData.allowedAdminEmails
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => e && e.includes('@'));
+
       const { error } = await supabase
         .from("adventure_places")
         .insert([{
@@ -162,6 +169,8 @@ const CreateAdventure = () => {
           gallery_images: uploadedUrls,
           map_link: formData.map_link || null,
           registration_number: formData.registrationNumber || null,
+          access_pin: formData.accessPin || null,
+          allowed_admin_emails: allowedAdminsArray.length > 0 ? allowedAdminsArray : null,
           email: formData.email || null,
           phone_numbers: phoneArray.length > 0 ? phoneArray : null,
           entry_fee_type: formData.entry_fee_type,
@@ -254,13 +263,39 @@ const CreateAdventure = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Registration Number</Label>
+                <Label htmlFor="registrationNumber">Registration Number *</Label>
                 <Input
                   id="registrationNumber"
+                  required
                   value={formData.registrationNumber}
                   onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
-                  placeholder="Enter registration number (if applicable)"
+                  placeholder="Enter registration number"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accessPin">Access PIN *</Label>
+                <Input
+                  id="accessPin"
+                  type="password"
+                  required
+                  value={formData.accessPin}
+                  onChange={(e) => setFormData({...formData, accessPin: e.target.value})}
+                  placeholder="Enter secure access PIN"
+                />
+                <p className="text-sm text-muted-foreground">This PIN will be required to manage this listing</p>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="allowedAdminEmails">Allowed Administrator Emails</Label>
+                <Input
+                  id="allowedAdminEmails"
+                  type="text"
+                  value={formData.allowedAdminEmails}
+                  onChange={(e) => setFormData({...formData, allowedAdminEmails: e.target.value})}
+                  placeholder="admin1@example.com, admin2@example.com"
+                />
+                <p className="text-sm text-muted-foreground">Comma-separated email addresses of users who can manage this listing</p>
               </div>
 
               <div className="space-y-2">
