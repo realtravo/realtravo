@@ -34,6 +34,7 @@ const CreateAdventure = () => {
     map_link: "",
     registrationNumber: "",
     accessPin: "",
+    confirmAccessPin: "",
     amenities: "",
     allowedAdminEmails: ""
   });
@@ -321,9 +322,21 @@ const CreateAdventure = () => {
                   required
                   value={formData.accessPin}
                   onChange={(e) => setFormData({...formData, accessPin: e.target.value})}
-                  placeholder="Enter secure access PIN"
+                  placeholder="Min 8 chars with uppercase, lowercase, numbers & special chars"
                 />
-                <p className="text-sm text-muted-foreground">This PIN will be required to manage this listing</p>
+                <p className="text-sm text-muted-foreground">Must include uppercase, lowercase, numbers & special characters (!@#$%^&*)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmAccessPin">Confirm Access PIN *</Label>
+                <Input
+                  id="confirmAccessPin"
+                  type="password"
+                  required
+                  value={formData.confirmAccessPin}
+                  onChange={(e) => setFormData({...formData, confirmAccessPin: e.target.value})}
+                  placeholder="Re-enter access PIN"
+                />
               </div>
 
               <div className="space-y-2 md:col-span-2">
