@@ -32,6 +32,7 @@ const CreateHotel = () => {
     map_link: "",
     registrationNumber: "",
     accessPin: "",
+    confirmAccessPin: "",
     establishmentType: "hotel",
     amenities: "",
     allowedAdminEmails: ""
@@ -102,6 +103,16 @@ const CreateHotel = () => {
         variant: "destructive"
       });
       navigate("/auth");
+      return;
+    }
+
+    // Validate PIN confirmation
+    if (formData.accessPin !== formData.confirmAccessPin) {
+      toast({
+        title: "PINs Don't Match",
+        description: "Access PIN and Confirm Access PIN must match.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -314,9 +325,21 @@ const CreateHotel = () => {
                   required
                   value={formData.accessPin}
                   onChange={(e) => setFormData({...formData, accessPin: e.target.value})}
-                  placeholder="Enter secure access PIN"
+                  placeholder="Min 8 chars with uppercase, lowercase, numbers & special chars"
                 />
-                <p className="text-sm text-muted-foreground">This PIN will be required to manage this listing</p>
+                <p className="text-sm text-muted-foreground">Must include uppercase, lowercase, numbers & special characters (!@#$%^&*)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmAccessPin">Confirm Access PIN *</Label>
+                <Input
+                  id="confirmAccessPin"
+                  type="password"
+                  required
+                  value={formData.confirmAccessPin}
+                  onChange={(e) => setFormData({...formData, confirmAccessPin: e.target.value})}
+                  placeholder="Re-enter access PIN"
+                />
               </div>
 
               <div className="space-y-2">
