@@ -84,25 +84,27 @@ const Index = () => {
 
   const fetchAllData = async (query?: string) => {
     setLoading(true);
-    const tables = [
-      { name: "trips", type: "TRIP" },
-      { name: "events", type: "EVENT" },
-      { name: "hotels", type: "HOTEL" },
-      { name: "adventure_places", type: "ADVENTURE PLACE" }
-    ];
 
-    const results = await Promise.all(
-      tables.map(async ({ name, type }) => {
-        let dbQuery = supabase.from(name).select("*").eq("approval_status", "approved").eq("is_hidden", false);
-        if (query) {
-          dbQuery = dbQuery.or(`name.ilike.%${query}%,location.ilike.%${query}%,country.ilike.%${query}%`);
-        }
-        const { data } = await dbQuery;
-        return (data || []).map((item: any) => ({ ...item, type }));
-      })
+    // Fetch each table separately with explicit table names for TypeScript
+    const fetchTable = async (table: "trips" | "events" | "hotels" | "adventure_places", type: string) => {
+      let dbQuery = supabase.from(table).select("*").eq("approval_status", "approved").eq("is_hidden", false);
+      if (query) {
+        dbQuery = dbQuery.or(`name.ilike.%${query}%,location.ilike.%${query}%,country.ilike.%${query}%`);
+      }
+      const { data } = await dbQuery;
+      return (data || []).map((item: any) => ({ ...item, type }));
+    };
+
+    const [trips, events, hotels, adventures] = await Promise.all([
+      fetchTable("trips", "TRIP"),
+      fetchTable("events", "EVENT"),
+      fetchTable("hotels", "HOTEL"),
+      fetchTable("adventure_places", "ADVENTURE PLACE")
+    ]);
+
+    const combined = [...trips, ...events, ...hotels, ...adventures].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-
-    const combined = results.flat().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setListings(combined);
     setLoading(false);
   };
