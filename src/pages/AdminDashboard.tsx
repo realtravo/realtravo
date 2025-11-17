@@ -63,8 +63,8 @@ const AdminDashboard = () => {
     const [trips, events, hotels, adventures] = await Promise.all([
       supabase.from("trips").select("*").eq("approval_status", "pending"),
       supabase.from("events").select("*").eq("approval_status", "pending"),
-      supabase.from("hotels").select("*").eq("approval_status", "pending"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "pending")
+      supabase.from("hotels").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, establishment_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number, allowed_admin_emails, facilities").eq("approval_status", "pending"),
+      supabase.from("adventure_places").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, activities, facilities, entry_fee, entry_fee_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number, allowed_admin_emails").eq("approval_status", "pending")
     ]);
 
     const all = [
@@ -81,8 +81,8 @@ const AdminDashboard = () => {
     const [trips, events, hotels, adventures] = await Promise.all([
       supabase.from("trips").select("*").eq("approval_status", "approved"),
       supabase.from("events").select("*").eq("approval_status", "approved"),
-      supabase.from("hotels").select("*").eq("approval_status", "approved"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "approved")
+      supabase.from("hotels").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, establishment_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number, allowed_admin_emails, facilities").eq("approval_status", "approved"),
+      supabase.from("adventure_places").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, activities, facilities, entry_fee, entry_fee_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number, allowed_admin_emails").eq("approval_status", "approved")
     ]);
 
     const all = [

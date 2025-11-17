@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NavigationDrawer } from "./NavigationDrawer";
+import { NavigationDrawer } from "@/components/NavigationDrawer";
 import { Link } from "react-router-dom";
 
 export const Header = () => {
@@ -177,5 +177,6 @@ export const Header = () => {
       </div>
     </header>
   );
-
 };
+
+export default Header;

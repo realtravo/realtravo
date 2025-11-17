@@ -59,7 +59,7 @@ const AdventurePlaceDetail = () => {
     try {
       const { data, error } = await supabase
         .from("adventure_places")
-        .select("*")
+        .select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, activities, facilities, entry_fee, entry_fee_type, map_link, gallery_images, images, approval_status, created_at, created_by, is_hidden, allowed_admin_emails")
         .eq("id", id)
         .single();
 

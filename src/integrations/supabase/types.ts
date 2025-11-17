@@ -33,6 +33,7 @@ export type Database = {
           entry_fee_type: string | null
           facilities: Json | null
           gallery_images: string[] | null
+          hashed_access_pin: string | null
           id: string
           image_url: string
           images: string[] | null
@@ -62,6 +63,7 @@ export type Database = {
           entry_fee_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          hashed_access_pin?: string | null
           id?: string
           image_url: string
           images?: string[] | null
@@ -91,6 +93,7 @@ export type Database = {
           entry_fee_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          hashed_access_pin?: string | null
           id?: string
           image_url?: string
           images?: string[] | null
@@ -268,6 +271,7 @@ export type Database = {
           establishment_type: string | null
           facilities: Json | null
           gallery_images: string[] | null
+          hashed_access_pin: string | null
           id: string
           image_url: string
           images: string[] | null
@@ -295,6 +299,7 @@ export type Database = {
           establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          hashed_access_pin?: string | null
           id?: string
           image_url: string
           images?: string[] | null
@@ -322,6 +327,7 @@ export type Database = {
           establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          hashed_access_pin?: string | null
           id?: string
           image_url?: string
           images?: string[] | null
@@ -583,6 +589,16 @@ export type Database = {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      hash_pin: { Args: { pin_text: string }; Returns: string }
+      verify_item_credentials: {
+        Args: {
+          p_item_id: string
+          p_item_type: string
+          p_pin_attempt: string
+          p_reg_number_attempt: string
         }
         Returns: boolean
       }

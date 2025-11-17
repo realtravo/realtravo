@@ -58,7 +58,7 @@ const HotelDetail = () => {
     try {
       const { data, error } = await supabase
         .from("hotels")
-        .select("*")
+        .select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, establishment_type, map_link, gallery_images, images, approval_status, created_at, created_by, is_hidden, allowed_admin_emails, facilities")
         .eq("id", id)
         .single();
 

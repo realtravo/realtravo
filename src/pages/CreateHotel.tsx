@@ -206,6 +206,18 @@ const CreateHotel = () => {
         .map(e => e.trim())
         .filter(e => e && e.includes('@'));
 
+      // Hash the PIN using database function
+      let hashedPin = null;
+      if (formData.accessPin) {
+        const { data: hashData, error: hashError } = await supabase.rpc('hash_pin', {
+          pin_text: formData.accessPin
+        });
+        if (hashError) {
+          throw new Error('Failed to hash PIN: ' + hashError.message);
+        }
+        hashedPin = hashData;
+      }
+
       const { error } = await supabase
         .from("hotels")
         .insert([{
@@ -218,7 +230,7 @@ const CreateHotel = () => {
           gallery_images: uploadedUrls,
           map_link: formData.map_link || null,
           registration_number: formData.registrationNumber,
-          access_pin: formData.accessPin,
+          hashed_access_pin: hashedPin,
           establishment_type: formData.establishmentType,
           allowed_admin_emails: allowedAdminsArray.length > 0 ? allowedAdminsArray : null,
           email: formData.email || null,
