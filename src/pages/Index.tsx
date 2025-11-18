@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
@@ -70,19 +70,44 @@ const Index = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const { position } = useGeolocation();
+  const [isSearchVisible, setIsSearchVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchAllData();
-    const initUserId = async () => {
-      const id = await getUserId();
-      setUserId(id);
-      if (id) {
-        const { data } = await supabase.from("saved_items").select("item_id").eq("user_id", id);
-        if (data) setSavedItems(new Set(data.map(item => item.item_id)));
-      }
-    };
-    initUserId();
-  }, []);
+  useEffect(() => {
+    fetchAllData();
+    const initUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+      if (id) {
+        const { data } = await supabase.from("saved_items").select("item_id").eq("user_id", id);
+        if (data) setSavedItems(new Set(data.map(item => item.item_id)));
+      }
+    };
+    initUserId();
+  }, []);
+
+  useEffect(() => {
+    const controlSearchBar = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (window.innerWidth >= 768) {
+        // Desktop: hide search bar on scroll down
+        if (currentScrollY > lastScrollY && currentScrollY > 200) {
+          setIsSearchVisible(false);
+        } else {
+          setIsSearchVisible(true);
+        }
+      } else {
+        setIsSearchVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", controlSearchBar);
+    return () => window.removeEventListener("scroll", controlSearchBar);
+  }, [lastScrollY]);
 
   const fetchAllData = async (query?: string) => {
     setLoading(true);

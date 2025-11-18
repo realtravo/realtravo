@@ -1,43 +1,37 @@
 import { Home, Ticket, Heart, Phone, Info, Video, Plus, Edit, Package, LogIn, LogOut, Plane, Building, Tent, Sun, Moon, User } from "lucide-react"; 
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  // Removed DropdownMenu components
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 
 interface NavigationDrawerProps {
-  onClose: () => void;
+  onClose: () => void;
 }
 
-// Placeholder for Theme Toggle component logic (You need to hook up theme state here)
-const ThemeToggle = ({ onClose }: { onClose: () => void }) => {
-  // Placeholder state for demonstration. Replace with actual theme state management (e.g., useContext)
-  const isDarkMode = false; // Assume light mode by default
+const MobileThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
 
-  const toggleTheme = () => {
-    // Implement actual theme switching logic here
-    console.log("Theme toggled!");
-    // You might want to remove onClose() if you prefer the drawer to stay open
-  };
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
-  return (
-    <li className="pt-2 border-t border-gray-200">
-      <button
-        onClick={toggleTheme}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 group"
-      >
-        {isDarkMode ? (
-          <Sun className="h-5 w-5 text-yellow-500 group-hover:text-yellow-600 transition-colors" />
-        ) : (
-          <Moon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
-        )}
-        <span className="font-medium">
-          {isDarkMode ? "Light Mode" : "Dark Mode"}
-        </span>
-      </button>
-    </li>
-  );
+  return (
+    <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
+      <button
+        onClick={toggleTheme}
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+      >
+        {theme === "dark" ? (
+          <Sun className="h-5 w-5 text-yellow-500 group-hover:text-yellow-600 transition-colors" />
+        ) : (
+          <Moon className="h-5 w-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
+        )}
+        <span className="font-medium">
+          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+        </span>
+      </button>
+    </li>
+  );
 };
 
 export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
@@ -183,13 +177,13 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
                       </span>
                     </button>
                   )}
-                  {/* ADD DARK MODE TOGGLE AND REMOVED CHANGE NAME BUTTON */}
-                  {item.label === "Wishlist" && (
-                    <>
-                      {/* Dark/Light Mode Toggle (NEW) */}
-                      <ThemeToggle onClose={onClose} />
-                    </>
-                  )}
+                  {/* ADD DARK MODE TOGGLE AND REMOVED CHANGE NAME BUTTON */}
+                  {item.label === "Wishlist" && (
+                    <>
+                      {/* Dark/Light Mode Toggle (NEW) */}
+                      <MobileThemeToggle />
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
