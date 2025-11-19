@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Calendar } from "lucide-react";
+import { MapPin, Phone, Share2, Calendar, Mail } from "lucide-react";
 import { BookEventDialog } from "@/components/booking/BookEventDialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -177,16 +177,16 @@ const EventDetail = () => {
         {/* Title, Location on left, Map & Share buttons on right */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">{event.name}</h1>
-            <p className="text-muted-foreground">{event.location}, {event.country}</p>
+            <h1 className="text-2xl md:text-3xl font-bold">{event.name}</h1>
+            <p className="text-sm md:text-base text-muted-foreground">{event.location}, {event.country}</p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={openInMaps}
-              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 text-xs md:text-sm"
             >
-              <MapPin className="mr-2 h-4 w-4" />
+              <MapPin className="mr-2 h-3 w-3 md:h-4 md:w-4" />
               View on Map
             </Button>
             <Button
@@ -194,71 +194,77 @@ const EventDetail = () => {
               onClick={handleShare}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6 p-4 md:p-6 border rounded-lg bg-card shadow-sm">
-            {/* Date and Phone Group */}
+            {/* Date, Phone, and Email Group */}
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span>{new Date(event.date).toLocaleDateString()}</span>
+                <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                <span className="text-xs md:text-base">{new Date(event.date).toLocaleDateString()}</span>
               </div>
               {event.phone_number && (
                 <div className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <a href={`tel:${event.phone_number}`}>{event.phone_number}</a>
+                  <Phone className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <a href={`tel:${event.phone_number}`} className="text-xs md:text-base">{event.phone_number}</a>
+                </div>
+              )}
+              {event.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                  <a href={`mailto:${event.email}`} className="text-xs md:text-base">{event.email}</a>
                 </div>
               )}
             </div>
 
             {/* About Section (Description) */}
             <div className="pt-4 border-t">
-              <h2 className="text-xl font-semibold mb-2">About This Event</h2>
-              <p className="text-muted-foreground">{event.description}</p>
+              <h2 className="text-lg md:text-xl font-semibold mb-2">About This Event</h2>
+              <p className="text-xs md:text-base text-muted-foreground">{event.description}</p>
             </div>
           </div>
 
           {/* Ticket Prices and Booking (Sidebar) */}
           <div className="space-y-4">
             <div className="bg-card p-6 rounded-lg border space-y-3 shadow-sm">
-              <h3 className="font-semibold text-lg">Ticket Prices</h3>
+              <h3 className="font-semibold text-base md:text-lg">Ticket Prices</h3>
               {/* Individual Price Tiers */}
               {event.price_vvip > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm">VVIP</span>
-                  <span className="font-semibold">${event.price_vvip}</span>
+                  <span className="text-xs md:text-sm">VVIP</span>
+                  <span className="font-semibold text-xs md:text-base">${event.price_vvip}</span>
                 </div>
               )}
               {event.price_vip > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm">VIP</span>
-                  <span className="font-semibold">${event.price_vip}</span>
+                  <span className="text-xs md:text-sm">VIP</span>
+                  <span className="font-semibold text-xs md:text-base">${event.price_vip}</span>
                 </div>
               )}
               {event.price_regular > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm">Regular</span>
-                  <span className="font-semibold">${event.price_regular}</span>
+                  <span className="text-xs md:text-sm">Regular</span>
+                  <span className="font-semibold text-xs md:text-base">${event.price_regular}</span>
                 </div>
               )}
               {event.price_child > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm">Child</span>
-                  <span className="font-semibold">${event.price_child}</span>
+                  <span className="text-xs md:text-sm">Child</span>
+                  <span className="font-semibold text-xs md:text-base">${event.price_child}</span>
                 </div>
               )}
               {/* Available Tickets */}
               <div className="pt-2 border-t">
-                <p className="text-sm text-muted-foreground">Available Tickets</p>
-                <p className="text-lg font-semibold">{event.available_tickets}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">Available Tickets</p>
+                <p className="text-base md:text-lg font-semibold">{event.available_tickets}</p>
               </div>
               {/* Book Button */}
               <Button 
-                className="w-full" 
+                className="w-full text-xs md:text-sm" 
                 onClick={() => setBookingOpen(true)}
                 disabled={event.available_tickets === 0 || new Date(event.date) < new Date()}
               >
@@ -269,8 +275,6 @@ const EventDetail = () => {
                   : 'Book Now'}
               </Button>
             </div>
-
-            {/* Note: The old standalone Map Button is removed since it's now in the main info box */}
           </div>
         </div>
 

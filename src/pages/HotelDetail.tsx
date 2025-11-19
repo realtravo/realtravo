@@ -180,16 +180,16 @@ const HotelDetail = () => {
         {/* Title, Location on left, Map & Share buttons on right */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold">{hotel.name}</h1>
-            <p className="text-muted-foreground">{hotel.location}, {hotel.country}</p>
+            <h1 className="text-2xl md:text-3xl font-bold">{hotel.name}</h1>
+            <p className="text-sm md:text-base text-muted-foreground">{hotel.location}, {hotel.country}</p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={openInMaps}
-              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600 text-xs md:text-sm"
             >
-              <MapPin className="mr-2 h-4 w-4" />
+              <MapPin className="mr-2 h-3 w-3 md:h-4 md:w-4" />
               View on Map
             </Button>
             <Button
@@ -197,49 +197,27 @@ const HotelDetail = () => {
               onClick={handleShare}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* MODIFICATION: Consolidated Name, Location, Map Button, and About section into 
-            a single card-like container (md:col-span-2) on large screens. 
-            Amenities and Facilities are included here.
-          */}
           <div className="md:col-span-2 space-y-6 p-4 md:p-6 border rounded-lg bg-card shadow-sm">
-            
-            {/* Title, Location & Map Button Group */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start space-y-2 md:space-y-0 pb-4 border-b">
-              <div>
-                <h1 className="text-3xl font-bold">{hotel.name}</h1>
-                <p className="text-muted-foreground">{hotel.location}, {hotel.country}</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={openInMaps}
-                // Only show View on Map next to title on large screens, or take up full width on small screens
-                className="w-full md:w-auto flex-shrink-0" 
-              >
-                <MapPin className="mr-2 h-4 w-4" />
-                View on Map
-              </Button>
-            </div>
             
             {/* About Section (Description) */}
             <div>
-              <h2 className="text-xl font-semibold mb-2">About {hotel.name}</h2>
-              <p className="text-muted-foreground">{hotel.description}</p>
+              <h2 className="text-lg md:text-xl font-semibold mb-2">About {hotel.name}</h2>
+              <p className="text-xs md:text-base text-muted-foreground">{hotel.description}</p>
             </div>
 
             {/* Amenities Section */}
             {hotel.amenities && hotel.amenities.length > 0 && (
               <div className="pt-4 border-t">
-                <h2 className="text-xl font-semibold mb-2">Amenities</h2>
+                <h2 className="text-lg md:text-xl font-semibold mb-2">Amenities</h2>
                 <div className="flex flex-wrap gap-2">
                   {hotel.amenities.map((amenity, idx) => (
-                    <span key={idx} className="bg-secondary px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                      {/* Using a placeholder icon for now, though Wifi is used, it's better to reflect diverse amenities */}
+                    <span key={idx} className="bg-secondary px-3 py-1 rounded-full text-xs md:text-sm flex items-center gap-1">
                       <Wifi className="h-3 w-3" />
                       {amenity}
                     </span>
@@ -251,15 +229,15 @@ const HotelDetail = () => {
             {/* Facilities Section */}
             {hotel.facilities && hotel.facilities.length > 0 && (
               <div className="pt-4 border-t">
-                <h2 className="text-xl font-semibold mb-3">Available Facilities</h2>
+                <h2 className="text-lg md:text-xl font-semibold mb-3">Available Facilities</h2>
                 <div className="grid gap-3">
                   {hotel.facilities.map((facility, idx) => (
                     <div key={idx} className="border rounded-lg p-4 bg-background">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">{facility.name}</h3>
-                        <span className="text-lg font-bold">${facility.price}/day</span>
+                        <h3 className="font-semibold text-xs md:text-base">{facility.name}</h3>
+                        <span className="text-base md:text-lg font-bold">${facility.price}/day</span>
                       </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
                         <span>Capacity: {facility.capacity} guests</span>
                       </div>
@@ -275,25 +253,25 @@ const HotelDetail = () => {
             {/* The standalone Map Button is removed as it's now next to the title */}
 
             <div className="bg-card p-6 rounded-lg border space-y-3 shadow-sm">
-              <h3 className="font-semibold">Contact & Booking</h3>
+              <h3 className="font-semibold text-base md:text-lg">Contact & Booking</h3>
               {/* Contact Information */}
               <div className="pt-2 border-t space-y-3">
                 {hotel.phone_numbers && hotel.phone_numbers.map((phone, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-primary" />
-                    <a href={`tel:${phone}`} className="text-sm">{phone}</a>
+                    <Phone className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                    <a href={`tel:${phone}`} className="text-xs md:text-sm">{phone}</a>
                   </div>
                 ))}
                 {hotel.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <a href={`mailto:${hotel.email}`} className="text-sm">{hotel.email}</a>
+                    <Mail className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                    <a href={`mailto:${hotel.email}`} className="text-xs md:text-sm">{hotel.email}</a>
                   </div>
                 )}
               </div>
               
               <Button 
-                className="w-full mt-4" 
+                className="w-full mt-4 text-xs md:text-sm" 
                 onClick={() => setBookingOpen(true)}
               >
                 Book Now
