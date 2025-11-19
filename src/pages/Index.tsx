@@ -263,7 +263,6 @@ style={{ backgroundImage: `url(${cat.bgImage})`, backgroundSize: 'cover', backgr
 <div className="px-4">
 {/* Main Listings - First - MODIFIED FOR HORIZONTAL SCROLLING */}
 <section className="mb-8">
-<h2 className="text-2xl font-bold mb-4">All Listings</h2> {/* Added a title for context */}
 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
 {loading ? (
 [...Array(10)].map((_, i) => (
