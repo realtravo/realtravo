@@ -88,13 +88,17 @@ const Index = () => {
       events: [],
       hotels: hotelsData.data || []
     });
-    setLoadingScrollable(false);
+    
+    // Only set loading to false if we have data
+    if (hotelsData.data && hotelsData.data.length > 0) {
+      setLoadingScrollable(false);
+    }
   };
 
   const fetchNearbyPlacesAndHotels = async () => {
     setLoadingNearby(true);
     if (!position) {
-      setLoadingNearby(false);
+      // Keep loading true if position is not available yet
       return;
     }
 
@@ -110,7 +114,11 @@ const Index = () => {
 
     const nearby = combined.slice(0, 10);
     setNearbyPlacesHotels(nearby);
-    setLoadingNearby(false);
+    
+    // Only set loading to false if we have data
+    if (nearby.length > 0) {
+      setLoadingNearby(false);
+    }
   };
 
   const fetchAllData = async (query?: string) => {
