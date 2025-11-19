@@ -60,39 +60,61 @@ const AdminDashboard = () => {
   };
 
   const fetchPendingListings = async () => {
-    const [trips, events, hotels, adventures] = await Promise.all([
-      supabase.from("trips").select("*").eq("approval_status", "pending"),
-      supabase.from("events").select("*").eq("approval_status", "pending"),
-      supabase.from("hotels").select("*").eq("approval_status", "pending"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "pending")
-    ]);
+    try {
+      const [trips, events, hotels, adventures] = await Promise.all([
+        supabase.from("trips").select("*").eq("approval_status", "pending"),
+        supabase.from("events").select("*").eq("approval_status", "pending"),
+        supabase.from("hotels").select("*").eq("approval_status", "pending"),
+        supabase.from("adventure_places").select("*").eq("approval_status", "pending")
+      ]);
 
-    const all = [
-      ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
-      ...(events.data?.map(e => ({ ...e, type: "event" })) || []),
-      ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
-      ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
-    ];
+      if (trips.error) console.error("Error fetching trips:", trips.error);
+      if (events.error) console.error("Error fetching events:", events.error);
+      if (hotels.error) console.error("Error fetching hotels:", hotels.error);
+      if (adventures.error) console.error("Error fetching adventures:", adventures.error);
 
-    setPendingListings(all);
+      const all = [
+        ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
+        ...(events.data?.map(e => ({ ...e, type: "event" })) || []),
+        ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
+        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
+      ];
+
+      console.log("Pending listings:", { trips: trips.data?.length, events: events.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length });
+      setPendingListings(all);
+    } catch (error) {
+      console.error("Error fetching pending listings:", error);
+      toast.error("Failed to fetch pending listings");
+    }
   };
 
   const fetchApprovedListings = async () => {
-    const [trips, events, hotels, adventures] = await Promise.all([
-      supabase.from("trips").select("*").eq("approval_status", "approved"),
-      supabase.from("events").select("*").eq("approval_status", "approved"),
-      supabase.from("hotels").select("*").eq("approval_status", "approved"),
-      supabase.from("adventure_places").select("*").eq("approval_status", "approved")
-    ]);
+    try {
+      const [trips, events, hotels, adventures] = await Promise.all([
+        supabase.from("trips").select("*").eq("approval_status", "approved"),
+        supabase.from("events").select("*").eq("approval_status", "approved"),
+        supabase.from("hotels").select("*").eq("approval_status", "approved"),
+        supabase.from("adventure_places").select("*").eq("approval_status", "approved")
+      ]);
 
-    const all = [
-      ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
-      ...(events.data?.map(e => ({ ...e, type: "event" })) || []),
-      ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
-      ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
-    ];
+      if (trips.error) console.error("Error fetching approved trips:", trips.error);
+      if (events.error) console.error("Error fetching approved events:", events.error);
+      if (hotels.error) console.error("Error fetching approved hotels:", hotels.error);
+      if (adventures.error) console.error("Error fetching approved adventures:", adventures.error);
 
-    setApprovedListings(all);
+      const all = [
+        ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
+        ...(events.data?.map(e => ({ ...e, type: "event" })) || []),
+        ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
+        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
+      ];
+
+      console.log("Approved listings:", { trips: trips.data?.length, events: events.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length });
+      setApprovedListings(all);
+    } catch (error) {
+      console.error("Error fetching approved listings:", error);
+      toast.error("Failed to fetch approved listings");
+    }
   };
 
   const fetchAllBookings = async () => {
