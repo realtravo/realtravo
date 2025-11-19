@@ -91,7 +91,10 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
             <Card
               key={item.id}
               className="flex-shrink-0 w-64 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate(`${item.route}/${item.id}`)}
+              onClick={() => {
+                navigate(`${item.route}/${item.id}`);
+                window.scrollTo(0, 0);
+              }}
             >
               <div className="aspect-video relative">
                 <img
