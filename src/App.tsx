@@ -30,6 +30,7 @@ import HostItemDetail from "./pages/HostItemDetail";
 import AdminReviewDetail from "./pages/AdminReviewDetail";
 import AdminBookings from "./pages/AdminBookings";
 import EditListing from "./pages/EditListing";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="/admin/review/:type/:id" element={<AdminReviewDetail />} />
               <Route path="/admin/bookings/:type/:id" element={<AdminBookings />} />
               <Route path="/edit-listing/:type/:id" element={<EditListing />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

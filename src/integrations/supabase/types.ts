@@ -331,28 +331,37 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country: string | null
           created_at: string
+          date_of_birth: string | null
           gender: Database["public"]["Enums"]["gender_type"] | null
           id: string
           name: string
+          phone_country_code: string | null
           phone_number: string | null
           profile_picture_url: string | null
           updated_at: string
         }
         Insert: {
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id: string
           name: string
+          phone_country_code?: string | null
           phone_number?: string | null
           profile_picture_url?: string | null
           updated_at?: string
         }
         Update: {
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: string
           name?: string
+          phone_country_code?: string | null
           phone_number?: string | null
           profile_picture_url?: string | null
           updated_at?: string

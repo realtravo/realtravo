@@ -83,6 +83,8 @@ export const SignupForm = () => {
         description: error.message,
         variant: "destructive",
       });
+      setLoading(false);
+      return;
     } else if (data.user) {
       // Create profile
       const { error: profileError } = await supabase
@@ -97,7 +99,10 @@ export const SignupForm = () => {
         console.error("Profile creation error:", profileError);
       }
 
-      toast({ title: "Account created! Please check your email to verify." });
+      toast({ 
+        title: "Account created!", 
+        description: "Please check your email for a verification code to activate your account.",
+      });
       navigate("/");
     }
 
