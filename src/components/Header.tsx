@@ -29,8 +29,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   const { user, signOut } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -86,7 +84,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   };
 
   return (
-    <header className="md:sticky top-0 z-50 w-full border-b border-border bg-blue-900 text-white h-16 dark:bg-blue-900 dark:text-white">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-blue-900 text-white h-16 dark:bg-blue-900 dark:text-white">
       <div className="container flex h-full items-center justify-between px-4">
         
         {/* Logo and Drawer Trigger (Left Side) */}
@@ -163,7 +161,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
               className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
             >
               <User className="h-5 w-5" />
-              <span className="text-sm font-medium">{getDisplayName()}</span>
+              {user && <span className="text-sm font-medium">{userName}</span>}
             </button>
             
             {/* Mobile account dropdown */}

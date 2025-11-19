@@ -9,6 +9,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/lib/sessionManager";
+import { cn } from "@/lib/utils";
 
 const CategoryDetail = () => {
   const { category } = useParams<{ category: string }>();
@@ -20,7 +21,6 @@ const CategoryDetail = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const [isSticky, setIsSticky] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const filterRef = useRef<HTMLDivElement>(null);
   const [isSearchVisible, setIsSearchVisible] = useState(true);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
@@ -76,26 +76,25 @@ const CategoryDetail = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > 100) {
-        setIsSearchVisible(false);
-        setShowSearchIcon(true);
-      } else {
-        setIsSearchVisible(true);
-        setShowSearchIcon(false);
-      }
+      const searchBarHeight = searchRef.current?.offsetHeight || 0;
       
-      if (currentScrollY > 200) {
-        setIsSticky(true);
-      } else {
-        setIsSticky(false);
+      // On mobile, hide search when scrolled past search bar
+      if (window.innerWidth < 768) {
+        if (currentScrollY > searchBarHeight + 100) {
+          setIsSearchVisible(false);
+          setShowSearchIcon(true);
+          setIsSticky(true);
+        } else {
+          setIsSearchVisible(true);
+          setShowSearchIcon(false);
+          setIsSticky(false);
+        }
       }
-      
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const handleSearchIconClick = () => {
     setIsSearchVisible(true);
@@ -262,11 +261,11 @@ const CategoryDetail = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
       
-      {/* Search Bar - Non-sticky */}
+      {/* Search Bar - Shows when visible */}
       <div 
         ref={searchRef}
         className={`bg-background border-b transition-all duration-300 ${
-          isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none absolute'
+          isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full h-0 overflow-hidden'
         }`}
       >
         <div className="container px-4 py-4">
@@ -278,12 +277,13 @@ const CategoryDetail = () => {
         </div>
       </div>
 
-      {/* Filter Bar - Sticky */}
+      {/* Filter Bar - Sticky on mobile when scrolled */}
       <div 
         ref={filterRef}
-        className={`sticky top-16 z-40 bg-background border-b transition-all duration-300 ${
-          isSticky ? "shadow-md" : ""
-        }`}
+        className={cn(
+          "bg-background border-b transition-all duration-300",
+          isSticky && "sticky top-16 z-40 shadow-md md:relative md:shadow-none"
+        )}
       >
         <div className="container px-4 py-4">
           <FilterBar

@@ -71,7 +71,6 @@ const Index = () => {
   const { toast } = useToast();
   const { position } = useGeolocation();
   const [isSearchVisible, setIsSearchVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [scrollableRows, setScrollableRows] = useState<{ trips: any[], events: any[], hotels: any[] }>({ trips: [], events: [], hotels: [] });
@@ -180,7 +179,7 @@ const Index = () => {
     const controlSearchBar = () => {
       const currentScrollY = window.scrollY;
       
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth < 768) {
         if (currentScrollY > 200) {
           setIsSearchVisible(false);
           setShowSearchIcon(true);
@@ -192,13 +191,11 @@ const Index = () => {
         setIsSearchVisible(true);
         setShowSearchIcon(false);
       }
-      
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", controlSearchBar);
     return () => window.removeEventListener("scroll", controlSearchBar);
-  }, [lastScrollY]);
+  }, []);
 
   const handleSearchIconClick = () => {
     setIsSearchVisible(true);
