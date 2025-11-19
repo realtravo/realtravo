@@ -1,4 +1,4 @@
-import { Home, Ticket, Heart, Phone, Info, Video, Plus, Edit, Package, LogIn, LogOut, Plane, Building, Tent, Sun, Moon, User, Shield } from "lucide-react"; 
+import { Home, Ticket, Heart, Phone, Info, Video, Plus, Edit, Package, LogIn, LogOut, Sun, Moon, User, Shield } from "lucide-react"; 
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -21,14 +21,14 @@ const MobileThemeToggle = () => {
     <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
       <button
         onClick={toggleTheme}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
       >
         {theme === "dark" ? (
-          <Sun className="h-5 w-5 text-white group-hover:text-yellow-600 transition-colors" />
+          <Sun className="h-5 w-5 text-black dark:text-white group-hover:text-yellow-600 transition-colors" />
         ) : (
-          <Moon className="h-5 w-5 text-white group-hover:text-blue-600 transition-colors" />
+          <Moon className="h-5 w-5 text-black dark:text-white group-hover:text-blue-600 transition-colors" />
         )}
-        <span className="font-medium text-white">
+        <span className="font-medium text-black dark:text-white">
           {theme === "dark" ? "Light Mode" : "Dark Mode"}
         </span>
       </button>
@@ -81,23 +81,6 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
     onClose();
   };
 
-  const partnerItems = [
-    { 
-      icon: Plane,
-      label: "Create Trip", 
-      path: "/CreateTripEvent" 
-    },
-    { 
-      icon: Building,
-      label: "List Hotel", 
-      path: "/CreateHotel" 
-    },
-    { 
-      icon: Tent,
-      label: "List Your Campsite", 
-      path: "/CreateAdventure" 
-    },
-  ];
 
   const bottomNavItems = [
     { icon: Video, label: "Vlog", path: "/vlog", protected: false },
@@ -120,79 +103,79 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
   
   // Reworked Auth Display to be a list item
   const AuthDisplay = user ? (
-    <li className="mt-4 pt-4 border-t border-blue-800">
-      <p className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase">Account</p>
+    <li className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+      <p className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Account</p>
       {userRole === "admin" && (
         <Link
           to="/admin"
           onClick={onClose}
-          className="w-full flex items-center gap-3 px-4 py-2.5 mb-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition-all duration-200 group"
+          className="w-full flex items-center gap-3 px-4 py-2.5 mb-2 rounded-lg bg-black dark:bg-gray-800 text-white hover:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 group"
         >
-          <Shield className="h-5 w-5" />
-          <span className="font-medium">Admin Dashboard</span>
+          <Shield className="h-5 w-5 text-white" />
+          <span className="font-medium text-white">Admin Dashboard</span>
         </Link>
       )}
       <Link
         to="/profile"
         onClick={onClose}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 group mb-2"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group mb-2"
       >
-        <User className="h-5 w-5 text-white" />
-        <span className="font-medium truncate text-white">
+        <User className="h-5 w-5 text-black dark:text-white" />
+        <span className="font-medium truncate text-black dark:text-white">
           {userName || "My Profile"}
         </span>
       </Link>
       <button
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-300 hover:bg-red-900/30 transition-all duration-200 group"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 group"
       >
-        <LogOut className="h-5 w-5 text-red-300" />
-        <span className="font-medium text-red-300">Logout</span>
+        <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
+        <span className="font-medium text-red-600 dark:text-red-400">Logout</span>
       </button>
     </li>
   ) : (
-    <li className="mt-4 pt-4 border-t border-blue-800">
+    <li className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
       <Link
         to="/auth"
         onClick={onClose}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-blue-700 text-white hover:bg-blue-600 transition-all duration-200 group"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-gray-800 text-white hover:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 group"
       >
-        <LogIn className="h-5 w-5" />
-        <span className="font-medium">Login / Register</span>
+        <LogIn className="h-5 w-5 text-white" />
+        <span className="font-medium text-white">Login / Register</span>
       </Link>
     </li>
   );
 
 
   return (
-    <div className="flex flex-col h-full bg-blue-900 text-white">
-      {/* Header section with logo, name, and paragraph */}
-      <div className="p-4 border-b border-blue-800">
+    <div className="flex flex-col h-full">
+      {/* Header section with logo, name, and paragraph - Always black */}
+      <div className="p-4 border-b bg-black text-white border-gray-800">
         <div className="flex items-center gap-3 mb-2">
-          <div className="h-8 w-8 rounded-lg bg-blue-700 flex items-center justify-center font-bold text-lg">
+          <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-lg text-white">
             T
           </div>
           <div>
-            <span className="font-bold text-base block">
+            <span className="font-bold text-base block text-white">
               TripTrac
             </span>
-            <p className="text-xs text-blue-200">Explore the world</p>
+            <p className="text-xs text-gray-300">Explore the world</p>
           </div>
         </div>
       </div>
-      
-      {/* Navigation links section (Scrollbar hidden) */}
-      <nav 
-        className="flex-1 p-4 pt-6 overflow-y-auto 
-                   [&::-webkit-scrollbar]:hidden 
-                   [-ms-overflow-style:none] 
-                   [scrollbar-width:none]"
-      >
-        <ul className="space-y-2">
-          
+      
+      {/* Navigation links section with white bg and dark mode support */}
+      <nav 
+        className="flex-1 p-4 pt-6 overflow-y-auto bg-white dark:bg-gray-950
+                   [&::-webkit-scrollbar]:hidden 
+                   [-ms-overflow-style:none] 
+                   [scrollbar-width:none]"
+      >
+        <ul className="space-y-2">
+          
           {/* 1. HOME, MY BOOKINGS, WISHLIST (TOP SECTION) */}
           <li className="mb-4 pt-2">
-            <p className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase">Navigation</p>
+            <p className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Navigation</p>
             <ul className="space-y-1">
               {topContentItems.map((item, index) => (
                 <li key={item.path}>
@@ -201,76 +184,56 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
                     <Link
                       to={item.path}
                       onClick={onClose}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 group"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
                     >
-                      <item.icon className="h-5 w-5 text-white" />
-                      <span className="font-medium text-white">
+                      <item.icon className="h-5 w-5 text-black dark:text-white" />
+                      <span className="font-medium text-black dark:text-white">
                         {item.label}
                       </span>
                     </Link>
                   ) : (
                     <button
                       onClick={() => handleProtectedNavigation(item.path)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 group"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
                     >
-                      <item.icon className="h-5 w-5 text-white" />
-                      <span className="font-medium text-white">
+                      <item.icon className="h-5 w-5 text-black dark:text-white" />
+                      <span className="font-medium text-black dark:text-white">
                         {item.label}
                       </span>
                     </button>
                   )}
-                  {/* ADD DARK MODE TOGGLE AND REMOVED CHANGE NAME BUTTON */}
+                  {/* ADD DARK MODE TOGGLE */}
                   {item.label === "Wishlist" && (
                     <>
-                      {/* Dark/Light Mode Toggle (NEW) */}
+                      {/* Dark/Light Mode Toggle */}
                       <MobileThemeToggle />
                     </>
                   )}
-                </li>
-              ))}
-            </ul>
-          </li>
-          
-          {/* 2. PARTNER LINKS (MIDDLE SECTION) */}
-          <li className="mb-4 pt-4 border-t border-blue-800">
-            <p className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase">Partner</p>
-            <ul className="space-y-1">
-              {partnerItems.map((item) => (
-                <li key={item.path}>
-                  <button
-                    onClick={() => handleProtectedNavigation(item.path)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 group"
-                  >
-                    <item.icon className="h-5 w-5 text-white" />
-                    <span className="font-medium text-white"> 
-                      {item.label}
-                    </span>
-                  </button>
                 </li>
               ))}
             </ul>
           </li>
 
-          {/* 3. VLOG, CONTACT, ABOUT (BOTTOM SECTION) */}
-          <li className="mb-4 pt-4 border-t border-blue-800">
-            <p className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase">Company</p>
+          {/* 2. VLOG, CONTACT, ABOUT (COMPANY SECTION) */}
+          <li className="mb-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <p className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Company</p>
             <ul className="space-y-1">
               {bottomNavItems.map((item) => (
                 <li key={item.path}>
                   <Link
                     to={item.path}
                     onClick={onClose}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-white hover:bg-blue-800 transition-all duration-200 group"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
                   >
-                    <item.icon className="h-5 w-5 text-white" />
-                    <span className="font-medium text-white">
+                    <item.icon className="h-5 w-5 text-black dark:text-white" />
+                    <span className="font-medium text-black dark:text-white">
                       {item.label}
                     </span>
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </li>
+              ))}
+            </ul>
+          </li>
           
           {/* LOGIN/LOGOUT ICON AND NAME (Moved to inside the UL) */}
           {AuthDisplay}

@@ -48,6 +48,17 @@ export const BookHotelDialog = ({ open, onOpenChange, hotel }: Props) => {
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
 
+  const resetForm = () => {
+    setStep(1);
+    setSelectedFacilities([]);
+    setPaymentMethod("");
+    setPaymentPhone("");
+    setGuestName("");
+    setGuestEmail("");
+    setGuestPhone("");
+    setLoading(false);
+  };
+
   const toggleFacility = (facility: Facility, checked: boolean) => {
     if (checked) {
       setSelectedFacilities([...selectedFacilities, { ...facility, startDate: "", endDate: "" }]);
