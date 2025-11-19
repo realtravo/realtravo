@@ -77,14 +77,19 @@ const CategoryDetail = () => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY > 100) {
-        setIsSticky(true);
         setIsSearchVisible(false);
         setShowSearchIcon(true);
       } else {
-        setIsSticky(false);
         setIsSearchVisible(true);
         setShowSearchIcon(false);
       }
+      
+      if (currentScrollY > 200) {
+        setIsSticky(true);
+      } else {
+        setIsSticky(false);
+      }
+      
       setLastScrollY(currentScrollY);
     };
 
@@ -95,9 +100,7 @@ const CategoryDetail = () => {
   const handleSearchIconClick = () => {
     setIsSearchVisible(true);
     setShowSearchIcon(false);
-    if (searchRef.current) {
-      searchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const fetchData = async () => {
@@ -110,7 +113,8 @@ const CategoryDetail = () => {
       const { data } = await supabase
         .from(table as any)
         .select("*")
-        .limit(20);
+        .eq("approval_status", "approved")
+        .eq("is_hidden", false);
       
       if (data && Array.isArray(data)) {
         allData.push(...data.map((item: any) => ({ ...item, table })));
@@ -129,11 +133,16 @@ const CategoryDetail = () => {
         
         if (aIsPast && !bIsPast) return 1;
         if (!aIsPast && bIsPast) return -1;
+        
+        return aDate.getTime() - bDate.getTime();
       }
       
-      return 0;
+      if (aDate && !bDate) return -1;
+      if (!aDate && bDate) return 1;
+      
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-    
+
     setItems(sortedData);
     setLoading(false);
   };
@@ -149,37 +158,26 @@ const CategoryDetail = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!config || !searchQuery.trim()) {
-      fetchData();
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setFilteredItems(items);
       return;
     }
 
-    // Sanitize search query to prevent SQL injection
-    const sanitizedQuery = searchQuery.toLowerCase().replace(/[%_]/g, '\\$&');
-    const query = `%${sanitizedQuery}%`;
-    const allData: any[] = [];
-    
-    for (const table of config.tables) {
-      const { data } = await supabase
-        .from(table as any)
-        .select("*")
-        .or(`name.ilike.${query},location.ilike.${query},country.ilike.${query},place.ilike.${query}`);
-      
-      if (data && Array.isArray(data)) {
-        allData.push(...data.map((item: any) => ({ ...item, table })));
-      }
-    }
-    
-    setItems(allData);
+    const filtered = items.filter(item => 
+      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.country?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredItems(filtered);
   };
 
   const handleSave = async (itemId: string, itemType: string) => {
     if (!userId) {
       toast({
         title: "Login required",
-        description: "Please log in to save items",
-        variant: "destructive",
+        description: "Please login to save items",
+        variant: "destructive"
       });
       return;
     }
@@ -264,24 +262,30 @@ const CategoryDetail = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
       
-      {/* Search & Filter Bar */}
+      {/* Search Bar - Non-sticky */}
+      <div 
+        ref={searchRef}
+        className={`bg-background border-b transition-all duration-300 ${
+          isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none absolute'
+        }`}
+      >
+        <div className="container px-4 py-4">
+          <SearchBarWithSuggestions
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSubmit={handleSearch}
+          />
+        </div>
+      </div>
+
+      {/* Filter Bar - Sticky */}
       <div 
         ref={filterRef}
         className={`sticky top-16 z-40 bg-background border-b transition-all duration-300 ${
           isSticky ? "shadow-md" : ""
         }`}
       >
-        <div className="container px-4 py-4 space-y-4">
-          <div
-            ref={searchRef}
-            className={`transition-all duration-300 ${isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none h-0'}`}
-          >
-            <SearchBarWithSuggestions
-              value={searchQuery}
-              onChange={setSearchQuery}
-              onSubmit={handleSearch}
-            />
-          </div>
+        <div className="container px-4 py-4">
           <FilterBar
             type={
               category === "hotels"

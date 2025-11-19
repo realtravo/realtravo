@@ -76,11 +76,9 @@ export const ListingCard = ({
   return (
     <Card 
       onClick={handleCardClick}
-      // Removed rounded-lg class for square corners
-      className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 rounded-none" 
+      className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 rounded-lg" 
     >
       <div 
-        // Removed rounded-t-lg class for square corners on the image container
         className="relative aspect-[4/3] overflow-hidden" 
       >
         <img
