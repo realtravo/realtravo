@@ -76,8 +76,11 @@ const Index = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const [scrollableRows, setScrollableRows] = useState<{ trips: any[], events: any[], hotels: any[] }>({ trips: [], events: [], hotels: [] });
   const [nearbyPlacesHotels, setNearbyPlacesHotels] = useState<any[]>([]);
+  const [loadingScrollable, setLoadingScrollable] = useState(true);
+  const [loadingNearby, setLoadingNearby] = useState(true);
 
   const fetchScrollableRows = async () => {
+    setLoadingScrollable(true);
     const [tripsData, eventsData, hotelsData] = await Promise.all([
       supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
       supabase.from("events").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
@@ -89,10 +92,15 @@ const Index = () => {
       events: eventsData.data || [],
       hotels: hotelsData.data || []
     });
+    setLoadingScrollable(false);
   };
 
   const fetchNearbyPlacesAndHotels = async () => {
-    if (!position) return;
+    setLoadingNearby(true);
+    if (!position) {
+      setLoadingNearby(false);
+      return;
+    }
 
     const [placesData, hotelsData] = await Promise.all([
       supabase.from("adventure_places").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(20),
@@ -106,6 +114,7 @@ const Index = () => {
 
     const nearby = combined.slice(0, 10);
     setNearbyPlacesHotels(nearby);
+    setLoadingNearby(false);
   };
 
   const fetchAllData = async (query?: string) => {
@@ -253,39 +262,150 @@ const Index = () => {
             <ImageSlideshow />
           </div>
         </section>
-        <div className="px-4">
-          <hr className="border-t border-gray-200 my-8" />
-          <section>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {loading ? (
-                [...Array(10)].map((_, i) => (
-                  <div key={i} className="shadow-lg">
-                    <div className="aspect-[4/3] bg-muted animate-pulse" />
-                    <div className="p-4 space-y-2">
-                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                listings.map((item) => (
-                  <ListingCard
-                    key={item.id}
-                    id={item.id}
-                    type={item.type}
-                    name={item.name}
-                    imageUrl={item.image_url}
-                    location={item.location}
-                    country={item.country}
-                    price={item.price || item.entry_fee || 0}
-                    date={item.date}
-                    onSave={handleSave}
-                    isSaved={savedItems.has(item.id)}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-        </div>
+        <div className="px-4">
+          <hr className="border-t border-gray-200 my-8" />
+          
+          {/* Scrollable Rows */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Popular Trips</h2>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {loadingScrollable ? (
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-64">
+                    <div className="aspect-[4/3] bg-muted animate-pulse rounded-lg" />
+                    <div className="h-4 bg-muted animate-pulse rounded mt-2 w-3/4" />
+                    <div className="h-3 bg-muted animate-pulse rounded mt-1 w-1/2" />
+                  </div>
+                ))
+              ) : (
+                scrollableRows.trips.map((trip) => (
+                  <div key={trip.id} className="flex-shrink-0 w-64 cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+                      <img src={trip.image_url} alt={trip.name} className="w-full h-full object-cover" />
+                    </div>
+                    <h3 className="font-semibold mt-2">{trip.name}</h3>
+                    <p className="text-sm text-muted-foreground">{trip.location}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {loadingScrollable ? (
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-64">
+                    <div className="aspect-[4/3] bg-muted animate-pulse rounded-lg" />
+                    <div className="h-4 bg-muted animate-pulse rounded mt-2 w-3/4" />
+                    <div className="h-3 bg-muted animate-pulse rounded mt-1 w-1/2" />
+                  </div>
+                ))
+              ) : (
+                scrollableRows.events.map((event) => (
+                  <div key={event.id} className="flex-shrink-0 w-64 cursor-pointer" onClick={() => navigate(`/event/${event.id}`)}>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+                      <img src={event.image_url} alt={event.name} className="w-full h-full object-cover" />
+                    </div>
+                    <h3 className="font-semibold mt-2">{event.name}</h3>
+                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Featured Hotels</h2>
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {loadingScrollable ? (
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-64">
+                    <div className="aspect-[4/3] bg-muted animate-pulse rounded-lg" />
+                    <div className="h-4 bg-muted animate-pulse rounded mt-2 w-3/4" />
+                    <div className="h-3 bg-muted animate-pulse rounded mt-1 w-1/2" />
+                  </div>
+                ))
+              ) : (
+                scrollableRows.hotels.map((hotel) => (
+                  <div key={hotel.id} className="flex-shrink-0 w-64 cursor-pointer" onClick={() => navigate(`/hotel/${hotel.id}`)}>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+                      <img src={hotel.image_url} alt={hotel.name} className="w-full h-full object-cover" />
+                    </div>
+                    <h3 className="font-semibold mt-2">{hotel.name}</h3>
+                    <p className="text-sm text-muted-foreground">{hotel.location}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Nearby Places/Hotels */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Near You</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {loadingNearby ? (
+                [...Array(10)].map((_, i) => (
+                  <div key={i}>
+                    <div className="aspect-square bg-muted animate-pulse rounded-lg" />
+                    <div className="h-4 bg-muted animate-pulse rounded mt-2 w-3/4" />
+                  </div>
+                ))
+              ) : nearbyPlacesHotels.length > 0 ? (
+                nearbyPlacesHotels.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="cursor-pointer"
+                    onClick={() => navigate(item.table === "hotels" ? `/hotel/${item.id}` : `/adventure/${item.id}`)}
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-lg">
+                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                      <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs">
+                        {item.category}
+                      </div>
+                    </div>
+                    <h3 className="font-semibold mt-2 text-sm">{item.name}</h3>
+                  </div>
+                ))
+              ) : (
+                <p className="col-span-full text-muted-foreground text-center">No nearby places found</p>
+              )}
+            </div>
+          </section>
+          
+          <hr className="border-t border-gray-200 my-8" />
+          <section>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {loading ? (
+                [...Array(10)].map((_, i) => (
+                  <div key={i} className="shadow-lg">
+                    <div className="aspect-[4/3] bg-muted animate-pulse" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                listings.map((item) => (
+                  <ListingCard
+                    key={item.id}
+                    id={item.id}
+                    type={item.type}
+                    name={item.name}
+                    imageUrl={item.image_url}
+                    location={item.location}
+                    country={item.country}
+                    price={item.price || item.entry_fee || 0}
+                    date={item.date}
+                    onSave={handleSave}
+                    isSaved={savedItems.has(item.id)}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        </div>
       </main>
       <Footer />
       <MobileBottomBar />
