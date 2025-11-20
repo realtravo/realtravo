@@ -26,13 +26,11 @@ const BecomeHost = () => {
 
     const fetchData = async () => {
       const { data: trips } = await supabase.from("trips").select("*").eq("created_by", user.id);
-      const { data: events } = await supabase.from("events").select("*").eq("created_by", user.id);
       const { data: hotels } = await supabase.from("hotels").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, establishment_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number, facilities").eq("created_by", user.id);
       const { data: adventures } = await supabase.from("adventure_places").select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, activities, facilities, entry_fee, entry_fee_type, map_link, gallery_images, images, approval_status, admin_notes, created_at, created_by, approved_by, approved_at, is_hidden, registration_number").eq("created_by", user.id);
 
       const allContent = [
         ...(trips?.map(t => ({ ...t, type: "trip" })) || []),
-        ...(events?.map(e => ({ ...e, type: "event" })) || []),
         ...(hotels?.map(h => ({ ...h, type: "hotel" })) || []),
         ...(adventures?.map(a => ({ ...a, type: "adventure" })) || [])
       ];

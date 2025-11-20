@@ -6,7 +6,7 @@ import { MapPin } from "lucide-react";
 
 interface SimilarItemsProps {
   currentItemId: string;
-  itemType: "trip" | "event" | "hotel" | "adventure";
+  itemType: "trip" | "hotel" | "adventure";
   location?: string;
   country?: string;
 }
@@ -28,18 +28,6 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
         route = "/trip";
         const { data, error } = await supabase
           .from("trips")
-          .select("id, name, location, place, country, image_url, description, price")
-          .eq("approval_status", "approved")
-          .eq("is_hidden", false)
-          .neq("id", currentItemId)
-          .eq("country", country || "")
-          .limit(6);
-        if (error) throw error;
-        setItems((data || []).map(item => ({ ...item, route })));
-      } else if (itemType === "event") {
-        route = "/event";
-        const { data, error } = await supabase
-          .from("events")
           .select("id, name, location, place, country, image_url, description, price")
           .eq("approval_status", "approved")
           .eq("is_hidden", false)

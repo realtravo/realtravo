@@ -62,10 +62,6 @@ const AdminReviewDetail = () => {
         const { data, error } = await supabase.from("trips").select("*").eq("id", id).single();
         if (error) throw error;
         itemData = data;
-      } else if (type === "event") {
-        const { data, error } = await supabase.from("events").select("*").eq("id", id).single();
-        if (error) throw error;
-        itemData = data;
       } else if (type === "hotel") {
         const { data, error } = await supabase.from("hotels").select("*").eq("id", id).single();
         if (error) throw error;
@@ -125,9 +121,6 @@ const AdminReviewDetail = () => {
       if (type === "trip") {
         const { error } = await supabase.from("trips").update(updateData).eq("id", id);
         if (error) throw error;
-      } else if (type === "event") {
-        const { error } = await supabase.from("events").update(updateData).eq("id", id);
-        if (error) throw error;
       } else if (type === "hotel") {
         const { error } = await supabase.from("hotels").update(updateData).eq("id", id);
         if (error) throw error;
@@ -156,9 +149,6 @@ const AdminReviewDetail = () => {
     try {
       if (type === "trip") {
         const { error } = await supabase.from("trips").update({ admin_notes: adminNotes }).eq("id", id);
-        if (error) throw error;
-      } else if (type === "event") {
-        const { error } = await supabase.from("events").update({ admin_notes: adminNotes }).eq("id", id);
         if (error) throw error;
       } else if (type === "hotel") {
         const { error } = await supabase.from("hotels").update({ admin_notes: adminNotes }).eq("id", id);

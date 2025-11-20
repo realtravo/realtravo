@@ -19,7 +19,6 @@ const CreateTripEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [isTrip, setIsTrip] = useState(true);
   const [loading, setLoading] = useState(false);
   const [phonePrefix, setPhonePrefix] = useState("+254");
   
@@ -152,7 +151,7 @@ const CreateTripEvent = () => {
         uploadedUrls.push(publicUrl);
       }
 
-      const table = isTrip ? "trips" : "events";
+      const table = "trips";
       const insertData: any = {
         name: formData.name,
         description: formData.description,
@@ -179,7 +178,7 @@ const CreateTripEvent = () => {
 
       toast({
         title: "Success!",
-        description: `Your ${isTrip ? 'trip' : 'event'} has been submitted for approval.`,
+        description: `Your trip has been submitted for approval.`,
       });
 
       navigate("/profile");
@@ -200,23 +199,8 @@ const CreateTripEvent = () => {
       <Header />
       
       <main className="container px-4 py-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Create {isTrip ? 'Trip' : 'Event'}</h1>
+        <h1 className="text-3xl font-bold mb-8">Create Trip</h1>
         
-        <div className="flex gap-4 mb-8">
-          <Button 
-            onClick={() => setIsTrip(true)}
-            variant={isTrip ? "default" : "outline"}
-          >
-            Trip
-          </Button>
-          <Button 
-            onClick={() => setIsTrip(false)}
-            variant={!isTrip ? "default" : "outline"}
-          >
-            Event
-          </Button>
-        </div>
-
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

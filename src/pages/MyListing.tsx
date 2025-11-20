@@ -30,7 +30,6 @@ const MyListing = () => {
       const userEmail = currentUser?.email;
 
       const { data: trips } = await supabase.from("trips").select("*").eq("created_by", user.id);
-      const { data: events } = await supabase.from("events").select("*").eq("created_by", user.id);
       const { data: hotels } = await supabase.from("hotels").select("*").eq("created_by", user.id);
       const { data: adventures } = await supabase.from("adventure_places").select("*").eq("created_by", user.id);
       
@@ -39,7 +38,6 @@ const MyListing = () => {
 
       console.log("Fetched user content:", { 
         trips: trips?.length, 
-        events: events?.length, 
         hotels: hotels?.length, 
         adventures: adventures?.length,
         hotelsAsAdmin: hotelsAsAdmin?.length,
@@ -48,7 +46,6 @@ const MyListing = () => {
 
       const allContent = [
         ...(trips?.map(t => ({ ...t, type: "trip", isCreator: true })) || []),
-        ...(events?.map(e => ({ ...e, type: "event", isCreator: true })) || []),
         ...(hotels?.map(h => ({ ...h, type: "hotel", isCreator: true })) || []),
         ...(adventures?.map(a => ({ ...a, type: "adventure", isCreator: true })) || []),
         ...(hotelsAsAdmin?.filter(h => h.created_by !== user.id).map(h => ({ ...h, type: "hotel", isCreator: false })) || []),

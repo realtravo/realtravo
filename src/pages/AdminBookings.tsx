@@ -58,9 +58,6 @@ const AdminBookings = () => {
       if (type === "trip") {
         const { data } = await supabase.from("trips").select("id, name, image_url").eq("id", id).single();
         itemData = data;
-      } else if (type === "event") {
-        const { data } = await supabase.from("events").select("id, name, image_url").eq("id", id).single();
-        itemData = data;
       } else if (type === "hotel") {
         const { data } = await supabase.from("hotels").select("id, name, image_url").eq("id", id).single();
         itemData = data;

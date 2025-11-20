@@ -47,23 +47,6 @@ const HostItemDetail = () => {
           return;
         }
         setItem({ ...itemData, type });
-      } else if (type === "event") {
-        const { data: itemData, error: itemError } = await supabase
-          .from("events")
-          .select("*")
-          .eq("id", id)
-          .single();
-        if (itemError) throw itemError;
-        if (itemData.created_by !== user.id) {
-          toast({
-            title: "Access Denied",
-            description: "You don't have permission to view this item",
-            variant: "destructive",
-          });
-          navigate("/become-host");
-          return;
-        }
-        setItem({ ...itemData, type });
       } else if (type === "hotel") {
         const { data: itemData, error: itemError } = await supabase
           .from("hotels")

@@ -52,11 +52,10 @@ const EditListing = () => {
 
   const fetchListing = async () => {
     try {
-      let table: "hotels" | "adventure_places" | "trips" | "events" = "hotels";
+      let table: "hotels" | "adventure_places" | "trips" = "hotels";
       if (type === "hotel") table = "hotels";
       else if (type === "adventure") table = "adventure_places";
       else if (type === "trip") table = "trips";
-      else if (type === "event") table = "events";
 
       const { data, error } = await supabase
         .from(table)
@@ -75,8 +74,8 @@ const EditListing = () => {
       }
       setExistingImages((data.gallery_images as string[]) || []);
       
-      // Load trip/event specific fields
-      if (type === 'trip' || type === 'event') {
+      // Load trip specific fields
+      if (type === 'trip') {
         setDate((data as any).date || '');
         setAvailableSlots((data as any).available_tickets || 0);
         setPriceChild((data as any).price_child || 0);
@@ -150,11 +149,10 @@ const EditListing = () => {
 
       const allImages = [...existingImages, ...uploadedImageUrls];
 
-      let table: "hotels" | "adventure_places" | "trips" | "events" = "hotels";
+      let table: "hotels" | "adventure_places" | "trips" = "hotels";
       if (type === "hotel") table = "hotels";
       else if (type === "adventure") table = "adventure_places";
       else if (type === "trip") table = "trips";
-      else if (type === "event") table = "events";
 
       const updateData: any = {
         name,
@@ -167,7 +165,7 @@ const EditListing = () => {
         updateData.facilities = facilities;
       }
       
-      if (type === 'trip' || type === 'event') {
+      if (type === 'trip') {
         updateData.date = date;
         updateData.available_tickets = availableSlots;
         updateData.price_child = priceChild;

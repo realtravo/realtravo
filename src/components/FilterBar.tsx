@@ -65,11 +65,8 @@ export const FilterBar = ({ type, onApplyFilters }: FilterBarProps) => {
     
     try {
       if (type === "trips-events") {
-        const [trips, events] = await Promise.all([
-          supabase.from("trips").select("location, place, country").eq("approval_status", "approved"),
-          supabase.from("events").select("location, place, country").eq("approval_status", "approved")
-        ]);
-        [...(trips.data || []), ...(events.data || [])].forEach(item => {
+        const { data } = await supabase.from("trips").select("location, place, country").eq("approval_status", "approved");
+        (data || []).forEach(item => {
           if (item.location) uniqueLocations.add(item.location);
           if (item.place) uniqueLocations.add(item.place);
           if (item.country) uniqueLocations.add(item.country);

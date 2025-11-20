@@ -73,7 +73,7 @@ const Index = () => {
     const [isSearchVisible, setIsSearchVisible] = useState(true);
     const [showSearchIcon, setShowSearchIcon] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
-    const [scrollableRows, setScrollableRows] = useState<{ trips: any[], events: any[], hotels: any[] }>({ trips: [], events: [], hotels: [] });
+    const [scrollableRows, setScrollableRows] = useState<{ trips: any[], hotels: any[] }>({ trips: [], hotels: [] });
     const [nearbyPlacesHotels, setNearbyPlacesHotels] = useState<any[]>([]);
     const [loadingScrollable, setLoadingScrollable] = useState(true);
     const [loadingNearby, setLoadingNearby] = useState(true);
@@ -86,7 +86,6 @@ const Index = () => {
 
         setScrollableRows({
             trips: [],
-            events: [],
             hotels: hotelsData.data || []
         });
         
@@ -121,7 +120,7 @@ const Index = () => {
     const fetchAllData = async (query?: string) => {
         setLoading(true);
 
-        const fetchTable = async (table: "trips" | "events" | "hotels" | "adventure_places", type: string) => {
+        const fetchTable = async (table: "trips" | "hotels" | "adventure_places", type: string) => {
             let dbQuery = supabase.from(table).select("*").eq("approval_status", "approved").eq("is_hidden", false);
             if (query) {
                 dbQuery = dbQuery.or(`name.ilike.%${query}%,location.ilike.%${query}%,country.ilike.%${query}%`);
@@ -130,14 +129,13 @@ const Index = () => {
             return (data || []).map((item: any) => ({ ...item, type }));
         };
 
-        const [trips, events, hotels, adventures] = await Promise.all([
+        const [trips, hotels, adventures] = await Promise.all([
             fetchTable("trips", "TRIP"),
-            fetchTable("events", "EVENT"),
             fetchTable("hotels", "HOTEL"),
             fetchTable("adventure_places", "ADVENTURE PLACE")
         ]);
 
-        let combined = [...trips, ...events, ...hotels, ...adventures];
+        let combined = [...trips, ...hotels, ...adventures];
 
         if (position) {
             combined = combined.sort((a, b) => {

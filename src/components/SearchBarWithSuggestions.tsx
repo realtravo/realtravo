@@ -14,7 +14,7 @@ interface SearchResult {
   id: string;
   name: string;
   image_url: string;
-  type: "trip" | "event" | "hotel" | "adventure";
+  type: "trip" | "hotel" | "adventure";
 }
 
 export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBarProps) => {
@@ -46,20 +46,14 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
       `name.ilike.${query}`;
 
     try {
-      // Fetch concurrently from all four tables
-      const [trips, events, hotels, places] = await Promise.all([
+      // Fetch concurrently from three tables
+      const [trips, hotels, places] = await Promise.all([
         supabase
           .from("trips")
           .select("id, name, image_url")
           .eq("approval_status", "approved")
           .or(orCondition)
           .limit(isFullQuery ? 3 : 2), // Limit results
-        supabase
-          .from("events")
-          .select("id, name, image_url")
-          .eq("approval_status", "approved")
-          .or(orCondition)
-          .limit(isFullQuery ? 3 : 2),
         supabase
           .from("hotels")
           .select("id, name, image_url")
@@ -77,9 +71,6 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
       // Consolidate results and assign type
       if (trips.data) {
         results.push(...trips.data.map((item) => ({ ...item, type: "trip" as const })));
-      }
-      if (events.data) {
-        results.push(...events.data.map((item) => ({ ...item, type: "event" as const })));
       }
       if (hotels.data) {
         results.push(...hotels.data.map((item) => ({ ...item, type: "hotel" as const })));
@@ -111,8 +102,6 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
     switch (type) {
       case "trip":
         return "Trip";
-      case "event":
-        return "Event";
       case "hotel":
         return "Hotel";
       case "adventure":
