@@ -22,8 +22,6 @@ export const StandardUserProfile = () => {
   const [gender, setGender] = useState<string>("");
   const [country, setCountry] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
-  const [isCountryLocked, setIsCountryLocked] = useState(false);
-
   useEffect(() => {
     if (user) {
       fetchProfile();
@@ -45,7 +43,6 @@ export const StandardUserProfile = () => {
       setName(data.name || "");
       setGender(data.gender || "");
       setCountry(data.country || "");
-      setIsCountryLocked(!!data.country);
       if (data.date_of_birth) {
         setDateOfBirth(new Date(data.date_of_birth));
       }
@@ -73,11 +70,8 @@ export const StandardUserProfile = () => {
         name,
         gender: gender as any,
         date_of_birth: dateOfBirth ? format(dateOfBirth, "yyyy-MM-dd") : null,
+        country: country || null,
       };
-      
-      if (!isCountryLocked && country) {
-        updateData.country = country;
-      }
       
       const { error } = await supabase
         .from("profiles")
@@ -163,13 +157,10 @@ export const StandardUserProfile = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="country">
-          Country {isCountryLocked && <span className="text-xs text-muted-foreground">(locked)</span>}
-        </Label>
+        <Label htmlFor="country">Country</Label>
         <CountrySelector 
           value={country} 
           onChange={setCountry}
-          disabled={isCountryLocked}
         />
       </div>
 

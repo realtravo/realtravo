@@ -38,8 +38,6 @@ const ProfileEdit = () => {
     date_of_birth: "",
     country: ""
   });
-  const [isCountryLocked, setIsCountryLocked] = useState(false);
-
   useEffect(() => {
     if (!user) {
       navigate("/auth");
@@ -61,7 +59,6 @@ const ProfileEdit = () => {
           date_of_birth: data.date_of_birth || "",
           country: data.country || ""
         });
-        setIsCountryLocked(!!data.country);
       }
       setFetchingProfile(false);
     };
@@ -77,11 +74,8 @@ const ProfileEdit = () => {
       const updateData: any = {
         name: profileData.name,
         date_of_birth: profileData.date_of_birth || null,
+        country: profileData.country || null,
       };
-      
-      if (!isCountryLocked && profileData.country) {
-        updateData.country = profileData.country;
-      }
       
       if (profileData.gender) {
         updateData.gender = profileData.gender;
@@ -215,23 +209,22 @@ const ProfileEdit = () => {
                 </div>
 
                 {/* Country Field */}
-                <div className={`p-4 flex items-center justify-between ${!isCountryLocked ? 'hover:bg-accent/50' : ''} transition-colors`}>
+                <div className="p-4 flex items-center justify-between hover:bg-accent/50 transition-colors">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <Globe className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <Label className="text-sm text-muted-foreground">
-                        Country {isCountryLocked && <span className="text-xs">(locked)</span>}
+                        Country
                       </Label>
                       <CountrySelector
                         value={profileData.country}
                         onChange={(value) => setProfileData({ ...profileData, country: value })}
-                        disabled={isCountryLocked}
                       />
                     </div>
                   </div>
-                  {!isCountryLocked && <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
 

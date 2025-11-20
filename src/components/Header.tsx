@@ -28,13 +28,11 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const checkRole = async () => {
       if (!user) {
         setUserRole(null);
-        setUserName("");
         return;
       }
 
@@ -48,35 +46,15 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
         if (roles.includes("admin")) setUserRole("admin");
         else setUserRole("user");
       }
-
-      // Fetch profile name
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("id", user.id)
-        .single();
-
-      if (profile && profile.name) {
-        setUserName(profile.name);
-      }
     };
 
     checkRole();
   }, [user]);
 
-  // Function to get the display name for the icon (name only, no email)
-  const getDisplayName = () => {
-    return userName || "Account";
-  };
-
-  // Function to get initials from the user's name
+  // Function to get initials from the user's email
   const getUserInitials = () => {
-    if (!userName) return "U";
-    const nameParts = userName.split(" ");
-    if (nameParts.length >= 2) {
-      return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
-    }
-    return userName.substring(0, 2).toUpperCase();
+    if (!user?.email) return "U";
+    return user.email.substring(0, 2).toUpperCase();
   };
 
   // Mobile account icon tap handler
@@ -174,7 +152,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
               <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
                 {user ? getUserInitials() : <User className="h-4 w-4" />}
               </div>
-              {user && <span className="text-sm font-medium">{userName}</span>}
             </button>
             
             {/* Mobile account dropdown */}
@@ -204,14 +181,13 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             {user ? (
-              // Logged In: Dropdown Menu with Account Icon and Name
+              // Logged In: Dropdown Menu with Account Icon
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-white">
                     <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
                       {getUserInitials()}
                     </div>
-                    <span className="font-medium">{getDisplayName()}</span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-background border-border">
