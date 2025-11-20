@@ -31,6 +31,8 @@ import AdminReviewDetail from "./pages/AdminReviewDetail";
 import AdminBookings from "./pages/AdminBookings";
 import EditListing from "./pages/EditListing";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +69,8 @@ const App = () => (
               <Route path="/admin/bookings/:type/:id" element={<AdminBookings />} />
               <Route path="/edit-listing/:type/:id" element={<EditListing />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

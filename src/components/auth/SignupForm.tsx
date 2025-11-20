@@ -64,49 +64,52 @@ export const SignupForm = () => {
 
     setLoading(true);
 
-    const redirectUrl = `${window.location.origin}/`;
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name,
-          gender,
-        },
-      },
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: name,
+            gender: gender,
+          }
+        }
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            name: name,
+            email: email,
+            gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+      }
+
       toast({
-        title: "Signup failed",
+        title: "Verification code sent!",
+        description: "Please check your email for the verification code.",
+      });
+
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+    } catch (error: any) {
+      setErrors({ email: error.message });
+      toast({
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
-      return;
-    } else if (data.user) {
-      // Create profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          name,
-          gender: gender as any,
-        });
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-      }
-
-      toast({ 
-        title: "Account created!", 
-        description: "Please check your email for a verification code to activate your account.",
-      });
-      navigate("/");
     }
-
-    setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
