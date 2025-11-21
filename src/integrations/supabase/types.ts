@@ -42,6 +42,7 @@ export type Database = {
           phone_numbers: string[] | null
           place: string
           registration_number: string | null
+          rejection_note: string | null
         }
         Insert: {
           activities?: Json | null
@@ -70,6 +71,7 @@ export type Database = {
           phone_numbers?: string[] | null
           place: string
           registration_number?: string | null
+          rejection_note?: string | null
         }
         Update: {
           activities?: Json | null
@@ -98,6 +100,7 @@ export type Database = {
           phone_numbers?: string[] | null
           place?: string
           registration_number?: string | null
+          rejection_note?: string | null
         }
         Relationships: []
       }
@@ -360,6 +363,7 @@ export type Database = {
           phone_numbers: string[] | null
           place: string
           registration_number: string | null
+          rejection_note: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -386,6 +390,7 @@ export type Database = {
           phone_numbers?: string[] | null
           place: string
           registration_number?: string | null
+          rejection_note?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -412,6 +417,7 @@ export type Database = {
           phone_numbers?: string[] | null
           place?: string
           registration_number?: string | null
+          rejection_note?: string | null
         }
         Relationships: []
       }
@@ -503,6 +509,7 @@ export type Database = {
           place: string
           price: number
           price_child: number | null
+          rejection_note: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -528,6 +535,7 @@ export type Database = {
           place: string
           price: number
           price_child?: number | null
+          rejection_note?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -553,6 +561,7 @@ export type Database = {
           place?: string
           price?: number
           price_child?: number | null
+          rejection_note?: string | null
         }
         Relationships: []
       }

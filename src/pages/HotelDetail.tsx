@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Mail, Wifi, Users } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, Wifi, Users, Clock, DollarSign } from "lucide-react";
 import { BookHotelDialog } from "@/components/booking/BookHotelDialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,11 @@ interface Facility {
   capacity: number;
 }
 
+interface Activity {
+  name: string;
+  price: number;
+}
+
 interface Hotel {
   id: string;
   name: string;
@@ -38,8 +43,10 @@ interface Hotel {
   phone_numbers: string[];
   email: string;
   facilities: Facility[];
+  activities: Activity[];
   registration_number: string;
   map_link: string;
+  establishment_type: string;
 }
 
 const HotelDetail = () => {
@@ -48,7 +55,6 @@ const HotelDetail = () => {
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
-  // State for current slide index to implement custom dots
   const [current, setCurrent] = useState(0); 
 
   useEffect(() => {
@@ -59,7 +65,7 @@ const HotelDetail = () => {
     try {
       const { data, error } = await supabase
         .from("hotels")
-        .select("id, name, location, place, country, image_url, description, email, phone_numbers, amenities, establishment_type, map_link, gallery_images, images, approval_status, created_at, created_by, is_hidden, allowed_admin_emails, facilities")
+        .select("*")
         .eq("id", id)
         .single();
 
@@ -102,8 +108,7 @@ const HotelDetail = () => {
       window.open(hotel.map_link, '_blank');
     } else {
       const query = encodeURIComponent(`${hotel?.name}, ${hotel?.location}, ${hotel?.country}`);
-      // Fixed the incorrect URL structure here for Google Maps
-      window.open(`https://maps.google.com/?q=${query}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
     }
   };
 
@@ -126,7 +131,6 @@ const HotelDetail = () => {
       <Header />
       
       <main className="container px-4 py-6 max-w-6xl mx-auto">
-
         {/* Image Gallery Carousel */}
         <div className="w-full mb-6">
           <Carousel
@@ -134,11 +138,11 @@ const HotelDetail = () => {
             plugins={[Autoplay({ delay: 3000 })]}
             className="w-full"
             setApi={(api) => {
-                if (api) {
-                  api.on("select", () => {
-                      setCurrent(api.selectedScrollSnap());
-                  });
-                }
+              if (api) {
+                api.on("select", () => {
+                  setCurrent(api.selectedScrollSnap());
+                });
+              }
             }}
           >
             <CarouselContent>
@@ -161,27 +165,34 @@ const HotelDetail = () => {
             />
             
             {displayImages.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-                    {displayImages.map((_, index) => (
-                        <div
-                            key={index}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                                index === current
-                                    ? 'bg-white'
-                                    : 'bg-white/40'
-                            }`}
-                        />
-                    ))}
-                </div>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+                {displayImages.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === current
+                        ? 'bg-white'
+                        : 'bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
             )}
           </Carousel>
         </div>
 
-        {/* Title, Location on left, Map & Share buttons on right */}
+        {/* Title and Actions */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
           <div className="flex flex-col">
             <h1 className="text-2xl md:text-3xl font-bold">{hotel.name}</h1>
-            <p className="text-sm md:text-base text-muted-foreground">{hotel.location}, {hotel.country}</p>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {hotel.location}, {hotel.country}
+            </p>
+            {hotel.establishment_type && (
+              <p className="text-xs text-muted-foreground capitalize mt-1">
+                {hotel.establishment_type}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
@@ -204,8 +215,7 @@ const HotelDetail = () => {
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6 p-4 md:p-6 border rounded-lg bg-card shadow-sm">
-            
-            {/* About Section (Description) */}
+            {/* About Section */}
             <div>
               <h2 className="text-lg md:text-xl font-semibold mb-2">About {hotel.name}</h2>
               <p className="text-xs md:text-base text-muted-foreground">{hotel.description}</p>
@@ -229,13 +239,16 @@ const HotelDetail = () => {
             {/* Facilities Section */}
             {hotel.facilities && hotel.facilities.length > 0 && (
               <div className="pt-4 border-t">
-                <h2 className="text-lg md:text-xl font-semibold mb-3">Available Facilities</h2>
+                <h2 className="text-lg md:text-xl font-semibold mb-3">Available Rooms</h2>
                 <div className="grid gap-3">
                   {hotel.facilities.map((facility, idx) => (
                     <div key={idx} className="border rounded-lg p-4 bg-background">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold text-xs md:text-base">{facility.name}</h3>
-                        <span className="text-base md:text-lg font-bold">${facility.price}/day</span>
+                        <span className="text-base md:text-lg font-bold">
+                          <DollarSign className="inline h-4 w-4" />
+                          {facility.price}/day
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
@@ -246,14 +259,31 @@ const HotelDetail = () => {
                 </div>
               </div>
             )}
+
+            {/* Activities Section */}
+            {hotel.activities && hotel.activities.length > 0 && (
+              <div className="pt-4 border-t">
+                <h2 className="text-lg md:text-xl font-semibold mb-3">Available Activities</h2>
+                <div className="grid gap-3">
+                  {hotel.activities.map((activity, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 flex justify-between items-center bg-background">
+                      <span className="font-medium text-xs md:text-base">{activity.name}</span>
+                      <span className="font-bold text-xs md:text-base">
+                        <DollarSign className="inline h-4 w-4" />
+                        {activity.price}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Contact and Booking (Sidebar) */}
+          {/* Sidebar - Contact and Booking */}
           <div className="space-y-4">
-            {/* The standalone Map Button is removed as it's now next to the title */}
-
             <div className="bg-card p-6 rounded-lg border space-y-3 shadow-sm">
               <h3 className="font-semibold text-base md:text-lg">Contact & Booking</h3>
+              
               {/* Contact Information */}
               <div className="pt-2 border-t space-y-3">
                 {hotel.phone_numbers && hotel.phone_numbers.map((phone, idx) => (
@@ -277,8 +307,6 @@ const HotelDetail = () => {
                 Book Now
               </Button>
             </div>
-
-            {/* Registration number hidden from public for security */}
           </div>
         </div>
 
@@ -296,4 +324,5 @@ const HotelDetail = () => {
     </div>
   );
 };
+
 export default HotelDetail;
