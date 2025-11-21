@@ -191,6 +191,24 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
                 >
                   Profile
                 </Link>
+                {userRole === "admin" && (
+                  <>
+                    <Link 
+                      to="/admin" 
+                      className="block px-4 py-3 hover:bg-accent text-foreground border-t"
+                      onClick={() => setShowMobileAccountDialog(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link 
+                      to="/admin/verification" 
+                      className="block px-4 py-3 hover:bg-accent text-foreground border-t"
+                      onClick={() => setShowMobileAccountDialog(false)}
+                    >
+                      Host Verification
+                    </Link>
+                  </>
+                )}
                 <button 
                   onClick={() => {
                     setShowMobileAccountDialog(false);

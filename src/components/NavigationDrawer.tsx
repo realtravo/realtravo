@@ -93,6 +93,7 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
     { icon: Ticket, label: "My Bookings", path: "/bookings", protected: true },
     { icon: Heart, label: "Wishlist", path: "/saved", protected: true },
     { icon: Package, label: "Become a Host", path: "/host-verification", protected: true },
+    { icon: Shield, label: "Host Verification", path: "/admin/verification", protected: true, adminOnly: true },
   ];
 
 
@@ -177,40 +178,45 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
           <li className="mb-4 pt-2">
             <p className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Navigation</p>
             <ul className="space-y-1">
-              {topContentItems.map((item, index) => (
-                <li key={item.path}>
-                  {/* Home is a link, others are buttons for protected navigation */}
-                  {item.label === "Home" ? (
-                    <Link
-                      to={item.path}
-                      onClick={onClose}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
-                    >
-                      <item.icon className="h-5 w-5 text-black dark:text-white" />
-                      <span className="font-medium text-black dark:text-white">
-                        {item.label}
-                      </span>
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={() => handleProtectedNavigation(item.path)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
-                    >
-                      <item.icon className="h-5 w-5 text-black dark:text-white" />
-                      <span className="font-medium text-black dark:text-white">
-                        {item.label}
-                      </span>
-                    </button>
-                  )}
-                  {/* ADD DARK MODE TOGGLE */}
-                  {item.label === "Wishlist" && (
-                    <>
-                      {/* Dark/Light Mode Toggle */}
-                      <MobileThemeToggle />
-                    </>
-                  )}
-                </li>
-              ))}
+              {topContentItems.map((item, index) => {
+                // Hide admin-only items for non-admin users
+                if ((item as any).adminOnly && userRole !== "admin") return null;
+                
+                return (
+                  <li key={item.path}>
+                    {/* Home is a link, others are buttons for protected navigation */}
+                    {item.label === "Home" ? (
+                      <Link
+                        to={item.path}
+                        onClick={onClose}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+                      >
+                        <item.icon className="h-5 w-5 text-black dark:text-white" />
+                        <span className="font-medium text-black dark:text-white">
+                          {item.label}
+                        </span>
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => handleProtectedNavigation(item.path)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+                      >
+                        <item.icon className="h-5 w-5 text-black dark:text-white" />
+                        <span className="font-medium text-black dark:text-white">
+                          {item.label}
+                        </span>
+                      </button>
+                    )}
+                    {/* ADD DARK MODE TOGGLE */}
+                    {item.label === "Wishlist" && (
+                      <>
+                        {/* Dark/Light Mode Toggle */}
+                        <MobileThemeToggle />
+                      </>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </li>
 

@@ -61,23 +61,26 @@ const AdminDashboard = () => {
 
   const fetchPendingListings = async () => {
     try {
-      const [trips, hotels, adventures] = await Promise.all([
+      const [trips, hotels, adventures, attractions] = await Promise.all([
         supabase.from("trips").select("*").eq("approval_status", "pending"),
         supabase.from("hotels").select("*").eq("approval_status", "pending"),
-        supabase.from("adventure_places").select("*").eq("approval_status", "pending")
+        supabase.from("adventure_places").select("*").eq("approval_status", "pending"),
+        supabase.from("attractions").select("*").eq("approval_status", "pending")
       ]);
 
       if (trips.error) console.error("Error fetching trips:", trips.error);
       if (hotels.error) console.error("Error fetching hotels:", hotels.error);
       if (adventures.error) console.error("Error fetching adventures:", adventures.error);
+      if (attractions.error) console.error("Error fetching attractions:", attractions.error);
 
       const all = [
         ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
         ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
-        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
+        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || []),
+        ...(attractions.data?.map(a => ({ ...a, type: "attraction" })) || [])
       ];
 
-      console.log("Pending listings:", { trips: trips.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length });
+      console.log("Pending listings:", { trips: trips.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length, attractions: attractions.data?.length });
       setPendingListings(all);
     } catch (error) {
       console.error("Error fetching pending listings:", error);
@@ -87,23 +90,26 @@ const AdminDashboard = () => {
 
   const fetchApprovedListings = async () => {
     try {
-      const [trips, hotels, adventures] = await Promise.all([
+      const [trips, hotels, adventures, attractions] = await Promise.all([
         supabase.from("trips").select("*").eq("approval_status", "approved"),
         supabase.from("hotels").select("*").eq("approval_status", "approved"),
-        supabase.from("adventure_places").select("*").eq("approval_status", "approved")
+        supabase.from("adventure_places").select("*").eq("approval_status", "approved"),
+        supabase.from("attractions").select("*").eq("approval_status", "approved")
       ]);
 
       if (trips.error) console.error("Error fetching approved trips:", trips.error);
       if (hotels.error) console.error("Error fetching approved hotels:", hotels.error);
       if (adventures.error) console.error("Error fetching approved adventures:", adventures.error);
+      if (attractions.error) console.error("Error fetching approved attractions:", attractions.error);
 
       const all = [
         ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
         ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
-        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || [])
+        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || []),
+        ...(attractions.data?.map(a => ({ ...a, type: "attraction" })) || [])
       ];
 
-      console.log("Approved listings:", { trips: trips.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length });
+      console.log("Approved listings:", { trips: trips.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length, attractions: attractions.data?.length });
       setApprovedListings(all);
     } catch (error) {
       console.error("Error fetching approved listings:", error);
@@ -123,7 +129,10 @@ const AdminDashboard = () => {
   };
 
   const handleApprove = async (itemId: string, itemType: string) => {
-    const table = itemType === "trip" ? "trips" : itemType === "hotel" ? "hotels" : "adventure_places";
+    const table = itemType === "trip" ? "trips" 
+      : itemType === "hotel" ? "hotels" 
+      : itemType === "attraction" ? "attractions"
+      : "adventure_places";
     
     const { error } = await supabase
       .from(table)
@@ -146,10 +155,9 @@ const AdminDashboard = () => {
 
   const handleReject = async (itemId: string, itemType: string) => {
     const table = itemType === "trip" ? "trips" 
-      : itemType === "event" ? "events" 
       : itemType === "hotel" ? "hotels" 
-      : itemType === "adventure" ? "adventure_places"
-      : "accommodations";
+      : itemType === "attraction" ? "attractions"
+      : "adventure_places";
     
     const { error } = await supabase
       .from(table as any)
@@ -168,10 +176,9 @@ const AdminDashboard = () => {
 
   const handleToggleVisibility = async (itemId: string, itemType: string, currentlyHidden: boolean) => {
     const table = itemType === "trip" ? "trips" 
-      : itemType === "event" ? "events" 
       : itemType === "hotel" ? "hotels" 
-      : itemType === "adventure" ? "adventure_places"
-      : "accommodations";
+      : itemType === "attraction" ? "attractions"
+      : "adventure_places";
     
     const { error } = await supabase
       .from(table as any)
@@ -336,10 +343,10 @@ const AdminDashboard = () => {
 
                 <div className="min-w-[400px] flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Pending Events</h2>
-                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('event', 'pending')}</Badge>
+                    <h2 className="text-2xl font-bold">Pending Attractions</h2>
+                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('attraction', 'pending')}</Badge>
                   </div>
-                  {renderListings('event', 'pending')}
+                  {renderListings('attraction', 'pending')}
                 </div>
 
                 <div className="min-w-[400px] flex-shrink-0">
@@ -352,18 +359,10 @@ const AdminDashboard = () => {
 
                 <div className="min-w-[400px] flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Pending Adventure Places</h2>
+                    <h2 className="text-2xl font-bold">Pending Campsite and Experiences</h2>
                     <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('adventure', 'pending')}</Badge>
                   </div>
                   {renderListings('adventure', 'pending')}
-                </div>
-
-                <div className="min-w-[400px] flex-shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Pending Accommodations</h2>
-                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('accommodation', 'pending')}</Badge>
-                  </div>
-                  {renderListings('accommodation', 'pending')}
                 </div>
               </div>
             </div>
@@ -382,10 +381,10 @@ const AdminDashboard = () => {
 
                 <div className="min-w-[400px] flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Approved Events</h2>
-                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('event', 'approved')}</Badge>
+                    <h2 className="text-2xl font-bold">Approved Attractions</h2>
+                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('attraction', 'approved')}</Badge>
                   </div>
-                  {renderListings('event', 'approved')}
+                  {renderListings('attraction', 'approved')}
                 </div>
 
                 <div className="min-w-[400px] flex-shrink-0">
@@ -398,18 +397,10 @@ const AdminDashboard = () => {
 
                 <div className="min-w-[400px] flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Approved Adventure Places</h2>
+                    <h2 className="text-2xl font-bold">Approved Campsite and Experiences</h2>
                     <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('adventure', 'approved')}</Badge>
                   </div>
                   {renderListings('adventure', 'approved')}
-                </div>
-
-                <div className="min-w-[400px] flex-shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold">Approved Accommodations</h2>
-                    <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('accommodation', 'approved')}</Badge>
-                  </div>
-                  {renderListings('accommodation', 'approved')}
                 </div>
               </div>
             </div>
@@ -426,10 +417,10 @@ const AdminDashboard = () => {
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Event Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('event')}</Badge>
+                <h2 className="text-2xl font-bold">Attraction Bookings</h2>
+                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('attraction')}</Badge>
               </div>
-              {renderBookings('event')}
+              {renderBookings('attraction')}
             </div>
 
             <div>
@@ -442,10 +433,10 @@ const AdminDashboard = () => {
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Adventure Place Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('adventure_place')}</Badge>
+                <h2 className="text-2xl font-bold">Campsite and Experiences Bookings</h2>
+                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('adventure')}</Badge>
               </div>
-              {renderBookings('adventure_place')}
+              {renderBookings('adventure')}
             </div>
           </TabsContent>
         </Tabs>
