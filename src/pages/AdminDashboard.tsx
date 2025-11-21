@@ -217,15 +217,21 @@ const AdminDashboard = () => {
           <Card key={item.id} className="p-4 border-0">
             <div className="flex gap-4">
               <img
-                src={item.image_url}
-                alt={item.name}
+                src={item.image_url || item.photo_urls?.[0] || ''}
+                alt={item.name || item.local_name || item.location_name}
                 className="w-32 h-32 object-cover rounded-lg"
               />
               <div className="flex-1">
-                <h3 className="font-bold text-lg">{item.name}</h3>
-                <p className="text-sm text-muted-foreground">{item.location}, {item.country}</p>
+                <h3 className="font-bold text-lg">{item.name || item.local_name || item.location_name}</h3>
+                <p className="text-sm text-muted-foreground">{item.location || item.location_name}, {item.country}</p>
                 {item.date && <p className="text-sm">Date: {new Date(item.date).toLocaleDateString()}</p>}
                 {item.price && <p className="text-sm font-semibold">${item.price}</p>}
+                {(item.price_adult || item.price_child) && (
+                  <p className="text-sm font-semibold">
+                    Adult: ${item.price_adult || 0} | Child: ${item.price_child || 0}
+                  </p>
+                )}
+                {item.entry_fee && <p className="text-sm font-semibold">Entry Fee: ${item.entry_fee}</p>}
                 {item.registration_number && <p className="text-sm">Registration: {item.registration_number}</p>}
                 {item.email && <p className="text-sm">Email: {item.email}</p>}
                 {item.phone_number && <p className="text-sm">Phone: {item.phone_number}</p>}
