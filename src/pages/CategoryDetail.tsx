@@ -45,8 +45,8 @@ const CategoryDetail = () => {
     },
     adventure: {
       title: "Attractions",
-      tables: ["adventure_places"],
-      type: "ADVENTURE PLACE"
+      tables: ["attractions"],
+      type: "ATTRACTION"
     },
     campsite: {
       title: "Campsite & Experience",
@@ -318,22 +318,24 @@ const CategoryDetail = () => {
               ))}
             </>
           ) : (
-            filteredItems.map((item) => (
+            filteredItems.map((item) => {
+              const isAttraction = item.table === "attractions";
+              return (
               <ListingCard
                 key={item.id}
                 id={item.id}
-                type={item.table === "trips" ? "TRIP" : item.table === "events" ? "EVENT" : item.table === "hotels" ? "HOTEL" : "ADVENTURE PLACE"}
-                name={item.name}
-                imageUrl={item.image_url}
-                location={item.location}
+                type={item.table === "trips" ? "TRIP" : item.table === "events" ? "EVENT" : item.table === "hotels" ? "HOTEL" : isAttraction ? "ATTRACTION" : "ADVENTURE PLACE"}
+                name={isAttraction ? (item.local_name || item.location_name) : item.name}
+                imageUrl={isAttraction ? (item.photo_urls?.[0] || "") : item.image_url}
+                location={isAttraction ? item.location_name : item.location}
                 country={item.country}
-                price={item.price}
+                price={isAttraction ? (item.price_adult || 0) : (item.price || item.entry_fee || 0)}
                 date={item.date}
                 onSave={handleSave}
                 isSaved={savedItems.has(item.id)}
                 amenities={item.amenities}
               />
-            ))
+            )})
           )}
         </div>
       </main>

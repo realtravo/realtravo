@@ -83,7 +83,7 @@ const Index = () => {
         setLoadingScrollable(true);
         const [hotelsData, attractionsData] = await Promise.all([
             supabase.from("hotels").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
-            supabase.from("adventure_places").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10)
+            supabase.from("attractions").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10)
         ]);
 
         setScrollableRows({
@@ -425,12 +425,12 @@ const Index = () => {
                                     <div key={attraction.id} className="flex-shrink-0 w-64">
                                         <ListingCard
                                             id={attraction.id}
-                                            type="ADVENTURE PLACE"
-                                            name={attraction.name}
-                                            imageUrl={attraction.image_url}
-                                            location={attraction.location}
+                                            type="ATTRACTION"
+                                            name={attraction.local_name || attraction.location_name}
+                                            imageUrl={attraction.photo_urls?.[0] || ""}
+                                            location={attraction.location_name}
                                             country={attraction.country}
-                                            price={attraction.entry_fee || 0}
+                                            price={attraction.price_adult || 0}
                                             date=""
                                             onSave={handleSave}
                                             isSaved={savedItems.has(attraction.id)}
