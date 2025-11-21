@@ -548,6 +548,7 @@ const Index = () => {
                                         price={item.table === "hotels" ? 0 : item.entry_fee || 0}
                                         onSave={handleSave}
                                         isSaved={savedItems.has(item.id)}
+                                        hidePrice={true}
                                     />
                                 ))
                             ) : (
