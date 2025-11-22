@@ -30,6 +30,7 @@ const Index = () => {
     const [nearbyPlacesHotels, setNearbyPlacesHotels] = useState<any[]>([]);
     const [loadingScrollable, setLoadingScrollable] = useState(true);
     const [loadingNearby, setLoadingNearby] = useState(true);
+    const [bookingStats, setBookingStats] = useState<Map<string, number>>(new Map());
 
     const fetchScrollableRows = async () => {
         setLoadingScrollable(true);
@@ -70,6 +71,25 @@ const Index = () => {
                 attractions: attractionsData.data || [],
                 campsites: campsitesData.data || []
             });
+            
+            // Fetch booking statistics for trips/events
+            const tripIds = (tripsData.data || []).map((trip: any) => trip.id);
+            if (tripIds.length > 0) {
+                const { data: bookingsData } = await supabase
+                    .from('bookings')
+                    .select('item_id, slots_booked')
+                    .in('item_id', tripIds)
+                    .in('status', ['confirmed', 'pending']);
+                
+                if (bookingsData) {
+                    const stats = new Map<string, number>();
+                    bookingsData.forEach(booking => {
+                        const current = stats.get(booking.item_id) || 0;
+                        stats.set(booking.item_id, current + (booking.slots_booked || 0));
+                    });
+                    setBookingStats(stats);
+                }
+            }
         } catch (error) {
             console.error("Error fetching scrollable rows:", error);
         } finally {
@@ -459,11 +479,13 @@ const Index = () => {
                                     </div>
                                 ))
                             ) : (
-                                scrollableRows.trips.map((trip) => (
+                                scrollableRows.trips.map((trip) => {
+                                    const isEvent = trip.type === "event";
+                                    return (
                                     <div key={trip.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={trip.id}
-                                            type="TRIP"
+                                            type={isEvent ? "EVENT" : "TRIP"}
                                             name={trip.name}
                                             imageUrl={trip.image_url}
                                             location={trip.location}
@@ -473,9 +495,11 @@ const Index = () => {
                                             isCustomDate={trip.is_custom_date}
                                             onSave={handleSave}
                                             isSaved={savedItems.has(trip.id)}
+                                            availableTickets={isEvent ? trip.available_tickets : undefined}
+                                            bookedTickets={isEvent ? (bookingStats.get(trip.id) || 0) : undefined}
                                         />
                                     </div>
-                                ))
+                                )})
                             )}
                         </div>
                     </section>

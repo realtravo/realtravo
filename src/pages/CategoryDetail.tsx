@@ -19,6 +19,7 @@ const CategoryDetail = () => {
   const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [bookingStats, setBookingStats] = useState<Map<string, number>>(new Map());
   const { toast } = useToast();
   const [isSticky, setIsSticky] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -117,6 +118,25 @@ const CategoryDetail = () => {
       
       if (data && Array.isArray(data)) {
         allData.push(...data.map((item: any) => ({ ...item, table })));
+      }
+    }
+    
+    // Fetch booking statistics for events/trips
+    const tripIds = allData.filter(item => item.table === 'trips').map(item => item.id);
+    if (tripIds.length > 0) {
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('item_id, slots_booked')
+        .in('item_id', tripIds)
+        .in('status', ['confirmed', 'pending']);
+      
+      if (bookingsData) {
+        const stats = new Map<string, number>();
+        bookingsData.forEach(booking => {
+          const current = stats.get(booking.item_id) || 0;
+          stats.set(booking.item_id, current + (booking.slots_booked || 0));
+        });
+        setBookingStats(stats);
       }
     }
     
@@ -320,6 +340,7 @@ const CategoryDetail = () => {
           ) : (
             filteredItems.map((item) => {
               const isAttraction = item.table === "attractions";
+              const isEvent = item.table === "trips" && item.type === "event";
               return (
               <ListingCard
                 key={item.id}
@@ -334,6 +355,8 @@ const CategoryDetail = () => {
                 onSave={handleSave}
                 isSaved={savedItems.has(item.id)}
                 amenities={item.amenities}
+                availableTickets={isEvent ? item.available_tickets : undefined}
+                bookedTickets={isEvent ? (bookingStats.get(item.id) || 0) : undefined}
               />
             )})
           )}

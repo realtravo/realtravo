@@ -21,6 +21,8 @@ interface ListingCardProps {
   isSaved?: boolean;
   amenities?: string[];
   hidePrice?: boolean;
+  availableTickets?: number;
+  bookedTickets?: number;
 }
 
 export const ListingCard = ({
@@ -37,6 +39,8 @@ export const ListingCard = ({
   isSaved = false,
   amenities,
   hidePrice = false,
+  availableTickets,
+  bookedTickets,
 }: ListingCardProps) => {
   const [saved, setSaved] = useState(isSaved);
   const navigate = useNavigate();
@@ -144,6 +148,21 @@ export const ListingCard = ({
           <div className="flex justify-between items-center pt-1">
             <p className="text-2xs md:text-sm font-semibold text-red-600 dark:text-red-400"> 
               {isCustomDate ? "Custom" : formatDate(date)}
+            </p>
+          </div>
+        )}
+        
+        {/* EVENT CAPACITY - Only for events */}
+        {type === "EVENT" && availableTickets !== undefined && (
+          <div className="flex items-center justify-between pt-1 border-t border-border/50 mt-1">
+            <p className="text-2xs md:text-xs font-medium text-muted-foreground">
+              Tickets Remaining:
+            </p>
+            <p className={cn(
+              "text-2xs md:text-sm font-bold",
+              (availableTickets - (bookedTickets || 0)) <= 5 ? "text-destructive" : "text-green-600 dark:text-green-400"
+            )}>
+              {Math.max(0, availableTickets - (bookedTickets || 0))} / {availableTickets}
             </p>
           </div>
         )}
