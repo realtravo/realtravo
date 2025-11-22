@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Mail, DollarSign, Wifi, ArrowLeft, Clock } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, DollarSign, Wifi, ArrowLeft, Clock, Heart } from "lucide-react";
 import { BookAdventureDialog } from "@/components/booking/BookAdventureDialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { AvailabilityCalendar } from "@/components/booking/AvailabilityCalendar";
@@ -55,11 +55,12 @@ const AdventurePlaceDetail = () => {
   const [place, setPlace] = useState<AdventurePlace | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
-  // State for current slide index to implement custom dots
-  const [current, setCurrent] = useState(0); 
+  const [current, setCurrent] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     fetchPlace();
+    checkIfSaved();
   }, [id]);
 
   const fetchPlace = async () => {
@@ -81,6 +82,51 @@ const AdventurePlaceDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkIfSaved = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from("saved_items")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("item_id", id)
+      .maybeSingle();
+    
+    setIsSaved(!!data);
+  };
+
+  const handleSave = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save this place",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (isSaved) {
+      await supabase
+        .from("saved_items")
+        .delete()
+        .eq("item_id", id)
+        .eq("user_id", user.id);
+      setIsSaved(false);
+      toast({ title: "Removed from wishlist" });
+    } else {
+      await supabase
+        .from("saved_items")
+        .insert([{ user_id: user.id, item_id: id, item_type: "adventure_place" }]);
+      setIsSaved(true);
+      toast({ title: "Added to wishlist" });
     }
   };
 
@@ -240,6 +286,14 @@ const AdventurePlaceDetail = () => {
                 className="hover:bg-accent"
               >
                 <Share2 className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleSave}
+                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : "hover:bg-accent"}
+              >
+                <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? "fill-current" : ""}`} />
               </Button>
             </div>
 

@@ -1,8 +1,6 @@
-import { Heart, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,24 +42,7 @@ export const ListingCard = ({
   bookedTickets,
   showBadge = false,
 }: ListingCardProps) => {
-  const [saved, setSaved] = useState(isSaved);
   const navigate = useNavigate();
-
-  // 💾 DATABASE INTERACTION LOGIC (UNCHANGED)
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Check if user is logged in
-    const { data: { session } = {} } = await supabase.auth.getSession();
-    if (!session) {
-      // Redirect to login with a message
-      navigate("/auth");
-      return;
-    }
-
-    setSaved(!saved);
-    onSave?.(id, type.toLowerCase().replace(" ", "_"));
-  };
 
   // 🗺️ NAVIGATION LOGIC (UNCHANGED)
   const handleCardClick = () => {
@@ -90,14 +71,10 @@ export const ListingCard = ({
   return (
     <Card 
       onClick={handleCardClick}
-      // Adjusted width for small screens (e.g., max-w-[180px] or w-full on larger)
-      // and smaller overall padding/font sizes
-      className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 rounded-none
+      className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 rounded-lg
                  max-w-[160px] sm:max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg" 
     >
-      <div 
-        className="relative aspect-[4/3] overflow-hidden" 
-      >
+      <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={imageUrl}
           alt={name}
@@ -111,54 +88,29 @@ export const ListingCard = ({
           </Badge>
         )}
 
-        {/* Save Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleSave}
-          className={cn(
-            "absolute top-2 right-2 h-7 w-7 rounded-full transition-all z-10 text-red-500 hover:bg-blue-500 hover:text-white"
-          )}
-        >
-          <Heart
-            className={cn(
-              "h-3 w-3 transition-all", // Smaller icon
-              saved ? "fill-red-500 text-red-500" : "text-red-500"
-            )}
-          />
-        </Button>
+        {/* Name Overlay - Bottom-Left of Image */}
+        <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+          <h3 className="font-bold text-xs md:text-sm text-white line-clamp-2">
+            {type === "ADVENTURE PLACE" ? "experience" : name}
+          </h3>
+        </div>
 
-        {/* Price Overlay - Bottom-Right of Image - Only for TRIP */}
-        {!hidePrice && type === "TRIP" && (
-          <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent flex justify-end items-end">
-            {price !== undefined && (
-              <p className="font-bold text-xs text-white"> 
-                KSh {price}
-              </p>
-            )}
+        {/* Price Tag - Top-Right Corner */}
+        {!hidePrice && price !== undefined && (
+          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-full shadow-lg z-10">
+            <p className="font-bold text-xs whitespace-nowrap">
+              KSh {price}
+            </p>
           </div>
         )}
       </div>
       
-      {/* Name, Location, and Date Details - Below the image */}
-      <div className="p-1.5 flex flex-col space-y-0.5"> {/* Smaller padding and spacing */}
-        {/* MODIFIED CODE FOR NAME DISPLAY */}
-        <h3 className="font-bold text-xs line-clamp-1">
-          {type === "ADVENTURE PLACE" ? "experience" : name}
-        </h3>
-
-        {/* LOCATION - Left below title name with icon */}
-        <div className="flex items-center space-x-0.5 text-[0.6rem] text-gray-600 dark:text-gray-400"> {/* Smaller font and spacing */}
-          <MapPin className="h-3 w-3 shrink-0" /> {/* Smaller icon */}
-          <p className="line-clamp-1">
-            {location}, {country}
-          </p>
-        </div>
-        
+      {/* Date and Event Capacity Details - Below the image */}
+      <div className="p-1.5 flex flex-col space-y-0.5">
         {/* DATE row */}
         {(date || isCustomDate) && (
-          <div className="flex justify-between items-center pt-0.5">
-            <p className="text-[0.6rem] font-semibold text-red-600 dark:text-red-400"> {/* Smaller font */}
+          <div className="flex justify-between items-center">
+            <p className="text-[0.6rem] font-semibold text-red-600 dark:text-red-400">
               {isCustomDate ? "Custom" : formatDate(date)}
             </p>
           </div>
@@ -167,11 +119,11 @@ export const ListingCard = ({
         {/* EVENT CAPACITY - Only for events */}
         {type === "EVENT" && availableTickets !== undefined && (
           <div className="flex items-center justify-between pt-0.5 border-t border-border/50 mt-0.5">
-            <p className="text-[0.6rem] font-medium text-muted-foreground"> {/* Smaller font */}
+            <p className="text-[0.6rem] font-medium text-muted-foreground">
               Tickets Remaining:
             </p>
             <p className={cn(
-              "text-[0.6rem] font-bold", // Smaller font
+              "text-[0.6rem] font-bold",
               (availableTickets - (bookedTickets || 0)) <= 5 ? "text-destructive" : "text-green-600 dark:text-green-400"
             )}>
               {Math.max(0, availableTickets - (bookedTickets || 0))} / {availableTickets}

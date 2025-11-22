@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Calendar, Mail, ArrowLeft, Copy } from "lucide-react";
+import { MapPin, Phone, Share2, Calendar, Mail, ArrowLeft, Copy, Heart } from "lucide-react";
 import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { BookTripDialog } from "@/components/booking/BookTripDialog";
@@ -53,9 +53,12 @@ const TripDetail = () => {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [current, setCurrent] = useState(0);
   const [referralLink, setReferralLink] = useState<string>("");
+  const [isSaved, setIsSaved] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTrip();
+    checkIfSaved();
     
     // Check for referral parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -63,7 +66,48 @@ const TripDetail = () => {
     if (refId && id) {
       trackReferralClick(refId, id, "trip", "booking");
     }
-  }, [id]);
+  }, [id, user]);
+
+  const checkIfSaved = async () => {
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from("saved_items")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("item_id", id)
+      .maybeSingle();
+    
+    setIsSaved(!!data);
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save this trip",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (isSaved) {
+      await supabase
+        .from("saved_items")
+        .delete()
+        .eq("item_id", id)
+        .eq("user_id", user.id);
+      setIsSaved(false);
+      toast({ title: "Removed from wishlist" });
+    } else {
+      await supabase
+        .from("saved_items")
+        .insert([{ user_id: user.id, item_id: id, item_type: "trip" }]);
+      setIsSaved(true);
+      toast({ title: "Added to wishlist" });
+    }
+  };
 
   const fetchTrip = async () => {
     try {
@@ -243,6 +287,13 @@ const TripDetail = () => {
               >
                 <Share2 className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+              >
+                <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? "fill-current" : ""}`} />
+              </Button>
             </div>
 
             {/* Pricing and Booking */}
@@ -303,18 +354,20 @@ const TripDetail = () => {
           </div>
         </div>
 
-        {/* Description and Availability Calendar */}
-        <div className="space-y-6 mt-6">
+        {/* Description Section - Below Carousel with same width on Large Screens */}
+        <div className="grid lg:grid-cols-2 gap-6 mt-6">
           <div className="p-4 md:p-6 border rounded-lg bg-card shadow-sm">
             <h2 className="text-lg md:text-xl font-semibold mb-4">About This Tour</h2>
             <p className="text-xs md:text-base text-muted-foreground">{trip.description}</p>
           </div>
 
           {/* Availability Calendar */}
-          <AvailabilityCalendar 
-            itemId={trip.id} 
-            itemType="trip"
-          />
+          <div>
+            <AvailabilityCalendar 
+              itemId={trip.id} 
+              itemType="trip"
+            />
+          </div>
         </div>
 
         {trip && <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />}

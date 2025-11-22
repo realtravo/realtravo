@@ -146,7 +146,7 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div 
-          className="absolute z-50 w-full mt-2 bg-background border shadow-lg max-h-96 overflow-y-auto rounded-xl"
+          className="absolute z-[60] w-full mt-2 bg-background border shadow-lg max-h-96 overflow-y-auto rounded-xl"
         >
           {suggestions.map((result) => (
             <button

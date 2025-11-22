@@ -226,17 +226,6 @@ const Index = () => {
     return (
         <div className="min-h-screen bg-background pb-20 md:pb-0">
             <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
-            {/* Sticky Search Bar - hidden initially as search is now in hero */}
-            <div
-                ref={searchRef}
-                className={`sticky top-0 md:top-16 z-40 bg-background border-b shadow-sm transition-all duration-300 ${
-                    isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
-                }`}
-            >
-                <div className="container px-4 py-4">
-                    <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => fetchAllData(searchQuery)} />
-                </div>
-            </div>
             <main className="container px-0 md:px-4 py-0 md:py-8">
                 <section className="flex flex-col gap-1 md:gap-3">
                 {/* Hero Section with Background Image */}

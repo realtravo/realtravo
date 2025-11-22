@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Mail, Wifi, Users, Clock, DollarSign, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, Wifi, Users, Clock, DollarSign, ArrowLeft, Heart } from "lucide-react";
 import { BookHotelDialog } from "@/components/booking/BookHotelDialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { AvailabilityCalendar } from "@/components/booking/AvailabilityCalendar";
@@ -58,10 +58,12 @@ const HotelDetail = () => {
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [current, setCurrent] = useState(0); 
+  const [current, setCurrent] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     fetchHotel();
+    checkIfSaved();
   }, [id]);
 
   const fetchHotel = async () => {
@@ -83,6 +85,51 @@ const HotelDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkIfSaved = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from("saved_items")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("item_id", id)
+      .maybeSingle();
+    
+    setIsSaved(!!data);
+  };
+
+  const handleSave = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save this hotel",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (isSaved) {
+      await supabase
+        .from("saved_items")
+        .delete()
+        .eq("item_id", id)
+        .eq("user_id", user.id);
+      setIsSaved(false);
+      toast({ title: "Removed from wishlist" });
+    } else {
+      await supabase
+        .from("saved_items")
+        .insert([{ user_id: user.id, item_id: id, item_type: "hotel" }]);
+      setIsSaved(true);
+      toast({ title: "Added to wishlist" });
     }
   };
 
@@ -230,6 +277,13 @@ const HotelDetail = () => {
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Share2 className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+              >
+                <Heart className={`h-4 w-4 md:h-5 md:w-5 ${isSaved ? "fill-current" : ""}`} />
               </Button>
             </div>
 

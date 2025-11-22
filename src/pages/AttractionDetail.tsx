@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Clock, DollarSign, Phone, Mail, Share2, Calendar, Users, ArrowLeft, Loader2, Navigation } from "lucide-react";
+import { MapPin, Clock, DollarSign, Phone, Mail, Share2, Calendar, Users, ArrowLeft, Loader2, Navigation, Heart } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
@@ -46,6 +46,7 @@ export default function AttractionDetail() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [current, setCurrent] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
   
   const [bookingData, setBookingData] = useState({
     visit_date: "",
@@ -60,6 +61,7 @@ export default function AttractionDetail() {
 
   useEffect(() => {
     fetchAttraction();
+    checkIfSaved();
   }, [id]);
 
   const fetchAttraction = async () => {
@@ -89,6 +91,47 @@ export default function AttractionDetail() {
   const calculateTotal = () => {
     if (!attraction || attraction.entrance_type === 'free') return 0;
     return (bookingData.num_adults * attraction.price_adult) + (bookingData.num_children * attraction.price_child);
+  };
+
+  const checkIfSaved = async () => {
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from("saved_items")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("item_id", id)
+      .maybeSingle();
+    
+    setIsSaved(!!data);
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save this attraction",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (isSaved) {
+      await supabase
+        .from("saved_items")
+        .delete()
+        .eq("item_id", id)
+        .eq("user_id", user.id);
+      setIsSaved(false);
+      toast({ title: "Removed from wishlist" });
+    } else {
+      await supabase
+        .from("saved_items")
+        .insert([{ user_id: user.id, item_id: id, item_type: "attraction" }]);
+      setIsSaved(true);
+      toast({ title: "Added to wishlist" });
+    }
   };
 
   const handleShare = () => {
@@ -230,8 +273,9 @@ export default function AttractionDetail() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-      {/* Two Column Layout on Large Screens */}
-      <div className="grid lg:grid-cols-2 gap-6">
+        
+        {/* Two Column Layout on Large Screens */}
+        <div className="grid lg:grid-cols-2 gap-6">
         {/* Left Column: Image Gallery with border-radius */}
         <div className="w-full">
           <Carousel
@@ -315,6 +359,14 @@ export default function AttractionDetail() {
             >
               <Share2 className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              onClick={handleSave}
+              className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+            >
+              <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+            </Button>
+          </div>
           </div>
 
           {/* Entrance Fee Card */}
@@ -364,38 +416,39 @@ export default function AttractionDetail() {
             Book Now
           </Button>
         </div>
-      </div>
+        </div>
 
-      {/* Description and Operating Hours Below */}
-      <div className="space-y-6 mt-6">
-        {/* Description */}
-        {attraction.description && (
-          <Card className="p-6">
-            <h2 className="text-2xl font-semibold mb-3">About</h2>
-            <p className="text-muted-foreground whitespace-pre-wrap">{attraction.description}</p>
-          </Card>
-        )}
+        {/* Description and Operating Hours Below */}
+        <div className="space-y-6 mt-6">
+          {/* Description */}
+          {attraction.description && (
+            <Card className="p-6">
+              <h2 className="text-2xl font-semibold mb-3">About</h2>
+              <p className="text-muted-foreground whitespace-pre-wrap">{attraction.description}</p>
+            </Card>
+          )}
 
-        {/* Operating Hours */}
-        {(attraction.opening_hours || attraction.closing_hours || attraction.days_opened?.length > 0) && (
-          <Card className="p-6">
-            <h2 className="text-2xl font-semibold mb-3 flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Operating Hours
-            </h2>
-            <div className="space-y-2">
-              {attraction.opening_hours && attraction.closing_hours && (
-                <p>Hours: {attraction.opening_hours} - {attraction.closing_hours}</p>
-              )}
-              {attraction.days_opened?.length > 0 && (
-                <p>Open: {attraction.days_opened.join(', ')}</p>
-              )}
-            </div>
-          </Card>
-        )}
-      </div>
-
-      {attraction && <SimilarItems currentItemId={attraction.id} itemType="attraction" country={attraction.country} />}
+          {/* Operating Hours */}
+          {(attraction.opening_hours || attraction.closing_hours || attraction.days_opened?.length > 0) && (
+            <Card className="p-6">
+              <h2 className="text-2xl font-semibold mb-3 flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Operating Hours
+              </h2>
+              <div className="space-y-2">
+                {attraction.opening_hours && attraction.closing_hours && (
+                  <p>Hours: {attraction.opening_hours} - {attraction.closing_hours}</p>
+                )}
+                {attraction.days_opened?.length > 0 && (
+                  <p>Open: {attraction.days_opened.join(', ')}</p>
+                )}
+              </div>
+            </Card>
+          )}
+          
+          {attraction && <SimilarItems currentItemId={attraction.id} itemType="attraction" country={attraction.country} />}
+        </div>
+      </main>
 
       {/* Booking Dialog */}
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
@@ -519,7 +572,6 @@ export default function AttractionDetail() {
           </div>
         </DialogContent>
       </Dialog>
-      </main>
       
       <MobileBottomBar />
     </div>
