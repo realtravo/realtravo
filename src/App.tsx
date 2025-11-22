@@ -40,6 +40,8 @@ import VerificationStatus from "./pages/VerificationStatus";
 import AdminVerification from "./pages/AdminVerification";
 import Account from "./pages/Account";
 import Payment from "./pages/Payment";
+import MyReferrals from "./pages/MyReferrals";
+import AdminReferralSettings from "./pages/AdminReferralSettings";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +87,8 @@ const App = () => (
               <Route path="/attraction/:id" element={<AttractionDetail />} />
               <Route path="/account" element={<Account />} />
               <Route path="/payment" element={<Payment />} />
+              <Route path="/my-referrals" element={<MyReferrals />} />
+              <Route path="/admin/referral-settings" element={<AdminReferralSettings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

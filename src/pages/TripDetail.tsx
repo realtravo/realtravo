@@ -5,7 +5,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Calendar, Mail, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Share2, Calendar, Mail, ArrowLeft, Copy } from "lucide-react";
+import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import { BookTripDialog } from "@/components/booking/BookTripDialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -45,13 +47,22 @@ const TripDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [current, setCurrent] = useState(0); 
+  const [current, setCurrent] = useState(0);
+  const [referralLink, setReferralLink] = useState<string>("");
 
   useEffect(() => {
     fetchTrip();
+    
+    // Check for referral parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get("ref");
+    if (refId && id) {
+      trackReferralClick(refId, id, "trip", "booking");
+    }
   }, [id]);
 
   const fetchTrip = async () => {
@@ -77,21 +88,33 @@ const TripDetail = () => {
   };
 
   const handleShare = async () => {
+    if (!user || !trip) {
+      toast({
+        title: "Login Required",
+        description: "Please login to share this tour",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const refLink = generateReferralLink(trip.id, "trip", user.id);
+    setReferralLink(refLink);
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: trip?.name,
           text: trip?.description,
-          url: window.location.href,
+          url: refLink,
         });
       } catch (error) {
         console.log("Share failed:", error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(refLink);
       toast({
-        title: "Link copied",
-        description: "Trip link copied to clipboard",
+        title: "Referral Link Copied",
+        description: "Share this link to earn commission on bookings!",
       });
     }
   };

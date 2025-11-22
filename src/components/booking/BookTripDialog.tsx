@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { guestBookingSchema, paymentPhoneSchema } from "@/lib/validation";
+import { getReferralTrackingId, calculateAndAwardCommission, clearReferralTracking } from "@/lib/referralUtils";
 
 interface Activity {
   name: string;
@@ -170,19 +171,23 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("bookings").insert({
+      const referralTrackingId = getReferralTrackingId();
+      
+      const { data: bookingData, error } = await supabase.from("bookings").insert({
         user_id: user?.id || null,
         booking_type: "trip",
         item_id: trip.id,
         total_amount: totalAmount,
         payment_method: paymentMethod,
         payment_phone: paymentPhone || null,
+        payment_status: "completed",
         is_guest_booking: !user,
         guest_name: !user ? guestName : null,
         guest_email: !user ? guestEmail : null,
         guest_phone: !user ? guestPhone : null,
         slots_booked: totalPeople,
         visit_date: trip.is_custom_date ? visitDate : trip.date,
+        referral_tracking_id: referralTrackingId,
         booking_details: {
           trip_name: trip.name,
           date: trip.is_custom_date ? visitDate : trip.date,
@@ -191,9 +196,20 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
           activities: selectedActivities,
           trip_note: tripNote,
         },
-      } as any);
+      } as any).select().single();
 
       if (error) throw error;
+
+      // Award commission if there's a referral
+      if (bookingData && referralTrackingId) {
+        await calculateAndAwardCommission(
+          bookingData.id,
+          totalAmount,
+          referralTrackingId
+        );
+      } else {
+        clearReferralTracking();
+      }
 
       toast({
         title: "Booking successful!",

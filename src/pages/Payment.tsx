@@ -81,6 +81,22 @@ export default function Payment() {
               total += Number(booking.total_amount);
             }
           }
+
+          // Add referral commissions to balance
+          const { data: commissions } = await supabase
+            .from("referral_commissions")
+            .select("commission_amount")
+            .eq("referrer_id", user.id)
+            .eq("status", "paid");
+
+          if (commissions) {
+            const commissionTotal = commissions.reduce(
+              (sum, c) => sum + Number(c.commission_amount),
+              0
+            );
+            total += commissionTotal;
+          }
+
           setBalance(total);
         }
 

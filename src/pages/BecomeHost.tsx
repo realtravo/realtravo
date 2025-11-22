@@ -24,6 +24,13 @@ const BecomeHost = () => {
       return;
     }
 
+    // Check for host referral tracking
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get("ref");
+    if (refId) {
+      trackHostReferral(refId);
+    }
+
     const checkVerificationAndFetchData = async () => {
       // Check if user has verification
       const { data: verification } = await supabase
@@ -69,6 +76,35 @@ const BecomeHost = () => {
 
     checkVerificationAndFetchData();
   }, [user, navigate]);
+
+  const trackHostReferral = async (referrerId: string) => {
+    try {
+      const { data: existingTracking } = await supabase
+        .from("referral_tracking")
+        .select("*")
+        .eq("referrer_id", referrerId)
+        .eq("referred_user_id", user?.id)
+        .eq("referral_type", "host")
+        .single();
+
+      if (!existingTracking) {
+        await supabase.from("referral_tracking").insert({
+          referrer_id: referrerId,
+          referred_user_id: user?.id,
+          referral_type: "host",
+          status: "pending",
+        });
+
+        // Save to profile for future reference
+        await supabase
+          .from("profiles")
+          .update({ referrer_id: referrerId })
+          .eq("id", user?.id);
+      }
+    } catch (error) {
+      console.error("Error tracking host referral:", error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {

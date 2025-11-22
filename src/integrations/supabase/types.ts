@@ -238,6 +238,7 @@ export type Database = {
           payment_method: string | null
           payment_phone: string | null
           payment_status: string | null
+          referral_tracking_id: string | null
           slots_booked: number | null
           status: string
           total_amount: number
@@ -258,6 +259,7 @@ export type Database = {
           payment_method?: string | null
           payment_phone?: string | null
           payment_status?: string | null
+          referral_tracking_id?: string | null
           slots_booked?: number | null
           status?: string
           total_amount: number
@@ -278,6 +280,7 @@ export type Database = {
           payment_method?: string | null
           payment_phone?: string | null
           payment_status?: string | null
+          referral_tracking_id?: string | null
           slots_booked?: number | null
           status?: string
           total_amount?: number
@@ -285,7 +288,15 @@ export type Database = {
           user_id?: string | null
           visit_date?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_referral_tracking_id_fkey"
+            columns: ["referral_tracking_id"]
+            isOneToOne: false
+            referencedRelation: "referral_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       host_verifications: {
         Row: {
@@ -458,6 +469,7 @@ export type Database = {
           id: string
           name: string
           profile_picture_url: string | null
+          referrer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -469,6 +481,7 @@ export type Database = {
           id: string
           name: string
           profile_picture_url?: string | null
+          referrer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -480,7 +493,141 @@ export type Database = {
           id?: string
           name?: string
           profile_picture_url?: string | null
+          referrer_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referral_commissions: {
+        Row: {
+          booking_amount: number
+          booking_id: string | null
+          commission_amount: number
+          commission_rate: number
+          commission_type: string
+          created_at: string | null
+          id: string
+          paid_at: string | null
+          referral_tracking_id: string | null
+          referred_user_id: string | null
+          referrer_id: string
+          status: string | null
+        }
+        Insert: {
+          booking_amount: number
+          booking_id?: string | null
+          commission_amount: number
+          commission_rate: number
+          commission_type: string
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          referral_tracking_id?: string | null
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string | null
+        }
+        Update: {
+          booking_amount?: number
+          booking_id?: string | null
+          commission_amount?: number
+          commission_rate?: number
+          commission_type?: string
+          created_at?: string | null
+          id?: string
+          paid_at?: string | null
+          referral_tracking_id?: string | null
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_commissions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "creator_booking_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_referral_tracking_id_fkey"
+            columns: ["referral_tracking_id"]
+            isOneToOne: false
+            referencedRelation: "referral_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_settings: {
+        Row: {
+          booking_commission_rate: number
+          created_at: string | null
+          host_commission_duration_days: number
+          host_commission_rate: number
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_commission_rate?: number
+          created_at?: string | null
+          host_commission_duration_days?: number
+          host_commission_rate?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_commission_rate?: number
+          created_at?: string | null
+          host_commission_duration_days?: number
+          host_commission_rate?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      referral_tracking: {
+        Row: {
+          clicked_at: string | null
+          converted_at: string | null
+          created_at: string | null
+          id: string
+          item_id: string | null
+          item_type: string | null
+          referral_type: string
+          referred_user_id: string | null
+          referrer_id: string
+          status: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: string | null
+          referral_type: string
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: string | null
+          referral_type?: string
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string | null
         }
         Relationships: []
       }

@@ -6,7 +6,7 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { ChevronRight, User, Briefcase, CreditCard, Shield, LogOut, UserCog } from "lucide-react";
+import { ChevronRight, User, Briefcase, CreditCard, Shield, LogOut, UserCog, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Account() {
@@ -72,6 +72,12 @@ export default function Account() {
       show: true,
     },
     {
+      icon: Users,
+      label: "My Referrals",
+      path: "/my-referrals",
+      show: true,
+    },
+    {
       icon: User,
       label: "Profile Edit",
       path: "/profile/edit",
@@ -93,6 +99,12 @@ export default function Account() {
       icon: UserCog,
       label: "Host Verification",
       path: "/admin/verification",
+      show: userRole === "admin",
+    },
+    {
+      icon: Shield,
+      label: "Set Referral Commission",
+      path: "/admin/referral-settings",
       show: userRole === "admin",
     },
   ];
