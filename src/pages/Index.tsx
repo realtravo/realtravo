@@ -321,10 +321,8 @@ const Index = () => {
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Campsite & Experience
                             </h2>
-                            <Link to="/category/campsite">
-                                <Button variant="outline" size="sm" className="text-3xs md:text-sm px-1.5 md:px-4">
-                                    View All
-                                </Button>
+                            <Link to="/category/campsite" className="text-primary text-3xs md:text-sm hover:underline">
+                                View All
                             </Link>
                         </div>
                         <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -367,10 +365,8 @@ const Index = () => {
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Hotels
                             </h2>
-                            <Link to="/category/hotels">
-                                <Button variant="outline" size="sm" className="text-3xs md:text-sm px-1.5 md:px-4">
-                                    View All
-                                </Button>
+                            <Link to="/category/hotels" className="text-primary text-3xs md:text-sm hover:underline">
+                                View All
                             </Link>
                         </div>
                         <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -413,10 +409,8 @@ const Index = () => {
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Attractions
                             </h2>
-                            <Link to="/category/adventure">
-                                <Button variant="outline" size="sm" className="text-3xs md:text-sm px-1.5 md:px-4">
-                                    View All
-                                </Button>
+                            <Link to="/category/adventure" className="text-primary text-3xs md:text-sm hover:underline">
+                                View All
                             </Link>
                         </div>
                         <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -461,10 +455,8 @@ const Index = () => {
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Trips
                             </h2>
-                            <Link to="/category/trips">
-                                <Button variant="outline" size="sm" className="text-3xs md:text-sm px-1.5 md:px-4">
-                                    View All
-                                </Button>
+                            <Link to="/category/trips" className="text-primary text-3xs md:text-sm hover:underline">
+                                View All
                             </Link>
                         </div>
                         <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
