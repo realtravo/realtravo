@@ -115,7 +115,7 @@ const Index = () => {
             ...(hotelsData.data || []).map(item => ({ ...item, table: "hotels", category: "Hotel" }))
         ];
 
-        const nearby = combined.slice(0, 10);
+        const nearby = combined.slice(0, 12);
         setNearbyPlacesHotels(nearby);
         // Only set loading to false if we have data
         if (nearby.length > 0) {
@@ -504,7 +504,7 @@ const Index = () => {
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {loadingNearby ? (
-                                [...Array(10)].map((_, i) => (
+                                [...Array(12)].map((_, i) => (
                                     <ListingSkeleton key={i} />
                                 ))
                             ) : nearbyPlacesHotels.length > 0 ? (
