@@ -216,14 +216,14 @@ const Index = () => {
                 </div>
             </div>
             <main className="container px-0 md:px-4 py-0 md:py-8">
-                <section className="flex flex-col gap-2 md:gap-4">
+                <section className="flex flex-col gap-1 md:gap-3">
                     {/* Hero Slogan Section */}
                     <div className="w-full">
-                        <div className="relative w-full overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background flex flex-col items-center justify-center p-4 md:p-8 py-6 md:py-12">
-                            <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-primary mb-2 md:mb-3 text-center">
+                        <div className="relative w-full overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background flex flex-col items-center justify-center p-3 md:p-8 py-4 md:py-12">
+                            <h1 className="text-lg md:text-3xl lg:text-4xl font-bold text-primary mb-1 md:mb-3 text-center">
                                 Discover Your Next Adventure
                             </h1>
-                            <p className="text-xs md:text-base lg:text-lg text-muted-foreground text-center max-w-2xl">
+                            <p className="text-2xs md:text-base lg:text-lg text-muted-foreground text-center max-w-2xl">
                                 Travel beyond boundaries and explore extraordinary destinations that inspire wonder and create unforgettable memories
                             </p>
                         </div>
@@ -231,17 +231,17 @@ const Index = () => {
                     
                     {/* Categories Section - Below on all screens */}
                     <div className="w-full px-2 md:px-0">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4">
                             {categories.map((cat) => (
                                 <div
                                     key={cat.title}
                                     onClick={() => navigate(cat.path)}
-                                    className="relative h-28 md:h-40 lg:h-48 cursor-pointer overflow-hidden group rounded-lg"
+                                    className="relative h-20 md:h-40 lg:h-48 cursor-pointer overflow-hidden group rounded-lg"
                                     style={{ backgroundImage: `url(${cat.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                                 >
-                                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center p-4">
-                                        <cat.icon className="h-8 w-8 md:h-12 md:w-12 lg:h-16 lg:w-16 text-white mb-2 md:mb-3" />
-                                        <h3 className="font-bold text-white text-sm md:text-base lg:text-lg">{cat.title}</h3>
+                                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center p-2 md:p-4">
+                                        <cat.icon className="h-6 w-6 md:h-12 md:w-12 lg:h-16 lg:w-16 text-white mb-1 md:mb-3" />
+                                        <h3 className="font-bold text-white text-2xs md:text-base lg:text-lg">{cat.title}</h3>
                                     </div>
                                 </div>
                             ))}
@@ -249,28 +249,28 @@ const Index = () => {
                     </div>
                 </section>
                 <div className="px-4">
-                    {/* Main Listings - First - MODIFIED FOR HORIZONTAL SCROLLING */}
-                    <section className="mb-8">
-                        <div className="flex justify-between items-center mb-4 mt-4 md:mt-0">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-
+                    {/* Latest - MODIFIED FOR HORIZONTAL SCROLLING */}
+                    <section className="mb-4 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4 mt-2 md:mt-0">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                                Latest
                             </h2>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {loading || listings.length === 0 ? (
                                 [...Array(10)].map((_, i) => (
-                                    <div key={i} className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md">
+                                    <div key={i} className="flex-shrink-0 w-40 md:w-64 rounded-lg overflow-hidden shadow-md">
                                         <div className="aspect-[4/3] bg-muted animate-pulse" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-muted animate-pulse rounded w-4/5" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                                        <div className="p-2 md:p-4 space-y-2 md:space-y-3">
+                                            <div className="h-4 md:h-5 bg-muted animate-pulse rounded w-4/5" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-2/3" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                 listings.map((item) => (
-                                    <div key={item.id} className="flex-shrink-0 w-64">
+                                    <div key={item.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={item.id}
                                             type={item.type}
@@ -292,35 +292,35 @@ const Index = () => {
                     </section>
 
 
-                    <hr className="border-t border-gray-200 my-4 md:my-8" />
+                    <hr className="border-t border-gray-200 my-2 md:my-6" />
 
                     {/* Featured Campsite & Experience */}
-                    <section className="mb-4 md:mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    <section className="mb-3 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Campsite & Experience
                             </h2>
                             <Link to="/category/campsite">
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                                <Button variant="outline" size="sm" className="text-2xs md:text-sm">
                                     View All
                                 </Button>
                             </Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {loadingScrollable || scrollableRows.campsites.length === 0 ? (
                                 [...Array(10)].map((_, i) => (
-                                    <div key={i} className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md">
+                                    <div key={i} className="flex-shrink-0 w-40 md:w-64 rounded-lg overflow-hidden shadow-md">
                                         <div className="aspect-[4/3] bg-muted animate-pulse" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-muted animate-pulse rounded w-4/5" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                                        <div className="p-2 md:p-4 space-y-2 md:space-y-3">
+                                            <div className="h-4 md:h-5 bg-muted animate-pulse rounded w-4/5" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-2/3" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                 scrollableRows.campsites.map((place) => (
-                                    <div key={place.id} className="flex-shrink-0 w-64">
+                                    <div key={place.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={place.id}
                                             type="ADVENTURE PLACE"
@@ -341,32 +341,32 @@ const Index = () => {
                     </section>
 
                     {/* Featured Hotels */}
-                    <section className="mb-4 md:mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    <section className="mb-3 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Hotels
                             </h2>
                             <Link to="/category/hotels">
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                                <Button variant="outline" size="sm" className="text-2xs md:text-sm">
                                     View All
                                 </Button>
                             </Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {loadingScrollable || scrollableRows.hotels.length === 0 ? (
                                 [...Array(10)].map((_, i) => (
-                                    <div key={i} className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md">
+                                    <div key={i} className="flex-shrink-0 w-40 md:w-64 rounded-lg overflow-hidden shadow-md">
                                         <div className="aspect-[4/3] bg-muted animate-pulse" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-muted animate-pulse rounded w-4/5" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                                        <div className="p-2 md:p-4 space-y-2 md:space-y-3">
+                                            <div className="h-4 md:h-5 bg-muted animate-pulse rounded w-4/5" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-2/3" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                 scrollableRows.hotels.map((hotel) => (
-                                    <div key={hotel.id} className="flex-shrink-0 w-64">
+                                    <div key={hotel.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={hotel.id}
                                             type="HOTEL"
@@ -387,32 +387,32 @@ const Index = () => {
                     </section>
 
                     {/* Featured Attractions */}
-                    <section className="mb-4 md:mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    <section className="mb-3 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Attractions
                             </h2>
                             <Link to="/category/adventure">
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                                <Button variant="outline" size="sm" className="text-2xs md:text-sm">
                                     View All
                                 </Button>
                             </Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {loadingScrollable || scrollableRows.attractions.length === 0 ? (
                                 [...Array(10)].map((_, i) => (
-                                    <div key={i} className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md">
+                                    <div key={i} className="flex-shrink-0 w-40 md:w-64 rounded-lg overflow-hidden shadow-md">
                                         <div className="aspect-[4/3] bg-muted animate-pulse" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-muted animate-pulse rounded w-4/5" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                                        <div className="p-2 md:p-4 space-y-2 md:space-y-3">
+                                            <div className="h-4 md:h-5 bg-muted animate-pulse rounded w-4/5" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-2/3" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                 scrollableRows.attractions.map((attraction) => (
-                                    <div key={attraction.id} className="flex-shrink-0 w-64">
+                                    <div key={attraction.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={attraction.id}
                                             type="ATTRACTION"
@@ -432,35 +432,35 @@ const Index = () => {
                         </div>
                     </section>
 
-                    <hr className="border-t border-gray-200 my-4 md:my-8" />
+                    <hr className="border-t border-gray-200 my-2 md:my-6" />
 
                     {/* Featured Trips Only Section */}
-                    <section className="mb-4 md:mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                    <section className="mb-3 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
                                 Featured Trips
                             </h2>
                             <Link to="/category/trips">
-                                <Button variant="outline" size="sm" className="text-xs md:text-sm">
+                                <Button variant="outline" size="sm" className="text-2xs md:text-sm">
                                     View All
                                 </Button>
                             </Link>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide">
                             {loadingScrollable || scrollableRows.trips.length === 0 ? (
                                 [...Array(10)].map((_, i) => (
-                                    <div key={i} className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md">
+                                    <div key={i} className="flex-shrink-0 w-40 md:w-64 rounded-lg overflow-hidden shadow-md">
                                         <div className="aspect-[4/3] bg-muted animate-pulse" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-muted animate-pulse rounded w-4/5" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
-                                            <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                                        <div className="p-2 md:p-4 space-y-2 md:space-y-3">
+                                            <div className="h-4 md:h-5 bg-muted animate-pulse rounded w-4/5" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-2/3" />
+                                            <div className="h-3 md:h-4 bg-muted animate-pulse rounded w-1/2" />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                                 scrollableRows.trips.map((trip) => (
-                                    <div key={trip.id} className="flex-shrink-0 w-64">
+                                    <div key={trip.id} className="flex-shrink-0 w-40 md:w-64">
                                         <ListingCard
                                             id={trip.id}
                                             type="TRIP"
@@ -473,7 +473,6 @@ const Index = () => {
                                             isCustomDate={trip.is_custom_date}
                                             onSave={handleSave}
                                             isSaved={savedItems.has(trip.id)}
-                                            hidePrice={true}
                                         />
                                     </div>
                                 ))

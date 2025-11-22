@@ -54,7 +54,7 @@ export const BookHotelDialog = ({ open, onOpenChange, hotel }: Props) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [visitDate, setVisitDate] = useState("");
-  const [adults, setAdults] = useState(1);
+  const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [selectedFacilities, setSelectedFacilities] = useState<SelectedFacility[]>([]);
   const [selectedActivities, setSelectedActivities] = useState<SelectedActivity[]>([]);
@@ -411,7 +411,7 @@ export const BookHotelDialog = ({ open, onOpenChange, hotel }: Props) => {
 
             <div>
               <Label>Select Payment Method</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="grid grid-cols-4 gap-2 mt-2">
                 <Button
                   variant={paymentMethod === "mpesa" ? "default" : "outline"}
                   onClick={() => setPaymentMethod("mpesa")}
@@ -423,6 +423,12 @@ export const BookHotelDialog = ({ open, onOpenChange, hotel }: Props) => {
                   onClick={() => setPaymentMethod("airtel")}
                 >
                   Airtel
+                </Button>
+                <Button
+                  variant={paymentMethod === "bank" ? "default" : "outline"}
+                  onClick={() => setPaymentMethod("bank")}
+                >
+                  Bank
                 </Button>
                 <Button
                   variant={paymentMethod === "card" ? "default" : "outline"}
@@ -442,6 +448,30 @@ export const BookHotelDialog = ({ open, onOpenChange, hotel }: Props) => {
                   onChange={(e) => setPaymentPhone(e.target.value)}
                   placeholder="+1234567890"
                 />
+              </div>
+            )}
+
+            {paymentMethod === "bank" && (
+              <div className="space-y-3 border rounded-lg p-4 bg-muted/50">
+                <h3 className="font-semibold text-sm">Bank Transfer Details</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Bank Name:</p>
+                    <p className="font-medium">Example Bank Ltd</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Account Name:</p>
+                    <p className="font-medium">Company Name</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Account Number:</p>
+                    <p className="font-medium">1234567890</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Reference:</p>
+                    <p className="font-medium">Use your booking ID after confirmation</p>
+                  </div>
+                </div>
               </div>
             )}
 

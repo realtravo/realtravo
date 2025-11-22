@@ -146,25 +146,25 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div 
-          className="absolute z-50 w-full mt-2 bg-background border shadow-lg max-h-96 overflow-y-auto rounded-xl" // Kept rounded-xl for suggestions for better aesthetics
+          className="absolute z-50 w-full mt-2 bg-background border shadow-lg max-h-96 overflow-y-auto rounded-xl"
         >
           {suggestions.map((result) => (
             <button
               key={`${result.type}-${result.id}`}
               type="button"
-              className="w-full flex items-center gap-3 p-3 hover:bg-accent transition-colors border-b last:border-b-0"
+              className="w-full flex items-center gap-2 p-2 hover:bg-accent transition-colors border-b last:border-b-0"
               onClick={() => handleSuggestionClick(result)}
             >
               {result.image_url && (
                 <img
                   src={result.image_url}
                   alt={result.name}
-                  className="w-16 h-16 object-cover rounded flex-shrink-0"
+                  className="w-12 h-12 object-cover rounded flex-shrink-0"
                 />
               )}
               <div className="flex-1 text-left min-w-0">
-                <p className="font-semibold text-sm md:text-base line-clamp-1">{result.name}</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{getTypeLabel(result.type)}</p>
+                <p className="font-semibold text-xs md:text-sm line-clamp-1">{result.name}</p>
+                <p className="text-2xs md:text-xs text-muted-foreground">{getTypeLabel(result.type)}</p>
               </div>
             </button>
           ))}

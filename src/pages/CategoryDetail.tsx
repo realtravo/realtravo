@@ -261,10 +261,10 @@ const CategoryDetail = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
       
-      {/* Search Bar - Shows when visible */}
+      {/* Search Bar - Shows when visible with higher z-index */}
       <div 
         ref={searchRef}
-        className={`bg-background border-b transition-all duration-300 ${
+        className={`bg-background border-b transition-all duration-300 z-50 relative ${
           isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full h-0 overflow-hidden'
         }`}
       >

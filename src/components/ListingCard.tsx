@@ -128,25 +128,28 @@ export const ListingCard = ({
       </div>
       
       {/* Name, Location, and Date Details - Below the image */}
-      <div className="p-4 pt-3 flex flex-col space-y-1">
-        <h3 className="font-bold text-sm md:text-lg line-clamp-1">{name}</h3> 
+      <div className="p-2 md:p-3 flex flex-col space-y-1">
+        <h3 className="font-bold text-xs md:text-sm line-clamp-1">{name}</h3> 
 
         {/* LOCATION - Left below title name with icon */}
-        <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
-          <MapPin className="h-4 w-4 shrink-0" />
+        <div className="flex items-center space-x-1 text-2xs md:text-xs text-gray-600 dark:text-gray-400">
+          <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
           <p className="line-clamp-1">
             {location}, {country}
           </p>
         </div>
         
-        {/* DATE - Aligned to the bottom right of the list/card body */}
-        <div className="flex justify-end pt-2">
-            {(date || isCustomDate) && (
-                <p className="text-sm font-semibold text-red-600 dark:text-red-400"> 
-                    {isCustomDate ? "Custom" : formatDate(date)}
-                </p>
+        {/* DATE and PRICE row - only show price for TRIP type */}
+        {(date || isCustomDate) && (
+          <div className="flex justify-between items-center pt-1">
+            <p className="text-2xs md:text-sm font-semibold text-red-600 dark:text-red-400"> 
+              {isCustomDate ? "Custom" : formatDate(date)}
+            </p>
+            {!hidePrice && type === "TRIP" && price !== undefined && (
+              <p className="text-2xs md:text-sm font-bold text-primary">KSh {price}</p>
             )}
-        </div>
+          </div>
+        )}
       </div>
     </Card>
   );
