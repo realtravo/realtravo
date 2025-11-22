@@ -42,6 +42,7 @@ import Account from "./pages/Account";
 import Payment from "./pages/Payment";
 import MyReferrals from "./pages/MyReferrals";
 import AdminReferralSettings from "./pages/AdminReferralSettings";
+import AdminPaymentVerification from "./pages/AdminPaymentVerification";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/payment" element={<Payment />} />
               <Route path="/my-referrals" element={<MyReferrals />} />
               <Route path="/admin/referral-settings" element={<AdminReferralSettings />} />
+              <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

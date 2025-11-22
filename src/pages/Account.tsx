@@ -102,6 +102,12 @@ export default function Account() {
       show: userRole === "admin",
     },
     {
+      icon: CreditCard,
+      label: "Payment Verification",
+      path: "/admin/payment-verification",
+      show: userRole === "admin",
+    },
+    {
       icon: Shield,
       label: "Set Referral Commission",
       path: "/admin/referral-settings",

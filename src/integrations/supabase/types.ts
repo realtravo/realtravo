@@ -232,7 +232,15 @@ export type Database = {
           created_at: string | null
           id: string
           last_updated: string | null
+          previous_account_holder_name: string | null
+          previous_account_number: string | null
+          previous_bank_name: string | null
+          previous_verified_at: string | null
+          rejection_reason: string | null
           user_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           account_holder_name: string
@@ -241,7 +249,15 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_updated?: string | null
+          previous_account_holder_name?: string | null
+          previous_account_number?: string | null
+          previous_bank_name?: string | null
+          previous_verified_at?: string | null
+          rejection_reason?: string | null
           user_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           account_holder_name?: string
@@ -250,7 +266,15 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_updated?: string | null
+          previous_account_holder_name?: string | null
+          previous_account_number?: string | null
+          previous_bank_name?: string | null
+          previous_verified_at?: string | null
+          rejection_reason?: string | null
           user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
