@@ -23,6 +23,7 @@ interface ListingCardProps {
   hidePrice?: boolean;
   availableTickets?: number;
   bookedTickets?: number;
+  showBadge?: boolean;
 }
 
 export const ListingCard = ({
@@ -41,6 +42,7 @@ export const ListingCard = ({
   hidePrice = false,
   availableTickets,
   bookedTickets,
+  showBadge = false,
 }: ListingCardProps) => {
   const [saved, setSaved] = useState(isSaved);
   const navigate = useNavigate();
@@ -97,10 +99,12 @@ export const ListingCard = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         
-        {/* Category Badge - Top-Left */}
-        <Badge className="absolute top-3 left-3 bg-red-600 text-white backdrop-blur text-xs md:text-xs text-2xs z-10">
-          {type}
-        </Badge>
+        {/* Category Badge - Top-Left - Only show when showBadge is true */}
+        {showBadge && (
+          <Badge className="absolute top-3 left-3 bg-red-600 text-white backdrop-blur text-2xs z-10">
+            {type}
+          </Badge>
+        )}
 
         {/* Save Button (Red, no background, hover blue) */}
         <Button

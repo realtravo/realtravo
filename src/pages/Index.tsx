@@ -304,6 +304,7 @@ const Index = () => {
                                             onSave={handleSave}
                                             isSaved={savedItems.has(item.id)}
                                             hidePrice={true}
+                                            showBadge={true}
                                         />
                                     </div>
                                 ))
@@ -533,6 +534,7 @@ const Index = () => {
                                         onSave={handleSave}
                                         isSaved={savedItems.has(item.id)}
                                         hidePrice={true}
+                                        showBadge={true}
                                     />
                                 ))
                             ) : (
