@@ -72,6 +72,12 @@ export default function Account() {
       show: true,
     },
     {
+      icon: Briefcase,
+      label: "My Host Bookings",
+      path: "/host-bookings",
+      show: true,
+    },
+    {
       icon: Users,
       label: "My Referrals",
       path: "/my-referrals",
