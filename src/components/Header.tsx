@@ -190,13 +190,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
               className="rounded-full h-10 w-10 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="Account"
             >
-              {user ? (
-                <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
-                  {getUserInitials()}
-                </div>
-              ) : (
-                <User className="h-5 w-5 text-white" />
-              )}
+              <User className="h-5 w-5 text-white" />
             </button>
           </div>
         </div>

@@ -150,7 +150,6 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
     { icon: Home, label: "Home", path: "/", protected: false },
     { icon: Ticket, label: "My Bookings", path: "/bookings", protected: true },
     { icon: Heart, label: "Wishlist", path: "/saved", protected: true },
-    { icon: Package, label: "Become a Host", path: "/host-verification", protected: true },
     { icon: Shield, label: "Host Verification", path: "/admin/verification", protected: true, adminOnly: true },
   ];
 

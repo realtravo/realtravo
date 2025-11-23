@@ -116,16 +116,6 @@ const Profile = () => {
       <main className="container px-4 py-8 max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
-        {/* Host Actions */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/become-host")}>
-            <h3 className="font-semibold text-center">Become a Host</h3>
-          </Card>
-          <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/host-bookings")}>
-            <h3 className="font-semibold text-center">My Host Bookings</h3>
-          </Card>
-        </div>
-
         <Card className="overflow-hidden">
           {fetchingProfile ? (
             <div className="p-6 space-y-4">
