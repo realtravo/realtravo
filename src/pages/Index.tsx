@@ -275,8 +275,9 @@ const Index = () => {
                 </div>
             )}
 
-            <main className={`container px-0 md:px-4 py-0 md:py-8 ${isSearchFocused ? 'hidden' : ''}`}>
-                <section className="flex flex-col gap-1 md:gap-3">
+            <main className="container px-0 md:px-4 py-0 md:py-8">
+                {/* Hero and Categories - Hide when search is focused */}
+                <section className={`flex flex-col gap-1 md:gap-3 ${isSearchFocused ? 'hidden' : ''}`}>
                 {/* Hero Section with Background Image */}
                     <div className="w-full">
                         <div 
@@ -330,7 +331,43 @@ const Index = () => {
                         </div>
                     </div>
                 </section>
-                <div className="px-4">
+                
+                {/* Search Results - Show when search is focused */}
+                {isSearchFocused && (
+                    <div className="px-4 mt-4">
+                        <h2 className="text-xl md:text-2xl font-bold mb-4">
+                            {searchQuery ? 'Search Results' : 'All Listings'}
+                        </h2>
+                        {loading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {[...Array(6)].map((_, i) => (
+                                    <ListingSkeleton key={i} />
+                                ))}
+                            </div>
+                        ) : listings.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {listings.map((listing) => (
+                                    <ListingCard
+                                        key={listing.id}
+                                        id={listing.id}
+                                        type={listing.type}
+                                        name={listing.name}
+                                        location={listing.location}
+                                        country={listing.country}
+                                        imageUrl={listing.image_url}
+                                        price={listing.price || listing.entry_fee || 0}
+                                        isSaved={savedItems.has(listing.id)}
+                                        onSave={() => handleSave(listing.id, listing.type)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">No results found</p>
+                        )}
+                    </div>
+                )}
+                
+                <div className={`px-4 ${isSearchFocused ? 'hidden' : ''}`}>
                     {/* Latest - MODIFIED FOR HORIZONTAL SCROLLING OR MAP VIEW */}
                     <section className="mb-4 md:mb-8">
                         <div className="flex justify-between items-center mb-2 md:mb-4 mt-2 md:mt-0">
