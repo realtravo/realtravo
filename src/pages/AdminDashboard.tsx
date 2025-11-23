@@ -325,11 +325,13 @@ const AdminDashboard = () => {
           {items.map((item) => (
             <div key={item.id} className="p-6">
               <div className="flex gap-4">
-                <img
-                  src={item.image_url || item.photo_urls?.[0] || ''}
-                  alt={item.name || item.local_name || item.location_name}
-                  className="w-32 h-32 object-cover rounded-lg flex-shrink-0"
-                />
+                {status === 'pending' && (
+                  <img
+                    src={item.image_url || item.photo_urls?.[0] || ''}
+                    alt={item.name || item.local_name || item.location_name}
+                    className="w-32 h-32 object-cover rounded-lg flex-shrink-0"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-lg text-foreground">{item.name || item.local_name || item.location_name}</h3>
                   <p className="text-sm text-muted-foreground">{item.location || item.location_name}, {item.country}</p>
@@ -392,6 +394,18 @@ const AdminDashboard = () => {
                         variant={item.is_hidden ? "default" : "outline"}
                       >
                         {item.is_hidden ? "Publish" : "Hide"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {status === 'rejected' && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Button 
+                        onClick={() => navigate(`/admin/review/${item.type}/${item.id}`)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        View Details
                       </Button>
                     </div>
                   )}
