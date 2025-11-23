@@ -248,32 +248,34 @@ const Index = () => {
         <div className="min-h-screen bg-background pb-20 md:pb-0">
             <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
             
-            {/* Search Bar - Appears below header when focused on mobile */}
+            {/* Search Bar - Appears below header when focused on all screens */}
             {isSearchFocused && (
-                <div className="md:hidden sticky top-[64px] z-[100] bg-background p-4 border-b shadow-md">
-                    <SearchBarWithSuggestions 
-                        value={searchQuery} 
-                        onChange={setSearchQuery} 
-                        onSubmit={() => {
-                            fetchAllData(searchQuery);
-                            setIsSearchFocused(false);
-                        }}
-                        onSuggestionSearch={(query) => {
-                            fetchAllData(query);
-                            setIsSearchFocused(false);
-                        }}
-                        onFocus={() => setIsSearchFocused(true)}
-                        onBlur={() => {
-                            // Only blur if search query is empty
-                            if (!searchQuery) {
-                                setTimeout(() => setIsSearchFocused(false), 200);
-                            }
-                        }}
-                    />
+                <div className="sticky top-[64px] z-[100] bg-background p-4 border-b shadow-md">
+                    <div className="max-w-3xl mx-auto">
+                        <SearchBarWithSuggestions 
+                            value={searchQuery} 
+                            onChange={setSearchQuery} 
+                            onSubmit={() => {
+                                fetchAllData(searchQuery);
+                                setIsSearchFocused(false);
+                            }}
+                            onSuggestionSearch={(query) => {
+                                fetchAllData(query);
+                                setIsSearchFocused(false);
+                            }}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => {
+                                // Only blur if search query is empty
+                                if (!searchQuery) {
+                                    setTimeout(() => setIsSearchFocused(false), 200);
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
             )}
 
-            <main className={`container px-0 md:px-4 py-0 md:py-8 ${isSearchFocused ? 'md:block hidden' : ''}`}>
+            <main className={`container px-0 md:px-4 py-0 md:py-8 ${isSearchFocused ? 'hidden' : ''}`}>
                 <section className="flex flex-col gap-1 md:gap-3">
                 {/* Hero Section with Background Image */}
                     <div className="w-full">
