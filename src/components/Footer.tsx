@@ -2,6 +2,19 @@ import { Link } from "react-router-dom";
 import { Compass } from "lucide-react";
 
 export const Footer = () => {
+  // Detect if running in webview/in-app context
+  const isInApp = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('inApp') === 'true' || 
+           urlParams.get('forceHideBadge') === 'true' ||
+           /webview|wv|inapp/i.test(navigator.userAgent);
+  };
+
+  // Don't render footer on small screens when in-app
+  if (typeof window !== 'undefined' && window.innerWidth < 768 && isInApp()) {
+    return null;
+  }
+
   return (
     <footer className="bg-white border-t mt-12 text-gray-900">
       <div className="container px-4 py-8">

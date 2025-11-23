@@ -511,7 +511,7 @@ const Index = () => {
                         <h2 className="text-sm md:text-2xl font-bold mb-4 whitespace-nowrap overflow-hidden text-ellipsis">
                             Near You
                         </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {loadingNearby ? (
                                 [...Array(12)].map((_, i) => (
                                     <ListingSkeleton key={i} />

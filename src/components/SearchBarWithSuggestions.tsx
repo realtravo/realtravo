@@ -27,24 +27,17 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBa
 
   // Effect to fetch suggestions when the value changes or the search bar is focused
   useEffect(() => {
-    // Only fetch if value is 2+ chars OR if the suggestions panel is currently visible (onFocus/tap)
-    if (value.trim().length >= 2 || (showSuggestions && value.trim().length === 0)) {
+    if (showSuggestions) {
       fetchSuggestions();
-    } else if (value.trim().length < 2) {
-      // Clear suggestions if the search text is too short
-      setSuggestions([]);
     }
   }, [value, showSuggestions]);
 
   const fetchSuggestions = async () => {
     const queryValue = value.trim();
-    if (!queryValue) {
-      setSuggestions([]);
-      return;
-    }
-
-    const searchPattern = `%${queryValue}%`;
     
+    // If no search value, fetch recent/popular items
+    const searchPattern = queryValue ? `%${queryValue}%` : `%%`;
+
     try {
       const [tripsData, hotelsData, adventuresData, attractionsData] = await Promise.all([
         supabase.from("trips").select("id, name, location, country, activities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern}`).limit(5),
