@@ -134,14 +134,21 @@ const AdminDashboard = () => {
       : itemType === "attraction" ? "attractions"
       : "adventure_places";
     
+    // Attractions table doesn't have admin_notes column
+    const updateData: any = {
+      approval_status: "approved",
+      approved_by: user?.id,
+      approved_at: new Date().toISOString(),
+    };
+    
+    // Only add admin_notes for tables that support it
+    if (itemType !== "attraction") {
+      updateData.admin_notes = adminNotes[itemId] || null;
+    }
+    
     const { error } = await supabase
       .from(table)
-      .update({ 
-        approval_status: "approved",
-        approved_by: user?.id,
-        approved_at: new Date().toISOString(),
-        admin_notes: adminNotes[itemId] || null
-      })
+      .update(updateData)
       .eq("id", itemId);
 
     if (!error) {
@@ -149,6 +156,7 @@ const AdminDashboard = () => {
       fetchPendingListings();
       fetchApprovedListings();
     } else {
+      console.error("Approval error:", error);
       toast.error("Failed to approve listing");
     }
   };
