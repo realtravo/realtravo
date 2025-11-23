@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,21 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const navigate = useNavigate();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Effect to handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Effect to fetch suggestions when the value changes or the search bar is focused
   useEffect(() => {
@@ -41,9 +56,9 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
 
     try {
       const [tripsData, hotelsData, adventuresData, attractionsData] = await Promise.all([
-        supabase.from("trips").select("id, name, location, country, activities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern}`).limit(5),
-        supabase.from("hotels").select("id, name, location, country, activities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern}`).limit(5),
-        supabase.from("adventure_places").select("id, name, location, country, activities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern}`).limit(5),
+        supabase.from("trips").select("id, name, location, country, activities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern},activities::text.ilike.${searchPattern}`).limit(5),
+        supabase.from("hotels").select("id, name, location, country, activities, facilities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern},activities::text.ilike.${searchPattern},facilities::text.ilike.${searchPattern}`).limit(5),
+        supabase.from("adventure_places").select("id, name, location, country, activities, facilities").or(`name.ilike.${searchPattern},location.ilike.${searchPattern},country.ilike.${searchPattern},activities::text.ilike.${searchPattern},facilities::text.ilike.${searchPattern}`).limit(5),
         supabase.from("attractions").select("id, location_name, country").or(`location_name.ilike.${searchPattern},country.ilike.${searchPattern}`).limit(5)
       ]);
 
@@ -112,7 +127,7 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
   };
 
   return (
-    <div className="relative w-full mx-auto">
+    <div ref={wrapperRef} className="relative w-full mx-auto">
       <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground z-10" />
       <Input
         type="text"
