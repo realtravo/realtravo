@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const AdminDashboard = () => {
@@ -19,8 +20,9 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [pendingListings, setPendingListings] = useState<any[]>([]);
   const [approvedListings, setApprovedListings] = useState<any[]>([]);
-  const [allBookings, setAllBookings] = useState<any[]>([]);
+  const [rejectedListings, setRejectedListings] = useState<any[]>([]);
   const [adminNotes, setAdminNotes] = useState<{ [key: string]: string }>({});
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -51,7 +53,7 @@ const AdminDashboard = () => {
       setIsAdmin(true);
       fetchPendingListings();
       fetchApprovedListings();
-      fetchAllBookings();
+      fetchRejectedListings();
     } catch (error) {
       navigate("/");
     } finally {
@@ -117,14 +119,32 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchAllBookings = async () => {
-    const { data } = await supabase
-      .from("bookings")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const fetchRejectedListings = async () => {
+    try {
+      const [trips, hotels, adventures, attractions] = await Promise.all([
+        supabase.from("trips").select("*").eq("approval_status", "rejected"),
+        supabase.from("hotels").select("*").eq("approval_status", "rejected"),
+        supabase.from("adventure_places").select("*").eq("approval_status", "rejected"),
+        supabase.from("attractions").select("*").eq("approval_status", "rejected")
+      ]);
 
-    if (data) {
-      setAllBookings(data);
+      if (trips.error) console.error("Error fetching rejected trips:", trips.error);
+      if (hotels.error) console.error("Error fetching rejected hotels:", hotels.error);
+      if (adventures.error) console.error("Error fetching rejected adventures:", adventures.error);
+      if (attractions.error) console.error("Error fetching rejected attractions:", attractions.error);
+
+      const all = [
+        ...(trips.data?.map(t => ({ ...t, type: "trip" })) || []),
+        ...(hotels.data?.map(h => ({ ...h, type: "hotel" })) || []),
+        ...(adventures.data?.map(a => ({ ...a, type: "adventure" })) || []),
+        ...(attractions.data?.map(a => ({ ...a, type: "attraction" })) || [])
+      ];
+
+      console.log("Rejected listings:", { trips: trips.data?.length, hotels: hotels.data?.length, adventures: adventures.data?.length, attractions: attractions.data?.length });
+      setRejectedListings(all);
+    } catch (error) {
+      console.error("Error fetching rejected listings:", error);
+      toast.error("Failed to fetch rejected listings");
     }
   };
 
@@ -233,6 +253,7 @@ const AdminDashboard = () => {
         console.log("Rejection successful:", data);
         toast.success("Item rejected successfully");
         await fetchPendingListings();
+        await fetchRejectedListings();
       }
     } catch (err: any) {
       console.error("Unexpected error during rejection:", err);
@@ -271,19 +292,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const getCategoryCount = (category: string, status: 'pending' | 'approved') => {
-    const list = status === 'pending' ? pendingListings : approvedListings;
+  const getCategoryCount = (category: string, status: 'pending' | 'approved' | 'rejected') => {
+    const list = status === 'pending' ? pendingListings : status === 'approved' ? approvedListings : rejectedListings;
     return list.filter(item => item.type === category).length;
   };
 
-  const getBookingCount = (category: string) => {
-    return allBookings.filter(b => b.booking_type === category).length;
+  const getFilteredListings = (status: 'pending' | 'approved' | 'rejected') => {
+    const list = status === 'pending' ? pendingListings : status === 'approved' ? approvedListings : rejectedListings;
+    
+    if (statusFilter === "all") return list;
+    return list.filter(item => item.type === statusFilter);
   };
 
-  const renderListings = (category: string, status: 'pending' | 'approved') => {
-    const items = status === 'pending' 
-      ? pendingListings.filter(item => item.type === category)
-      : approvedListings.filter(item => item.type === category);
+  const renderListings = (category: string, status: 'pending' | 'approved' | 'rejected') => {
+    const items = getFilteredListings(status).filter(item => 
+      statusFilter === "all" ? item.type === category : true
+    );
     
     if (items.length === 0) {
       return (
@@ -380,31 +404,6 @@ const AdminDashboard = () => {
     );
   };
 
-  const renderBookings = (category: string) => {
-    const items = allBookings.filter(b => b.booking_type === category);
-    
-    if (items.length === 0) {
-      return <p className="text-muted-foreground">No {category} bookings</p>;
-    }
-
-    return (
-      <div className="grid gap-4">
-        {items.map((booking) => (
-          <Card key={booking.id} className="p-4 border-0">
-            <div className="flex justify-between">
-              <div>
-                <p className="font-semibold">Booking #{booking.id.slice(0, 8)}</p>
-                <p className="text-sm">Amount: ${booking.total_amount}</p>
-                <p className="text-sm">Status: {booking.status}</p>
-                <p className="text-sm">Date: {new Date(booking.created_at).toLocaleDateString()}</p>
-              </div>
-              <Badge>{booking.payment_status}</Badge>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
-  };
 
   if (loading || authLoading) {
     return (
@@ -426,11 +425,25 @@ const AdminDashboard = () => {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pending">Pending Approval</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
-            <TabsTrigger value="bookings">All Bookings</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-6">
             <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex justify-end mb-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="trip">Trips Only</SelectItem>
+                    <SelectItem value="attraction">Attractions Only</SelectItem>
+                    <SelectItem value="hotel">Hotels Only</SelectItem>
+                    <SelectItem value="adventure">Campsites Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-foreground">Pending Trips</h2>
@@ -467,6 +480,20 @@ const AdminDashboard = () => {
 
           <TabsContent value="approved" className="space-y-6">
             <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex justify-end mb-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="trip">Trips Only</SelectItem>
+                    <SelectItem value="attraction">Attractions Only</SelectItem>
+                    <SelectItem value="hotel">Hotels Only</SelectItem>
+                    <SelectItem value="adventure">Campsites Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-foreground">Approved Trips</h2>
@@ -501,37 +528,54 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="bookings" className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Trip Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('trip')}</Badge>
+          <TabsContent value="rejected" className="space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="flex justify-end mb-4">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="trip">Trips Only</SelectItem>
+                    <SelectItem value="attraction">Attractions Only</SelectItem>
+                    <SelectItem value="hotel">Hotels Only</SelectItem>
+                    <SelectItem value="adventure">Campsites Only</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              {renderBookings('trip')}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Attraction Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('attraction')}</Badge>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-foreground">Rejected Trips</h2>
+                  <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('trip', 'rejected')}</Badge>
+                </div>
+                {renderListings('trip', 'rejected')}
               </div>
-              {renderBookings('attraction')}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Hotel Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('hotel')}</Badge>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-foreground">Rejected Attractions</h2>
+                  <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('attraction', 'rejected')}</Badge>
+                </div>
+                {renderListings('attraction', 'rejected')}
               </div>
-              {renderBookings('hotel')}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Campsite and Experiences Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('adventure')}</Badge>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-foreground">Rejected Hotels</h2>
+                  <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('hotel', 'rejected')}</Badge>
+                </div>
+                {renderListings('hotel', 'rejected')}
               </div>
-              {renderBookings('adventure')}
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-foreground">Rejected Campsite and Experiences</h2>
+                  <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('adventure', 'rejected')}</Badge>
+                </div>
+                {renderListings('adventure', 'rejected')}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
