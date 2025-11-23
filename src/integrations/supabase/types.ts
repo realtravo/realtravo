@@ -558,6 +558,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          subscription_data: Json
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          subscription_data: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          subscription_data?: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       referral_commissions: {
         Row: {
           booking_amount: number
