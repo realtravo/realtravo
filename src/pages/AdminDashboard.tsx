@@ -129,56 +129,77 @@ const AdminDashboard = () => {
   };
 
   const handleApprove = async (itemId: string, itemType: string) => {
-    const table = itemType === "trip" ? "trips" 
-      : itemType === "hotel" ? "hotels" 
-      : itemType === "attraction" ? "attractions"
-      : "adventure_places";
-    
-    // Attractions table doesn't have admin_notes column
-    const updateData: any = {
-      approval_status: "approved",
-      approved_by: user?.id,
-      approved_at: new Date().toISOString(),
-    };
-    
-    // Only add admin_notes for tables that support it
-    if (itemType !== "attraction") {
-      updateData.admin_notes = adminNotes[itemId] || null;
-    }
-    
-    const { error } = await supabase
-      .from(table)
-      .update(updateData)
-      .eq("id", itemId);
+    try {
+      console.log("Approving item:", { itemId, itemType, userId: user?.id });
+      
+      const table = itemType === "trip" ? "trips" 
+        : itemType === "hotel" ? "hotels" 
+        : itemType === "attraction" ? "attractions"
+        : "adventure_places";
+      
+      // Attractions table doesn't have admin_notes column
+      const updateData: any = {
+        approval_status: "approved",
+        approved_by: user?.id,
+        approved_at: new Date().toISOString(),
+      };
+      
+      // Only add admin_notes for tables that support it
+      if (itemType !== "attraction") {
+        updateData.admin_notes = adminNotes[itemId] || null;
+      }
+      
+      console.log("Update data:", updateData);
+      
+      const { data, error } = await supabase
+        .from(table)
+        .update(updateData)
+        .eq("id", itemId)
+        .select();
 
-    if (!error) {
-      toast.success("Listing approved successfully");
-      fetchPendingListings();
-      fetchApprovedListings();
-    } else {
-      console.error("Approval error:", error);
-      toast.error("Failed to approve listing");
+      if (error) {
+        console.error("Approval error details:", error);
+        toast.error(`Failed to approve: ${error.message}`);
+      } else {
+        console.log("Approval successful:", data);
+        toast.success("Listing approved successfully");
+        fetchPendingListings();
+        fetchApprovedListings();
+      }
+    } catch (err) {
+      console.error("Unexpected error during approval:", err);
+      toast.error("An unexpected error occurred");
     }
   };
 
   const handleReject = async (itemId: string, itemType: string) => {
-    const table = itemType === "trip" ? "trips" 
-      : itemType === "hotel" ? "hotels" 
-      : itemType === "attraction" ? "attractions"
-      : "adventure_places";
-    
-    const { error } = await supabase
-      .from(table as any)
-      .update({ 
-        approval_status: "rejected"
-      })
-      .eq("id", itemId);
+    try {
+      console.log("Rejecting item:", { itemId, itemType, userId: user?.id });
+      
+      const table = itemType === "trip" ? "trips" 
+        : itemType === "hotel" ? "hotels" 
+        : itemType === "attraction" ? "attractions"
+        : "adventure_places";
+      
+      const { data, error } = await supabase
+        .from(table as any)
+        .update({ 
+          approval_status: "rejected"
+        })
+        .eq("id", itemId)
+        .select();
 
-    if (!error) {
-      toast.success("Listing rejected");
-      fetchPendingListings();
-    } else {
-      toast.error("Failed to reject listing");
+      if (error) {
+        console.error("Rejection error details:", error);
+        toast.error(`Failed to reject: ${error.message}`);
+      } else {
+        console.log("Rejection successful:", data);
+        toast.success("Listing rejected");
+        fetchPendingListings();
+      }
+    } catch (err) {
+      console.error("Unexpected error during rejection:", err);
+      toast.error("An unexpected error occurred");
     }
   };
 
