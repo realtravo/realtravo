@@ -367,7 +367,6 @@ export default function AttractionDetail() {
               <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
             </Button>
           </div>
-          </div>
 
           {/* Entrance Fee Card */}
           <Card className="p-6">
@@ -416,7 +415,7 @@ export default function AttractionDetail() {
             Book Now
           </Button>
         </div>
-        </div>
+      </div>
 
         {/* Description and Operating Hours Below */}
         <div className="space-y-6 mt-6">
