@@ -408,8 +408,8 @@ const Index = () => {
                                 </div>
                             ) : scrollableRows.campsites.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-8 w-full">No campsites available</p>
-                            ) : (
-                scrollableRows.campsites.map((place) => (
+            ) : (
+                scrollableRows.campsites.map((place, index) => (
                                     <div key={place.id} className="flex-shrink-0 w-[85vw] md:w-64 snap-center md:snap-align-none">
                                         <ListingCard
                                             id={place.id}
@@ -423,10 +423,11 @@ const Index = () => {
                                             onSave={handleSave}
                                             isSaved={savedItems.has(place.id)}
                                             hidePrice={true}
+                                            priority={index === 0}
                                         />
                                     </div>
-                                ))
-                            )}
+                ))
+            )}
                         </div>
                     </section>
 
