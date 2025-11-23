@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, X, TrendingUp } from "lucide-react";
+import { getSessionId } from "@/lib/sessionManager";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SearchBarProps {
   value: string;
@@ -27,20 +29,39 @@ interface SearchResult {
 const SEARCH_HISTORY_KEY = "search_history";
 const MAX_HISTORY_ITEMS = 10;
 
+interface TrendingSearch {
+  query: string;
+  search_count: number;
+}
+
 export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggestionSearch, onFocus, onBlur }: SearchBarProps) => {
+  const { user } = useAuth();
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [trendingSearches, setTrendingSearches] = useState<TrendingSearch[]>([]);
   const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Load search history from localStorage
+  // Load search history and trending searches from database
   useEffect(() => {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY);
     if (history) {
       setSearchHistory(JSON.parse(history));
     }
+    fetchTrendingSearches();
   }, []);
+
+  const fetchTrendingSearches = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_trending_searches', { limit_count: 10 });
+      if (!error && data) {
+        setTrendingSearches(data);
+      }
+    } catch (error) {
+      console.error("Error fetching trending searches:", error);
+    }
+  };
 
   // Effect to handle click outside
   useEffect(() => {
@@ -116,10 +137,11 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
     return "";
   };
 
-  const saveToHistory = (query: string) => {
+  const saveToHistory = async (query: string) => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
+    // Save to localStorage
     const updatedHistory = [
       trimmedQuery,
       ...searchHistory.filter(item => item !== trimmedQuery)
@@ -127,6 +149,19 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
 
     setSearchHistory(updatedHistory);
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+
+    // Save to database for trending searches
+    try {
+      await supabase.from('search_queries').insert({
+        query: trimmedQuery,
+        user_id: user?.id || null,
+        session_id: user ? null : getSessionId()
+      });
+      // Refresh trending searches
+      fetchTrendingSearches();
+    } catch (error) {
+      console.error("Error saving search query:", error);
+    }
   };
 
   const clearHistory = () => {
@@ -219,39 +254,67 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
 
       {showSuggestions && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-card border rounded-lg shadow-lg max-h-96 overflow-y-auto z-[150]">
-          {/* Show search history when no value or search results */}
-          {!value.trim() && searchHistory.length > 0 && (
+          {/* Show search history and trending when no value */}
+          {!value.trim() && (
             <div>
-              <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs font-medium text-muted-foreground">Recent Searches</p>
-                </div>
-                <button
-                  onClick={clearHistory}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Clear All
-                </button>
-              </div>
-              {searchHistory.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleHistoryClick(item)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left border-b last:border-b-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm">{item}</p>
+              {searchHistory.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs font-medium text-muted-foreground">Recent Searches</p>
+                    </div>
+                    <button
+                      onClick={clearHistory}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Clear All
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => removeHistoryItem(item, e)}
-                    className="p-1 hover:bg-muted rounded-full transition-colors"
-                  >
-                    <X className="h-3 w-3 text-muted-foreground" />
-                  </button>
-                </button>
-              ))}
+                  {searchHistory.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleHistoryClick(item)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left border-b last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm">{item}</p>
+                      </div>
+                      <button
+                        onClick={(e) => removeHistoryItem(item, e)}
+                        className="p-1 hover:bg-muted rounded-full transition-colors"
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {trendingSearches.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground">Trending Searches</p>
+                  </div>
+                  {trendingSearches.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleHistoryClick(item.query)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left border-b last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <p className="text-sm">{item.query}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {item.search_count} searches
+                      </span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

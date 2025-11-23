@@ -742,6 +742,30 @@ export type Database = {
         }
         Relationships: []
       }
+      search_queries: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           activities: Json | null
@@ -944,6 +968,13 @@ export type Database = {
       get_date_availability: {
         Args: { p_date: string; p_item_id: string; p_item_type: string }
         Returns: Json
+      }
+      get_trending_searches: {
+        Args: { limit_count?: number }
+        Returns: {
+          query: string
+          search_count: number
+        }[]
       }
       has_role: {
         Args: {

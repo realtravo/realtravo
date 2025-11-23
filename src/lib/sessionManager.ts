@@ -30,3 +30,18 @@ export const getUserId = async (): Promise<string | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   return user?.id || null;
 };
+
+/**
+ * Get or create a simple session ID for tracking purposes (non-authenticated)
+ */
+export const getSessionId = (): string => {
+  const SESSION_KEY = 'app_session_id';
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem(SESSION_KEY, sessionId);
+  }
+  
+  return sessionId;
+};
