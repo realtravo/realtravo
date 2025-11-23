@@ -21,7 +21,7 @@ interface ListingCardProps {
   availableTickets?: number;
   bookedTickets?: number;
   showBadge?: boolean;
-  priority?: boolean; // Add priority prop for LCP optimization
+  priority?: boolean;
 }
 
 export const ListingCard = ({
@@ -41,29 +41,10 @@ export const ListingCard = ({
   availableTickets,
   bookedTickets,
   showBadge = false,
-  priority = false, // Default to false
+  priority = false,
 }: ListingCardProps) => {
   const navigate = useNavigate();
 
-<<<<<<< HEAD
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Check if user is logged in
-    const { data: { session } = {} } = await supabase.auth.getSession();
-    if (!session) {
-      // Redirect to login with a message
-      navigate("/auth");
-      return;
-    }
-
-    setSaved(!saved);
-    onSave?.(id, type.toLowerCase().replace(" ", "_"));
-  };
-
-=======
-  // 🗺️ NAVIGATION LOGIC (UNCHANGED)
->>>>>>> 95dc4a0f02d6b7b515965fe89eaf5917cf8879ab
   const handleCardClick = () => {
     const typeMap: Record<string, string> = {
       "TRIP": "trip",
@@ -76,7 +57,6 @@ export const ListingCard = ({
     navigate(`/${typeMap[type]}/${id}`);
   };
 
-  // Function to format the date as 'Month Day, Year'
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     const options: Intl.DateTimeFormatOptions = { 
@@ -103,32 +83,12 @@ export const ListingCard = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 m-0 p-0"
         />
         
-        {/* Category Badge - Top-Left - Only show when showBadge is true */}
         {showBadge && (
           <Badge className="absolute top-2 left-2 bg-red-600 text-white backdrop-blur text-[0.6rem] z-10 p-1">
             {type}
           </Badge>
         )}
 
-<<<<<<< HEAD
-        {/* Save Button (Red, no background, hover blue) */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleSave}
-          className={cn(
-            "absolute top-2 right-2 h-7 w-7 rounded-full transition-all z-10 text-red-500 hover:bg-blue-500 hover:text-white"
-          )}
-        >
-          <Heart
-            className={cn(
-              "h-3 w-3 transition-all", // Smaller icon
-              saved ? "fill-red-500 text-red-500" : "text-red-500"
-            )}
-          />
-        </Button>
-=======
-        {/* Price Tag - Top-Right Corner - Only for TRIP and EVENT */}
         {!hidePrice && price !== undefined && (type === "TRIP" || type === "EVENT") && (
           <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1.5 md:px-2 md:py-1 rounded-full shadow-lg z-10">
             <p className="font-bold text-sm md:text-xs whitespace-nowrap">
@@ -136,9 +96,7 @@ export const ListingCard = ({
             </p>
           </div>
         )}
->>>>>>> 95dc4a0f02d6b7b515965fe89eaf5917cf8879ab
 
-        {/* Date Tag - Bottom-Right Corner - For trips/events */}
         {(date || isCustomDate) && (
           <div className="absolute bottom-2 right-2 bg-background/90 backdrop-blur text-foreground px-2 py-1 rounded-md shadow-md z-10">
             <p className="text-xs font-semibold">
@@ -148,33 +106,18 @@ export const ListingCard = ({
         )}
       </div>
       
-<<<<<<< HEAD
-      {/* Name, Location, and Date Details - Below the image */}
-      <div className="p-1.5 flex flex-col space-y-0.5"> {/* Smaller padding and spacing */}
-        <h3 className="font-bold text-xs line-clamp-1">{name}</h3> {/* Smaller font */}
-
-        {/* LOCATION - Left below title name with icon */}
-        <div className="flex items-center space-x-0.5 text-[0.6rem] text-gray-600 dark:text-gray-400"> {/* Smaller font and spacing */}
-          <MapPin className="h-3 w-3 shrink-0" /> {/* Smaller icon */}
-          <p className="line-clamp-1">
-=======
-      {/* Content below the image */}
       <div className="p-3 md:p-4 flex flex-col space-y-2">
-        {/* Name */}
         <h3 className="font-bold text-sm md:text-base line-clamp-2">
-          {type === "ADVENTURE PLACE" ? "experience" : name}
+          {name}
         </h3>
         
-        {/* Location with icon */}
         <div className="flex items-center gap-1">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
           <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
->>>>>>> 95dc4a0f02d6b7b515965fe89eaf5917cf8879ab
             {location}, {country}
           </p>
         </div>
         
-        {/* EVENT CAPACITY - Only for events */}
         {type === "EVENT" && availableTickets !== undefined && (
           <div className="flex items-center justify-between pt-1 border-t border-border/50">
             <p className="text-xs md:text-sm font-medium text-muted-foreground">
