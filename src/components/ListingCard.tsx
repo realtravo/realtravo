@@ -108,7 +108,7 @@ export const ListingCard = ({
       
       <div className="p-3 md:p-4 flex flex-col space-y-2">
         <h3 className="font-bold text-sm md:text-base line-clamp-2">
-          {name}
+          {type === "ADVENTURE PLACE" ? "experience" : name}
         </h3>
         
         <div className="flex items-center gap-1">
