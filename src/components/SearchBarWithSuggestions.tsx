@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Clock, X } from "lucide-react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,23 @@ interface SearchResult {
   activities?: any;
 }
 
+const SEARCH_HISTORY_KEY = "search_history";
+const MAX_HISTORY_ITEMS = 10;
+
 export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggestionSearch, onFocus, onBlur }: SearchBarProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Load search history from localStorage
+  useEffect(() => {
+    const history = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (history) {
+      setSearchHistory(JSON.parse(history));
+    }
+  }, []);
 
   // Effect to handle click outside
   useEffect(() => {
@@ -45,7 +58,7 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
 
   // Effect to fetch suggestions when the value changes or the search bar is focused
   useEffect(() => {
-    if (showSuggestions) {
+    if (showSuggestions && value.trim()) {
       fetchSuggestions();
     }
   }, [value, showSuggestions]);
@@ -103,15 +116,42 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
     return "";
   };
 
+  const saveToHistory = (query: string) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    const updatedHistory = [
+      trimmedQuery,
+      ...searchHistory.filter(item => item !== trimmedQuery)
+    ].slice(0, MAX_HISTORY_ITEMS);
+
+    setSearchHistory(updatedHistory);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+  };
+
+  const clearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  };
+
+  const removeHistoryItem = (item: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updatedHistory = searchHistory.filter(h => h !== item);
+    setSearchHistory(updatedHistory);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       setShowSuggestions(false);
+      saveToHistory(value);
       onSubmit();
     }
   };
 
   const handleSuggestionClick = (result: SearchResult) => {
     setShowSuggestions(false);
+    saveToHistory(result.name);
     // If onSuggestionSearch is provided, trigger search instead of navigation
     if (onSuggestionSearch) {
       onChange(result.name);
@@ -119,6 +159,16 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
     } else {
       // Otherwise navigate to detail page
       navigate(`/${result.type}/${result.id}`);
+    }
+  };
+
+  const handleHistoryClick = (historyItem: string) => {
+    onChange(historyItem);
+    setShowSuggestions(false);
+    if (onSuggestionSearch) {
+      onSuggestionSearch(historyItem);
+    } else {
+      onSubmit();
     }
   };
 
@@ -157,37 +207,81 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
         className="pl-10 md:pl-12 pr-20 md:pr-24 h-10 md:h-14 text-sm md:text-lg rounded-full border-2 focus-visible:border-primary shadow-md"
       />
       <Button
-        onClick={onSubmit}
+        onClick={() => {
+          saveToHistory(value);
+          onSubmit();
+        }}
         size="sm"
         className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 md:h-12 px-4 md:px-6"
       >
         Search
       </Button>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-card border rounded-lg shadow-lg max-h-96 overflow-y-auto z-[150]">
-          {suggestions.map((result) => (
-            <button
-              key={result.id}
-              onClick={() => handleSuggestionClick(result)}
-              className="w-full px-4 py-3 flex flex-col gap-1 hover:bg-accent transition-colors text-left border-b last:border-b-0"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-sm flex-1">{result.name}</p>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap">
-                  {getTypeLabel(result.type)}
-                </span>
+          {/* Show search history when no value or search results */}
+          {!value.trim() && searchHistory.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-medium text-muted-foreground">Recent Searches</p>
+                </div>
+                <button
+                  onClick={clearHistory}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Clear All
+                </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {result.location && `${result.location}, `}{result.country}
-              </p>
-              {getActivitiesText(result.activities) && (
-                <p className="text-xs text-primary font-medium">
-                  {getActivitiesText(result.activities)}
-                </p>
-              )}
-            </button>
-          ))}
+              {searchHistory.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleHistoryClick(item)}
+                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">{item}</p>
+                  </div>
+                  <button
+                    onClick={(e) => removeHistoryItem(item, e)}
+                    className="p-1 hover:bg-muted rounded-full transition-colors"
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Show search suggestions when typing */}
+          {value.trim() && suggestions.length > 0 && (
+            <>
+              {suggestions.map((result) => (
+                <button
+                  key={result.id}
+                  onClick={() => handleSuggestionClick(result)}
+                  className="w-full px-4 py-3 flex flex-col gap-1 hover:bg-accent transition-colors text-left border-b last:border-b-0"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-sm flex-1">{result.name}</p>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium whitespace-nowrap">
+                      {getTypeLabel(result.type)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {result.location && `${result.location}, `}{result.country}
+                  </p>
+                  {getActivitiesText(result.activities) && (
+                    <p className="text-xs text-primary font-medium">
+                      {getActivitiesText(result.activities)}
+                    </p>
+                  )}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
