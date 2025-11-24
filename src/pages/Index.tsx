@@ -29,7 +29,7 @@ const Index = () => {
     const [isSearchVisible, setIsSearchVisible] = useState(true);
     const [showSearchIcon, setShowSearchIcon] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
-    const [scrollableRows, setScrollableRows] = useState<{ trips: any[], hotels: any[], attractions: any[], campsites: any[] }>({ trips: [], hotels: [], attractions: [], campsites: [] });
+    const [scrollableRows, setScrollableRows] = useState<{ trips: any[], hotels: any[], attractions: any[], campsites: any[], events: any[] }>({ trips: [], hotels: [], attractions: [], campsites: [], events: [] });
     const [nearbyPlacesHotels, setNearbyPlacesHotels] = useState<any[]>([]);
     const [loadingScrollable, setLoadingScrollable] = useState(true);
     const [loadingNearby, setLoadingNearby] = useState(true);
@@ -40,11 +40,12 @@ const Index = () => {
     const fetchScrollableRows = async () => {
         setLoadingScrollable(true);
         try {
-            const [tripsData, hotelsData, attractionsData, campsitesData] = await Promise.all([
-                supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
+            const [tripsData, hotelsData, attractionsData, campsitesData, eventsData] = await Promise.all([
+                supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "trip").limit(10),
                 supabase.from("hotels").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
                 supabase.from("attractions").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
-                supabase.from("adventure_places").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10)
+                supabase.from("adventure_places").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(10),
+                supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "event").limit(10)
             ]);
 
             console.log("Fetched scrollable data:", {
@@ -67,6 +68,11 @@ const Index = () => {
                     count: campsitesData.data?.length || 0,
                     error: campsitesData.error,
                     data: campsitesData.data
+                },
+                events: {
+                    count: eventsData.data?.length || 0,
+                    error: eventsData.error,
+                    data: eventsData.data
                 }
             });
 
@@ -74,16 +80,17 @@ const Index = () => {
                 trips: tripsData.data || [],
                 hotels: hotelsData.data || [],
                 attractions: attractionsData.data || [],
-                campsites: campsitesData.data || []
+                campsites: campsitesData.data || [],
+                events: eventsData.data || []
             });
             
             // Fetch booking statistics for trips/events
-            const tripIds = (tripsData.data || []).map((trip: any) => trip.id);
-            if (tripIds.length > 0) {
+            const allTripIds = [...(tripsData.data || []), ...(eventsData.data || [])].map((trip: any) => trip.id);
+            if (allTripIds.length > 0) {
                 const { data: bookingsData } = await supabase
                     .from('bookings')
                     .select('item_id, slots_booked')
-                    .in('item_id', tripIds)
+                    .in('item_id', allTripIds)
                     .in('status', ['confirmed', 'pending']);
                 
                 if (bookingsData) {
@@ -510,6 +517,53 @@ const Index = () => {
                         )}
                     </section>
 
+
+                    <hr className="border-t border-gray-200 my-2 md:my-6" />
+
+                    {/* Featured Events */}
+                    <section className="mb-3 md:mb-8">
+                        <div className="flex justify-between items-center mb-2 md:mb-4">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                                Featured Events
+                            </h2>
+                            <Link to="/category/events" className="text-primary text-3xs md:text-sm hover:underline">
+                                View All
+                            </Link>
+                        </div>
+                        <div className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory md:snap-none">
+                            {loadingScrollable ? (
+                                <div className="flex gap-2 md:gap-4">
+                                    {[...Array(5)].map((_, i) => (
+                                        <div key={i} className="flex-shrink-0 w-[85vw] md:w-64 snap-center md:snap-align-none">
+                                            <ListingSkeleton />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : scrollableRows.events.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-8 w-full">No events available</p>
+                            ) : (
+                                scrollableRows.events.map((event, index) => (
+                                    <div key={event.id} className="flex-shrink-0 w-[85vw] md:w-64 snap-center md:snap-align-none">
+                                        <ListingCard
+                                            id={event.id}
+                                            type="EVENT"
+                                            name={event.name}
+                                            imageUrl={event.image_url}
+                                            location={event.location}
+                                            country={event.country}
+                                            price={event.price}
+                                            date={event.date}
+                                            isCustomDate={event.is_custom_date}
+                                            onSave={handleSave}
+                                            isSaved={savedItems.has(event.id)}
+                                            showBadge={true}
+                                            priority={index === 0}
+                                        />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </section>
 
                     <hr className="border-t border-gray-200 my-2 md:my-6" />
 

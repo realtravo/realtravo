@@ -33,12 +33,19 @@ const CategoryDetail = () => {
       title: string;
       tables: string[];
       type: string;
+      eventType?: string;
     };
   } = {
     trips: {
       title: "Trips",
       tables: ["trips"],
       type: "TRIP"
+    },
+    events: {
+      title: "Events",
+      tables: ["trips"],
+      type: "EVENT",
+      eventType: "event"
     },
     hotels: {
       title: "Hotels",
@@ -108,11 +115,21 @@ const CategoryDetail = () => {
     const allData: any[] = [];
     
     for (const table of config.tables) {
-      const { data } = await supabase
+      let query = supabase
         .from(table as any)
         .select("*")
         .eq("approval_status", "approved")
         .eq("is_hidden", false);
+      
+      // Filter by event type if specified
+      if (config.eventType) {
+        query = query.eq("type", config.eventType);
+      } else if (category === "trips") {
+        // For trips category, only show trips (not events)
+        query = query.eq("type", "trip");
+      }
+      
+      const { data } = await query;
       
       if (data && Array.isArray(data)) {
         allData.push(...data.map((item: any) => ({ ...item, table })));
