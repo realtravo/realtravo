@@ -6,7 +6,7 @@ import { MapPin } from "lucide-react";
 
 interface SimilarItemsProps {
   currentItemId: string;
-  itemType: "trip" | "hotel" | "adventure" | "attraction";
+  itemType: "trip" | "hotel" | "adventure" | "attraction" | "event";
   location?: string;
   country?: string;
 }
@@ -90,7 +90,7 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
   if (loading || items.length === 0) return null;
 
   const getTitleByType = () => {
-    const type = itemType as "adventure" | "hotel" | "attraction" | "trip";
+    const type = itemType as "adventure" | "hotel" | "attraction" | "trip" | "event";
     switch(type) {
       case "adventure":
         return "Similar Campsites & Experiences";
@@ -98,6 +98,8 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
         return "Similar Hotels";
       case "attraction":
         return "Similar Attractions";
+      case "event":
+        return "Similar Events";
       case "trip":
         return "Similar Trips";
       default:
