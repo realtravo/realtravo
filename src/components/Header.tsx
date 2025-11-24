@@ -17,6 +17,7 @@ import {
 import { NavigationDrawer } from "./NavigationDrawer";
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 
 interface HeaderProps {
   onSearchClick?: () => void;
@@ -170,29 +171,22 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
             </button>
           )}
             
-          {/* Mobile: Account Icon (Right Side) */}
+          {/* Mobile: Notification Bell replaces Account Icon */}
           <div className="md:hidden flex items-center gap-2">
-            <button 
-              onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="flex items-center gap-2 text-white hover:text-white/80 transition-colors"
-            >
-              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-sm">
-                <User className="h-4 w-4" />
-              </div>
-            </button>
+            <NotificationBell />
           </div>
 
-          {/* Desktop Auth Actions (Right Side) - MODIFIED SECTION */}
+          {/* Desktop Auth Actions (Right Side) - Account, Notification, Theme */}
           <div className="hidden md:flex items-center gap-2">
-            <ThemeToggle />
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
               className="rounded-full h-10 w-10 flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="Account"
             >
-              {/* This is the change: Always show the User icon for desktop */}
               <User className="h-5 w-5 text-white" />
             </button>
+            <NotificationBell />
+            <ThemeToggle />
           </div>
         </div>
       </div>
