@@ -1,6 +1,7 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -67,6 +68,13 @@ export const ListingCard = ({
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSave) {
+      onSave(id, type);
+    }
+  };
+
   return (
     <Card 
       onClick={handleCardClick}
@@ -95,8 +103,24 @@ export const ListingCard = ({
           </Badge>
         )}
 
+        {onSave && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSaveClick}
+            className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur hover:bg-background/90"
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4",
+                isSaved ? "fill-primary text-primary" : "text-foreground"
+              )}
+            />
+          </Button>
+        )}
+
         {!hidePrice && price !== undefined && (type === "TRIP" || type === "EVENT") && (
-          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1.5 md:px-2 md:py-1 rounded-full shadow-lg z-10">
+          <div className="absolute bottom-2 left-2 bg-primary text-primary-foreground px-3 py-1.5 md:px-2 md:py-1 rounded-full shadow-lg z-10">
             <p className="font-bold text-sm md:text-xs whitespace-nowrap">
               KSh {price}
             </p>
