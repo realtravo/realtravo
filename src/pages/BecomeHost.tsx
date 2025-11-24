@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Plane, Building, Tent, MapPin } from "lucide-react";
+import { Plane, Building, Tent, MapPin, Plus } from "lucide-react";
 
 const BecomeHost = () => {
   const { user } = useAuth();
@@ -215,24 +215,37 @@ const BecomeHost = () => {
           </button>
 
           {/* Hotels Card */}
-          <button
-            onClick={() => navigate("/host/category/hotels")}
-            className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
-            <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
-              <Building className="h-10 w-10 mb-3" />
-              <span className="text-xl font-bold mb-2">Hotels</span>
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {myContent.filter(i => i.type === 'hotel').length} Created
-              </Badge>
-            </div>
-          </button>
+          <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
+            <button
+              onClick={() => navigate("/host/category/hotels")}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
+              <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
+                <Building className="h-10 w-10 mb-3" />
+                <span className="text-xl font-bold mb-2">Hotels</span>
+                <Badge variant="secondary" className="bg-white/90 text-foreground">
+                  {myContent.filter(i => i.type === 'hotel').length} Created
+                </Badge>
+              </div>
+            </button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/create-hotel");
+              }}
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Hotel
+            </Button>
+          </div>
 
           {/* Attractions Card */}
           <button
@@ -255,24 +268,37 @@ const BecomeHost = () => {
           </button>
 
           {/* Experiences Card */}
-          <button
-            onClick={() => navigate("/host/category/experiences")}
-            className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
-            <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
-              <Tent className="h-10 w-10 mb-3" />
-              <span className="text-xl font-bold mb-2">Experiences</span>
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {myContent.filter(i => i.type === 'adventure').length} Created
-              </Badge>
-            </div>
-          </button>
+          <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
+            <button
+              onClick={() => navigate("/host/category/experiences")}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
+              <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
+                <Tent className="h-10 w-10 mb-3" />
+                <span className="text-xl font-bold mb-2">Experiences</span>
+                <Badge variant="secondary" className="bg-white/90 text-foreground">
+                  {myContent.filter(i => i.type === 'adventure').length} Created
+                </Badge>
+              </div>
+            </button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/create-adventure");
+              }}
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Experience
+            </Button>
+          </div>
         </div>
       </main>
       <Footer />
