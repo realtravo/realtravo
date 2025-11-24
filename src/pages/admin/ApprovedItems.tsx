@@ -5,7 +5,8 @@ import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Plane, Building, Tent, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronRight, Plane, Building, Tent, MapPin, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,7 +23,9 @@ const ApprovedItems = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [items, setItems] = useState<ListingItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -55,13 +58,29 @@ const ApprovedItems = () => {
         })) || []),
       ];
 
-      setItems(allItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      const sortedItems = allItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setItems(sortedItems);
+      setFilteredItems(sortedItems);
     } catch (error) {
       console.error("Error fetching approved items:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredItems(items);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.location.toLowerCase().includes(query)
+      );
+      setFilteredItems(filtered);
+    }
+  }, [searchQuery, items]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -90,16 +109,29 @@ const ApprovedItems = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container px-4 py-8 max-w-4xl mx-auto mb-20 md:mb-0">
-        <h1 className="text-3xl font-bold mb-8">Approved Items</h1>
+        <h1 className="text-3xl font-bold mb-6">Approved Items</h1>
 
-        {items.length === 0 ? (
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by name or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {filteredItems.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No approved items</p>
+            <p className="text-muted-foreground">
+              {searchQuery ? "No items match your search" : "No approved items"}
+            </p>
           </Card>
         ) : (
           <Card>
             <div className="divide-y divide-border">
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const Icon = getIcon(item.type);
                 return (
                   <button
