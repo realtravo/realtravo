@@ -205,24 +205,37 @@ const BecomeHost = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Tours Card */}
-          <button
-            onClick={() => navigate("/host/category/trips")}
-            className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
-            <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
-              <Plane className="h-10 w-10 mb-3" />
-              <span className="text-xl font-bold mb-2">Tours</span>
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {myContent.filter(i => i.type === 'trip').length} Created
-              </Badge>
-            </div>
-          </button>
+          <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
+            <button
+              onClick={() => navigate("/host/category/trips")}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
+              <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
+                <Plane className="h-10 w-10 mb-3" />
+                <span className="text-xl font-bold mb-2">Tours</span>
+                <Badge variant="secondary" className="bg-white/90 text-foreground">
+                  {myContent.filter(i => i.type === 'trip').length} Created
+                </Badge>
+              </div>
+            </button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/CreateTripEvent");
+              }}
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Tour
+            </Button>
+          </div>
 
           {/* Hotels Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
@@ -258,24 +271,37 @@ const BecomeHost = () => {
           </div>
 
           {/* Attractions Card */}
-          <button
-            onClick={() => navigate("/host/category/attractions")}
-            className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
-            <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
-              <MapPin className="h-10 w-10 mb-3" />
-              <span className="text-xl font-bold mb-2">Attractions</span>
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {myContent.filter(i => i.type === 'attraction').length} Created
-              </Badge>
-            </div>
-          </button>
+          <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
+            <button
+              onClick={() => navigate("/host/category/attractions")}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: 'url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all" />
+              <div className="relative h-full flex flex-col items-center justify-center text-white p-6">
+                <MapPin className="h-10 w-10 mb-3" />
+                <span className="text-xl font-bold mb-2">Attractions</span>
+                <Badge variant="secondary" className="bg-white/90 text-foreground">
+                  {myContent.filter(i => i.type === 'attraction').length} Created
+                </Badge>
+              </div>
+            </button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/create-attraction");
+              }}
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Attraction
+            </Button>
+          </div>
 
           {/* Experiences Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
