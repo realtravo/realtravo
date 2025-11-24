@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Plane, Building, Tent, ChevronRight, Package, MapPin } from "lucide-react";
+import { Plane, Building, Tent, ChevronRight, MapPin } from "lucide-react";
 
 const BecomeHost = () => {
   const { user } = useAuth();
@@ -193,85 +193,73 @@ const BecomeHost = () => {
       <main className="flex-1 container px-4 py-8 mb-20 md:mb-0">
         <h1 className="text-3xl font-bold mb-6">Become a Host</h1>
 
-        {/* Create New Content Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-8">
-          <Card className="p-3 md:p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/CreateTripEvent")}>
-            <div className="flex flex-col items-center text-center space-y-1 md:space-y-3">
-              <Plane className="h-6 w-6 md:h-12 md:w-12 text-blue-600" />
-              <h3 className="font-semibold text-xs md:text-lg">Create Tour</h3>
-              <Button size="sm" className="w-full text-xs md:text-sm">Create</Button>
-            </div>
-          </Card>
+        <Card>
+          <div className="divide-y divide-border">
+            <button
+              onClick={() => navigate("/host/category/trips")}
+              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <Plane className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">Tours</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {myContent.filter(i => i.type === 'trip').length}
+                </Badge>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </button>
 
-          <Card className="p-3 md:p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/CreateHotel")}>
-            <div className="flex flex-col items-center text-center space-y-1 md:space-y-3">
-              <Building className="h-6 w-6 md:h-12 md:w-12 text-green-600" />
-              <h3 className="font-semibold text-xs md:text-lg">Create Hotel</h3>
-              <Button size="sm" className="w-full text-xs md:text-sm">Create</Button>
-            </div>
-          </Card>
+            <button
+              onClick={() => navigate("/host/category/hotels")}
+              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <Building className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">Hotels</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {myContent.filter(i => i.type === 'hotel').length}
+                </Badge>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </button>
 
-          <Card className="p-3 md:p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/create-attraction")}>
-            <div className="flex flex-col items-center text-center space-y-1 md:space-y-3">
-              <MapPin className="h-6 w-6 md:h-12 md:w-12 text-orange-600" />
-              <h3 className="font-semibold text-xs md:text-lg">Attraction</h3>
-              <Button size="sm" className="w-full text-xs md:text-sm">Create</Button>
-            </div>
-          </Card>
+            <button
+              onClick={() => navigate("/host/category/attractions")}
+              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">Attractions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {myContent.filter(i => i.type === 'attraction').length}
+                </Badge>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </button>
 
-          <Card className="p-3 md:p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/CreateAdventure")}>
-            <div className="flex flex-col items-center text-center space-y-1 md:space-y-3">
-              <Tent className="h-6 w-6 md:h-12 md:w-12 text-purple-600" />
-              <h3 className="font-semibold text-xs md:text-lg">Experience</h3>
-              <Button size="sm" className="w-full text-xs md:text-sm">Create</Button>
-            </div>
-          </Card>
-        </div>
-
-        {/* My Created Items Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-6 w-6" />
-              <h2 className="text-2xl font-bold">My Created Items</h2>
-            </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2">
-              {myContent.length} Items
-            </Badge>
+            <button
+              onClick={() => navigate("/host/category/experiences")}
+              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-4">
+                <Tent className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">Experiences</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {myContent.filter(i => i.type === 'adventure').length}
+                </Badge>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </button>
           </div>
-
-          {myContent.length === 0 ? (
-            <Card>
-              <div className="p-8 text-center">
-                <p className="text-muted-foreground">You haven't created any items yet. Start by creating your first listing above!</p>
-              </div>
-            </Card>
-          ) : (
-            <Card>
-              <div className="divide-y divide-border">
-                {myContent.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(`/edit-listing/${item.type}/${item.id}`)}
-                    className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      {item.type === 'trip' && <Plane className="h-5 w-5 text-muted-foreground" />}
-                      {item.type === 'hotel' && <Building className="h-5 w-5 text-muted-foreground" />}
-                      {item.type === 'adventure' && <Tent className="h-5 w-5 text-muted-foreground" />}
-                      {item.type === 'attraction' && <MapPin className="h-5 w-5 text-muted-foreground" />}
-                      <span className="font-medium text-foreground">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(item.approval_status)}
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
+        </Card>
       </main>
       <Footer />
       <MobileBottomBar />

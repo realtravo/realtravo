@@ -45,6 +45,13 @@ import AdminReferralSettings from "./pages/AdminReferralSettings";
 import AdminPaymentVerification from "./pages/AdminPaymentVerification";
 import HostBookings from "./pages/HostBookings";
 import HostBookingDetails from "./pages/HostBookingDetails";
+import PendingApprovalItems from "./pages/admin/PendingApprovalItems";
+import ApprovedItems from "./pages/admin/ApprovedItems";
+import RejectedItems from "./pages/admin/RejectedItems";
+import CategoryTrips from "./pages/host/CategoryTrips";
+import CategoryHotels from "./pages/host/CategoryHotels";
+import CategoryAttractions from "./pages/host/CategoryAttractions";
+import CategoryExperiences from "./pages/host/CategoryExperiences";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +102,13 @@ const App = () => (
               <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
               <Route path="/host-bookings" element={<HostBookings />} />
               <Route path="/host-bookings/:type/:itemId" element={<HostBookingDetails />} />
+              <Route path="/admin/pending-approval" element={<PendingApprovalItems />} />
+              <Route path="/admin/approved" element={<ApprovedItems />} />
+              <Route path="/admin/rejected" element={<RejectedItems />} />
+              <Route path="/host/category/trips" element={<CategoryTrips />} />
+              <Route path="/host/category/hotels" element={<CategoryHotels />} />
+              <Route path="/host/category/attractions" element={<CategoryAttractions />} />
+              <Route path="/host/category/experiences" element={<CategoryExperiences />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
