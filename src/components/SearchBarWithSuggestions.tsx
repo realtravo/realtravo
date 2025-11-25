@@ -203,15 +203,15 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
   const handleSuggestionClick = (result: SearchResult) => {
     setShowSuggestions(false);
     saveToHistory(result.name);
-    // If onSuggestionSearch is provided, trigger search instead of navigation
-    if (onSuggestionSearch) {
-      onChange(result.name);
-      onSuggestionSearch(result.name);
-    } else {
-      // Otherwise navigate to detail page
-      const detailPath = result.type === "event" ? "event" : result.type;
-      navigate(`/${detailPath}/${result.id}`);
-    }
+    // Navigate to detail page based on type
+    const typeMap: Record<string, string> = {
+      "trip": "trip",
+      "event": "event",
+      "hotel": "hotel",
+      "adventure": "adventure",
+      "attraction": "attraction"
+    };
+    navigate(`/${typeMap[result.type]}/${result.id}`);
   };
 
   const handleHistoryClick = (historyItem: string) => {
