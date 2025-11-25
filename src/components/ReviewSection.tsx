@@ -3,20 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Star, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface Review {
   id: string;
@@ -38,8 +27,6 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
-  const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
   const { data: reviews = [] } = useQuery({
@@ -75,28 +62,39 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
   const displayedReviews = showAllReviews ? allReviewsSorted : allReviewsSorted.slice(0, 5);
   const hasMoreReviews = reviews.length > 5;
 
-  const submitReviewMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Must be logged in to submit a review");
-      if (rating === 0) throw new Error("Please select a rating");
+  // Set current user's rating if exists
+  const userRating = userReviews.length > 0 ? userReviews[0].rating : 0;
+  if (rating === 0 && userRating > 0) {
+    setRating(userRating);
+  }
 
-      if (editingReviewId) {
+  const submitRatingMutation = useMutation({
+    mutationFn: async (newRating: number) => {
+      if (!user) throw new Error("Must be logged in to submit a rating");
+      if (newRating === 0) throw new Error("Please select a rating");
+
+      // Check if user already has a rating
+      const existingReview = userReviews[0];
+
+      if (existingReview) {
+        // Update existing rating
         const { error } = await supabase
           .from("reviews")
           .update({
-            rating,
+            rating: newRating,
             comment: null,
           })
-          .eq("id", editingReviewId)
+          .eq("id", existingReview.id)
           .eq("user_id", user.id);
 
         if (error) throw error;
       } else {
+        // Insert new rating
         const { error } = await supabase.from("reviews").insert({
           user_id: user.id,
           item_id: itemId,
           item_type: itemType,
-          rating,
+          rating: newRating,
           comment: null,
         });
 
@@ -104,9 +102,6 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
       }
     },
     onSuccess: () => {
-      toast({ title: editingReviewId ? "Review updated successfully" : "Review submitted successfully" });
-      setRating(0);
-      setEditingReviewId(null);
       queryClient.invalidateQueries({ queryKey: ["reviews", itemId, itemType] });
     },
     onError: (error: Error) => {
@@ -114,37 +109,9 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
     },
   });
 
-  const deleteReviewMutation = useMutation({
-    mutationFn: async (reviewId: string) => {
-      if (!user) throw new Error("Must be logged in");
-
-      const { error } = await supabase
-        .from("reviews")
-        .delete()
-        .eq("id", reviewId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Review deleted successfully" });
-      setDeleteReviewId(null);
-      queryClient.invalidateQueries({ queryKey: ["reviews", itemId, itemType] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error deleting review", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const handleEdit = (review: Review) => {
-    setEditingReviewId(review.id);
-    setRating(review.rating);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingReviewId(null);
-    setRating(0);
+  const handleStarClick = (star: number) => {
+    setRating(star);
+    submitRatingMutation.mutate(star);
   };
 
   const averageRating = reviews.length > 0
@@ -170,66 +137,22 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
           </div>
         )}
 
-        {user && !editingReviewId && (
+        {user && (
           <div className="mb-6 space-y-4">
-            <h3 className="text-lg font-semibold">Add Your Rating</h3>
-            <div>
-              <p className="text-sm font-medium mb-2">Your Rating</p>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-8 w-8 cursor-pointer transition-colors ${
-                      star <= (hoveredStar || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                    }`}
-                    onMouseEnter={() => setHoveredStar(star)}
-                    onMouseLeave={() => setHoveredStar(0)}
-                    onClick={() => setRating(star)}
-                  />
-                ))}
-              </div>
+            <h3 className="text-lg font-semibold">Your Rating</h3>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-8 w-8 cursor-pointer transition-colors ${
+                    star <= (hoveredStar || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                  }`}
+                  onMouseEnter={() => setHoveredStar(star)}
+                  onMouseLeave={() => setHoveredStar(0)}
+                  onClick={() => handleStarClick(star)}
+                />
+              ))}
             </div>
-
-            <Button
-              onClick={() => submitReviewMutation.mutate()}
-              disabled={rating === 0 || submitReviewMutation.isPending}
-            >
-              {submitReviewMutation.isPending ? "Submitting..." : "Submit Rating"}
-            </Button>
-          </div>
-        )}
-
-        {user && editingReviewId && (
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit Your Rating</h3>
-              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-2">Your Rating</p>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-8 w-8 cursor-pointer transition-colors ${
-                      star <= (hoveredStar || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                    }`}
-                    onMouseEnter={() => setHoveredStar(star)}
-                    onMouseLeave={() => setHoveredStar(0)}
-                    onClick={() => setRating(star)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <Button
-              onClick={() => submitReviewMutation.mutate()}
-              disabled={rating === 0 || submitReviewMutation.isPending}
-            >
-              {submitReviewMutation.isPending ? "Updating..." : "Update Rating"}
-            </Button>
           </div>
         )}
 
@@ -248,31 +171,9 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </p>
-                  {user?.id === review.user_id && (
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleEdit(review)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => setDeleteReviewId(review.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(review.created_at).toLocaleDateString()}
+                </p>
               </div>
               
             </Card>
@@ -303,26 +204,6 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
           )}
         </div>
       </Card>
-
-      <AlertDialog open={!!deleteReviewId} onOpenChange={() => setDeleteReviewId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Review</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete your review? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteReviewId && deleteReviewMutation.mutate(deleteReviewId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
