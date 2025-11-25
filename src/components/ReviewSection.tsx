@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Star, Pencil, Trash2 } from "lucide-react";
+import { Star, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -41,6 +41,7 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [deleteReviewId, setDeleteReviewId] = useState<string | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["reviews", itemId, itemType],
@@ -70,6 +71,8 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
   });
 
   const userReview = reviews.find(r => r.user_id === user?.id);
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
+  const hasMoreReviews = reviews.length > 5;
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
@@ -88,6 +91,19 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
 
         if (error) throw error;
       } else {
+        // Check if user already has a review
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("id")
+          .eq("item_id", itemId)
+          .eq("item_type", itemType)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existingReview) {
+          throw new Error("You have already submitted a review for this item");
+        }
+
         const { error } = await supabase.from("reviews").insert({
           user_id: user.id,
           item_id: itemId,
@@ -169,17 +185,52 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
           </div>
         )}
 
-        {user && (!userReview || editingReviewId) && (
+        {user && !userReview && !editingReviewId && (
+          <div className="mb-6 space-y-4">
+            <h3 className="text-lg font-semibold">Add Your Review</h3>
+            <div>
+              <p className="text-sm font-medium mb-2">Your Rating</p>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-8 w-8 cursor-pointer transition-colors ${
+                      star <= (hoveredStar || rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                    }`}
+                    onMouseEnter={() => setHoveredStar(star)}
+                    onMouseLeave={() => setHoveredStar(0)}
+                    onClick={() => setRating(star)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Your Review (Optional)</p>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience..."
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <Button
+              onClick={() => submitReviewMutation.mutate()}
+              disabled={rating === 0 || submitReviewMutation.isPending}
+            >
+              {submitReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+            </Button>
+          </div>
+        )}
+
+        {user && userReview && editingReviewId && (
           <div className="mb-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {editingReviewId ? "Edit Your Review" : "Add Your Review"}
-              </h3>
-              {editingReviewId && (
-                <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                  Cancel
-                </Button>
-              )}
+              <h3 className="text-lg font-semibold">Edit Your Review</h3>
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
             </div>
             <div>
               <p className="text-sm font-medium mb-2">Your Rating</p>
@@ -212,13 +263,13 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
               onClick={() => submitReviewMutation.mutate()}
               disabled={rating === 0 || submitReviewMutation.isPending}
             >
-              {submitReviewMutation.isPending ? "Submitting..." : editingReviewId ? "Update Review" : "Submit Review"}
+              {submitReviewMutation.isPending ? "Updating..." : "Update Review"}
             </Button>
           </div>
         )}
 
         <div className="space-y-4">
-          {reviews.map((review) => (
+          {displayedReviews.map((review) => (
             <Card key={review.id} className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -264,6 +315,26 @@ export function ReviewSection({ itemId, itemType }: ReviewSectionProps) {
 
           {reviews.length === 0 && (
             <p className="text-center text-muted-foreground py-8">No reviews yet. Be the first to review!</p>
+          )}
+
+          {hasMoreReviews && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowAllReviews(!showAllReviews)}
+            >
+              {showAllReviews ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show More ({reviews.length - 5} more)
+                </>
+              )}
+            </Button>
           )}
         </div>
       </Card>
