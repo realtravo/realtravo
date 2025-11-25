@@ -124,6 +124,10 @@ const CategoryDetail = () => {
       // Filter by event type if specified
       if (config.eventType) {
         query = query.eq("type", config.eventType);
+        // Hide events 30 days after their date has passed
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        query = query.gte("date", thirtyDaysAgo.toISOString().split('T')[0]);
       } else if (category === "trips") {
         // For trips category, only show trips (not events)
         query = query.eq("type", "trip");
@@ -368,7 +372,7 @@ const CategoryDetail = () => {
                 onSave={handleSave}
                 isSaved={savedItems.has(item.id)}
                 amenities={item.amenities}
-                showBadge={isEvent}
+                showBadge={false}
               />
             )})
           )}

@@ -557,7 +557,7 @@ const Index = () => {
                                             isCustomDate={event.is_custom_date}
                                             onSave={handleSave}
                                             isSaved={savedItems.has(event.id)}
-                                            showBadge={true}
+                                            showBadge={false}
                                             priority={index === 0}
                                         />
                                     </div>

@@ -290,7 +290,7 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
       </div>
 
       {showSuggestions && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border rounded-lg shadow-lg max-h-96 overflow-y-auto z-[150]" style={{ marginLeft: showBackButton ? '0' : '0' }}>
+        <div className="fixed md:absolute top-auto md:top-full left-0 right-0 mt-0 md:mt-2 bg-card border-t md:border rounded-none md:rounded-lg shadow-lg max-h-[60vh] md:max-h-96 overflow-y-auto z-[150]" style={{ top: showBackButton ? 'calc(var(--header-height, 64px) + 60px)' : 'calc(var(--header-height, 64px) + 60px)' }}>
           {/* Show search history and trending when no value */}
           {!value.trim() && (
             <div>

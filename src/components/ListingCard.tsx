@@ -93,12 +93,6 @@ export const ListingCard = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 m-0 p-0"
         />
         
-        {(type === "EVENT" || (showBadge && type === "TRIP")) && (
-          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground backdrop-blur text-xs font-bold z-10 px-2 py-1">
-            {type === "EVENT" ? "EVENT" : type}
-          </Badge>
-        )}
-        
         {showBadge && type !== "EVENT" && type !== "TRIP" && (
           <Badge className="absolute top-2 left-2 bg-red-600 text-white backdrop-blur text-[0.6rem] z-10 p-1">
             {type}
