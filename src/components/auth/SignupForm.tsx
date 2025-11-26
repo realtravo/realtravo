@@ -65,20 +65,22 @@ export const SignupForm = () => {
     setLoading(true);
 
     try {
+      // Step 1: Create the user account with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: name,
             gender: gender,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/`,
         }
       });
 
       if (error) throw error;
 
+      // Step 2: Create profile entry
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -94,9 +96,21 @@ export const SignupForm = () => {
         }
       }
 
+      // Step 3: Send OTP code via email
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false, // User already created
+        }
+      });
+
+      if (otpError) {
+        console.error('OTP send error:', otpError);
+      }
+
       toast({
         title: "Verification code sent!",
-        description: "Please check your email for the verification code.",
+        description: "Please check your email for the 6-digit verification code.",
       });
 
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);

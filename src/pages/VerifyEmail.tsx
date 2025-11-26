@@ -38,7 +38,7 @@ const VerifyEmail = () => {
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: 'signup'
+        type: 'email'
       });
 
       if (error) throw error;
@@ -63,16 +63,18 @@ const VerifyEmail = () => {
   const handleResendCode = async () => {
     setResending(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
+      const { error } = await supabase.auth.signInWithOtp({
         email,
+        options: {
+          shouldCreateUser: false,
+        }
       });
 
       if (error) throw error;
 
       toast({
         title: "Code resent!",
-        description: "A new verification code has been sent to your email.",
+        description: "A new 6-digit verification code has been sent to your email.",
       });
       
       setCountdown(60);
