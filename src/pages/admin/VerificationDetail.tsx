@@ -233,40 +233,77 @@ const VerificationDetail = () => {
 
             <div>
               <Label>Residential Address</Label>
-              <p className="text-sm mt-1">{verification.residential_address}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Document Front</Label>
-                <img
-                  src={verification.document_front_url}
-                  alt="Document front"
-                  className="w-full h-auto object-contain rounded-lg border mt-2 cursor-pointer hover:opacity-90"
-                  onClick={() => window.open(verification.document_front_url, "_blank")}
-                />
+              <div className="text-sm mt-1 space-y-1">
+                <p><span className="font-medium">Street:</span> {verification.street_address}</p>
+                <p><span className="font-medium">City:</span> {verification.city}</p>
+                {verification.postal_code && (
+                  <p><span className="font-medium">Postal Code:</span> {verification.postal_code}</p>
+                )}
               </div>
-              {verification.document_back_url && (
-                <div>
-                  <Label>Document Back</Label>
-                  <img
-                    src={verification.document_back_url}
-                    alt="Document back"
-                    className="w-full h-auto object-contain rounded-lg border mt-2 cursor-pointer hover:opacity-90"
-                    onClick={() => window.open(verification.document_back_url, "_blank")}
-                  />
-                </div>
-              )}
             </div>
 
-            <div>
-              <Label>Selfie</Label>
-              <img
-                src={verification.selfie_url}
-                alt="Selfie"
-                className="w-full max-w-md h-auto object-contain rounded-lg border mt-2 cursor-pointer hover:opacity-90"
-                onClick={() => window.open(verification.selfie_url, "_blank")}
-              />
+            <div className="pt-2">
+              <Label>Submitted Date</Label>
+              <p className="text-sm mt-1">{new Date(verification.submitted_at).toLocaleString()}</p>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Verification Documents</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm">Document Front Side</Label>
+                  <div className="relative group">
+                    <img
+                      src={verification.document_front_url}
+                      alt="Document front"
+                      className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                      onClick={() => window.open(verification.document_front_url, "_blank")}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
+                        Click to view full size
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {verification.document_back_url && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Document Back Side</Label>
+                    <div className="relative group">
+                      <img
+                        src={verification.document_back_url}
+                        alt="Document back"
+                        className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                        onClick={() => window.open(verification.document_back_url, "_blank")}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
+                          Click to view full size
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Selfie Verification</Label>
+                <div className="relative group max-w-md">
+                  <img
+                    src={verification.selfie_url}
+                    alt="Selfie"
+                    className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => window.open(verification.selfie_url, "_blank")}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
+                      Click to view full size
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {verification.status === "pending" && (
