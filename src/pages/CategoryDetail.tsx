@@ -236,14 +236,24 @@ const CategoryDetail = () => {
       });
       toast({ title: "Removed from saved" });
     } else {
-      await supabase
+      // Check if item already exists to prevent duplicates
+      const { data: existing } = await supabase
         .from("saved_items")
-        .insert([{
-          user_id: userId,
-          item_id: itemId,
-          item_type: itemType,
-          session_id: null
-        }]);
+        .select("id")
+        .eq("item_id", itemId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (!existing) {
+        await supabase
+          .from("saved_items")
+          .insert([{
+            user_id: userId,
+            item_id: itemId,
+            item_type: itemType,
+            session_id: null
+          }]);
+      }
       
       setSavedItems(prev => new Set([...prev, itemId]));
       toast({ title: "Added to saved!" });

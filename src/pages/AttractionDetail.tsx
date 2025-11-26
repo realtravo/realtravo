@@ -154,9 +154,19 @@ export default function AttractionDetail() {
       setIsSaved(false);
       toast({ title: "Removed from wishlist" });
     } else {
-      await supabase
+      // Check if item already exists to prevent duplicates
+      const { data: existing } = await supabase
         .from("saved_items")
-        .insert([{ user_id: user.id, item_id: id, item_type: "attraction" }]);
+        .select("id")
+        .eq("item_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (!existing) {
+        await supabase
+          .from("saved_items")
+          .insert([{ user_id: user.id, item_id: id, item_type: "attraction" }]);
+      }
       setIsSaved(true);
       toast({ title: "Added to wishlist" });
     }
