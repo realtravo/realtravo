@@ -24,7 +24,7 @@ import { useSavedItems } from "@/hooks/useSavedItems";
 
 const Saved = () => {
   const [savedListings, setSavedListings] = useState<any[]>([]);
-  const { savedItems } = useSavedItems();
+  const { savedItems, handleSave } = useSavedItems();
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -89,20 +89,6 @@ const Saved = () => {
     setIsLoading(false);
   };
 
-  const handleUnsave = async (itemId: string) => {
-    if (!userId) return;
-    
-    const { error } = await supabase
-      .from("saved_items")
-      .delete()
-      .eq("item_id", itemId)
-      .eq("user_id", userId);
-
-    if (!error) {
-      setSavedListings(prev => prev.filter(item => item.id !== itemId));
-      toast({ title: "Removed from saved" });
-    }
-  };
 
   const toggleItemSelection = (itemId: string) => {
     setSelectedItems(prev => {
@@ -248,7 +234,7 @@ const Saved = () => {
                   country={item.country}
                   price={item.price}
                   date={item.date}
-                  onSave={handleUnsave}
+                  onSave={() => handleSave(item.id, item.savedType)}
                   isSaved={true}
                 />
               </div>
