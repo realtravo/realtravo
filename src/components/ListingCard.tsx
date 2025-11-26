@@ -116,12 +116,17 @@ export const ListingCard = ({
             variant="ghost"
             size="icon"
             onClick={handleSaveClick}
-            className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-background/80 backdrop-blur hover:bg-background/90"
+            className={cn(
+              "absolute top-2 right-2 z-10 h-8 w-8 rounded-full backdrop-blur",
+              isSaved 
+                ? "bg-red-500 text-white hover:bg-red-600" 
+                : "bg-background/80 hover:bg-background/90"
+            )}
           >
             <Heart
               className={cn(
                 "h-4 w-4",
-                isSaved ? "fill-primary text-primary" : "text-foreground"
+                isSaved ? "fill-current" : ""
               )}
             />
           </Button>
