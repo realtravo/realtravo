@@ -104,8 +104,8 @@ const MyListing = () => {
                     <h3 className="font-bold text-lg">{item.name || item.local_name || item.location_name}</h3>
                     <p className="text-sm text-muted-foreground">{item.location || item.location_name}, {item.country}</p>
                     {item.date && <p className="text-sm text-muted-foreground">Date: {new Date(item.date).toLocaleDateString()}</p>}
-                    {item.price && <p className="text-sm font-semibold mt-1">${item.price}</p>}
-                    {(item.price_adult || item.entry_fee) && <p className="text-sm font-semibold mt-1">${item.price_adult || item.entry_fee}</p>}
+                    {item.price && <p className="text-sm font-semibold mt-1">KSh {item.price}</p>}
+                    {(item.price_adult || item.entry_fee) && <p className="text-sm font-semibold mt-1">KSh {item.price_adult || item.entry_fee}</p>}
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <Badge variant={item.approval_status === 'approved' ? 'default' : item.approval_status === 'pending' ? 'secondary' : 'destructive'}>
@@ -158,7 +158,7 @@ const MyListing = () => {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-semibold">Booking #{booking.id.slice(0, 8)}</p>
-                <p className="text-sm text-muted-foreground">Amount: ${booking.total_amount}</p>
+                <p className="text-sm text-muted-foreground">Amount: KSh {booking.total_amount}</p>
                 <p className="text-sm text-muted-foreground">Status: {booking.status}</p>
                 <p className="text-sm text-muted-foreground">Date: {new Date(booking.created_at).toLocaleDateString()}</p>
               </div>

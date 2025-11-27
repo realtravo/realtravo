@@ -397,8 +397,8 @@ export default function AttractionDetail() {
               <p className="text-lg font-semibold text-green-600">Free Entry</p>
             ) : (
               <div className="space-y-2">
-                <p>Adults: ${attraction.price_adult}</p>
-                <p>Children: ${attraction.price_child}</p>
+                <p>Adults: KSh {attraction.price_adult}</p>
+                <p>Children: KSh {attraction.price_child}</p>
               </div>
             )}
           </Card>
@@ -476,7 +476,7 @@ export default function AttractionDetail() {
                     <span className="font-medium">{facility.name}</span>
                     <p className="text-sm text-muted-foreground">Capacity: {facility.capacity} people</p>
                   </div>
-                  <span className="font-bold">${facility.price}</span>
+                  <span className="font-bold">KSh {facility.price}</span>
                 </div>
               ))}
             </div>
@@ -555,7 +555,7 @@ export default function AttractionDetail() {
                         <p className="text-xs text-muted-foreground">Capacity: {facility.capacity} people</p>
                       </div>
                     </div>
-                    <span className="font-bold">${facility.price}</span>
+                    <span className="font-bold">KSh {facility.price}</span>
                   </div>
                 ))}
               </div>

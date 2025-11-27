@@ -269,9 +269,9 @@ const EventDetail = () => {
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Price per ticket</p>
-                      <p className="text-2xl font-bold">${event.price}</p>
+                      <p className="text-2xl font-bold">KSh {event.price}</p>
                       {event.price_child && event.price_child > 0 && (
-                        <p className="text-sm text-muted-foreground">Child: ${event.price_child}</p>
+                        <p className="text-sm text-muted-foreground">Child: KSh {event.price_child}</p>
                       )}
                     </div>
                   </div>
@@ -348,9 +348,9 @@ const EventDetail = () => {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Price per ticket</p>
-                    <p className="text-2xl font-bold">${event.price}</p>
+                    <p className="text-2xl font-bold">KSh {event.price}</p>
                     {event.price_child && event.price_child > 0 && (
-                      <p className="text-sm text-muted-foreground">Child: ${event.price_child}</p>
+                      <p className="text-sm text-muted-foreground">Child: KSh {event.price_child}</p>
                     )}
                   </div>
                 </div>

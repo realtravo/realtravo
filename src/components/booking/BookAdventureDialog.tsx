@@ -329,7 +329,7 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
                             {activity.name}
                           </label>
                         </div>
-                        <span className="text-sm font-semibold">${activity.price}/person</span>
+                        <span className="text-sm font-semibold">KSh {activity.price}/person</span>
                       </div>
                       
                       {selectedActivities.some(a => a.name === activity.name) && (
@@ -364,7 +364,7 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
                         />
                         <label htmlFor={`facility-${facility.name}`} className="flex-1 cursor-pointer">
                           <div className="font-medium">{facility.name}</div>
-                          <div className="text-sm text-muted-foreground">${facility.price}/day</div>
+                          <div className="text-sm text-muted-foreground">KSh {facility.price}/day</div>
                         </label>
                       </div>
                       
@@ -399,7 +399,7 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
             <div className="bg-secondary p-4 rounded-lg">
               <div className="flex justify-between font-semibold">
                 <span>Total Amount:</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>KSh {calculateTotal().toFixed(2)}</span>
               </div>
             </div>
 
@@ -412,7 +412,7 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
             <div className="bg-secondary p-4 rounded-lg">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total to Pay:</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                <span>KSh {calculateTotal().toFixed(2)}</span>
               </div>
             </div>
 

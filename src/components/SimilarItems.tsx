@@ -137,7 +137,7 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
                   <span className="line-clamp-1">{item.location}, {item.country}</span>
                 </div>
                 {item.price && (
-                  <p className="text-sm font-semibold">${item.price}</p>
+                  <p className="text-sm font-semibold">KSh {item.price}</p>
                 )}
               </div>
             </Card>

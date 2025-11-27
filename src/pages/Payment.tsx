@@ -280,7 +280,7 @@ export default function Payment() {
       setShowWithdrawDialog(false);
       toast({
         title: "Success",
-        description: `Withdrawal of $${amount.toFixed(2)} initiated successfully`,
+        description: `Withdrawal of KSh ${amount.toFixed(2)} initiated successfully`,
       });
     }, 1500);
   };
@@ -356,7 +356,7 @@ export default function Payment() {
             </CardHeader>
             <CardContent>
               <p className="text-4xl font-bold text-primary">
-                ${balance.toFixed(2)}
+                KSh {balance.toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -527,7 +527,7 @@ export default function Payment() {
                     step="0.01"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Available: ${balance.toFixed(2)}
+                    Available: KSh {balance.toFixed(2)}
                   </p>
                 </div>
 

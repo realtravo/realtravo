@@ -167,7 +167,7 @@ const Bookings = () => {
                         <p className="font-medium text-foreground">Facilities Booked:</p>
                         {(booking.booking_details.facilities || booking.booking_details.selected_facilities)?.map((facility: any, idx: number) => (
                           <p key={idx} className="text-sm text-muted-foreground">
-                            {facility.name} {facility.capacity ? `(Capacity: ${facility.capacity})` : ''} - ${facility.price}
+                            {facility.name} {facility.capacity ? `(Capacity: ${facility.capacity})` : ''} - KSh {facility.price}
                             {facility.startDate && facility.endDate && 
                               ` from ${new Date(facility.startDate).toLocaleDateString()} to ${new Date(facility.endDate).toLocaleDateString()}`
                             }

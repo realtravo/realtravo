@@ -267,20 +267,20 @@ const AdminReviewDetail = () => {
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Price</p>
-                        <p className="font-medium">${item.price || item.entry_fee}</p>
+                        <p className="font-medium">KSh {item.price || item.entry_fee}</p>
                       </div>
                     </div>
                   )}
                   {item.price_adult && (
                     <div>
                       <p className="text-xs text-muted-foreground">Adult Price</p>
-                      <p className="font-medium">${item.price_adult}</p>
+                      <p className="font-medium">KSh {item.price_adult}</p>
                     </div>
                   )}
                   {item.price_child && (
                     <div>
                       <p className="text-xs text-muted-foreground">Child Price</p>
-                      <p className="font-medium">${item.price_child}</p>
+                      <p className="font-medium">KSh {item.price_child}</p>
                     </div>
                   )}
                   {item.registration_number && (
@@ -341,7 +341,7 @@ const AdminReviewDetail = () => {
                       {item.facilities.map((facility: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center p-2 bg-accent rounded">
                           <span>{facility.name}</span>
-                          <span className="font-medium">${facility.price || facility.price_per_day}/day - Cap: {facility.capacity}</span>
+                          <span className="font-medium">KSh {facility.price || facility.price_per_day}/day - Cap: {facility.capacity}</span>
                         </div>
                       ))}
                     </div>
@@ -356,7 +356,7 @@ const AdminReviewDetail = () => {
                       {item.activities.map((activity: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center p-2 bg-accent rounded">
                           <span>{activity.name}</span>
-                          <span className="font-medium">${activity.price}</span>
+                          <span className="font-medium">KSh {activity.price}</span>
                         </div>
                       ))}
                     </div>
@@ -558,7 +558,7 @@ const AdminReviewDetail = () => {
                             {new Date(booking.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <p className="text-sm font-medium">${booking.total_amount}</p>
+                        <p className="text-sm font-medium">KSh {booking.total_amount}</p>
                         {booking.guest_name && (
                           <p className="text-xs text-muted-foreground">{booking.guest_name}</p>
                         )}

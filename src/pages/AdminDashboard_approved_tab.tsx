@@ -50,7 +50,7 @@ export const ApprovedTab = ({ approvedListings, handleToggleVisibility }: any) =
                 )}
                 
                 {item.price && (
-                  <p><span className="font-medium">Price:</span> ${item.price}</p>
+                  <p><span className="font-medium">Price:</span> KSh {item.price}</p>
                 )}
               </div>
               

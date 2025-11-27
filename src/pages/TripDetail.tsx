@@ -276,7 +276,7 @@ const TripDetail = () => {
                     <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     <span className="text-xs md:text-base font-semibold">Date</span>
                   </div>
-                  <div className="text-lg md:text-xl font-bold">${trip.price}</div>
+                  <div className="text-lg md:text-xl font-bold">KSh {trip.price}</div>
                 </div>
                 <div className="text-xs md:text-base text-muted-foreground">
                   {trip.is_custom_date ? "Available for 30 days - Choose your visit date" : new Date(trip.date).toLocaleDateString()}
@@ -285,7 +285,7 @@ const TripDetail = () => {
                 {trip.price_child > 0 && (
                   <div className="pt-2">
                     <p className="text-xs md:text-sm text-muted-foreground">Child Price</p>
-                    <p className="text-base md:text-xl font-semibold">${trip.price_child}</p>
+                    <p className="text-base md:text-xl font-semibold">KSh {trip.price_child}</p>
                   </div>
                 )}
                 <div>
@@ -342,7 +342,7 @@ const TripDetail = () => {
                 <Calendar className="h-4 w-4 text-primary" />
                 <span className="text-xs font-semibold">Date</span>
               </div>
-              <div className="text-lg font-bold">${trip.price}</div>
+              <div className="text-lg font-bold">KSh {trip.price}</div>
             </div>
             <div className="text-xs text-muted-foreground">
               {trip.is_custom_date ? "Available for 30 days - Choose your visit date" : new Date(trip.date).toLocaleDateString()}
@@ -351,7 +351,7 @@ const TripDetail = () => {
             {trip.price_child > 0 && (
               <div className="pt-2">
                 <p className="text-xs text-muted-foreground">Child Price</p>
-                <p className="text-base font-semibold">${trip.price_child}</p>
+                <p className="text-base font-semibold">KSh {trip.price_child}</p>
               </div>
             )}
             <div>

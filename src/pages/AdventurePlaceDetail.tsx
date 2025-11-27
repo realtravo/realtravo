@@ -271,7 +271,7 @@ const AdventurePlaceDetail = () => {
                 <div className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     <span className="text-xs md:text-base">
-                      {place.entry_fee_type === 'free' ? 'Free Entry' : `$${place.entry_fee} Entry Fee`}
+                      {place.entry_fee_type === 'free' ? 'Free Entry' : `KSh ${place.entry_fee} Entry Fee`}
                     </span>
                 </div>
               </div>
@@ -394,7 +394,7 @@ const AdventurePlaceDetail = () => {
                             <span className="font-medium text-xs md:text-base">{facility.name}</span>
                             {facility.capacity && <p className="text-xs text-muted-foreground mt-1">Capacity: {facility.capacity} people</p>}
                           </div>
-                          <span className="font-bold text-xs md:text-base">${facility.price}/day</span>
+                          <span className="font-bold text-xs md:text-base">KSh {facility.price}/day</span>
                         </div>
                       </div>
                     ))}
@@ -410,7 +410,7 @@ const AdventurePlaceDetail = () => {
                     {place.activities.map((activity, idx) => (
                       <div key={idx} className="border rounded-lg p-4 flex justify-between items-center bg-background">
                         <span className="font-medium text-xs md:text-base">{activity.name}</span>
-                        <span className="font-bold text-xs md:text-base">${activity.price}/person</span>
+                        <span className="font-bold text-xs md:text-base">KSh {activity.price}/person</span>
                       </div>
                     ))}
                   </div>

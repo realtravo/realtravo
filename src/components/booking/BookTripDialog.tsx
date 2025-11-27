@@ -317,7 +317,7 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
                 value={adults}
                 onChange={(e) => setAdults(parseInt(e.target.value) || 1)}
               />
-              <p className="text-sm text-muted-foreground mt-1">${trip.price} per adult</p>
+              <p className="text-sm text-muted-foreground mt-1">KSh {trip.price} per adult</p>
             </div>
 
             <div>
@@ -330,7 +330,7 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
                 onChange={(e) => setChildren(parseInt(e.target.value) || 0)}
               />
               <p className="text-sm text-muted-foreground mt-1">
-                ${trip.price_child || 0} per child
+                KSh {trip.price_child || 0} per child
               </p>
             </div>
 
@@ -351,7 +351,7 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
                             {activity.name}
                           </label>
                         </div>
-                        <span className="text-sm font-semibold">${activity.price}/person</span>
+                        <span className="text-sm font-semibold">KSh {activity.price}/person</span>
                       </div>
                       
                       {selectedActivities.some(a => a.name === activity.name) && (
@@ -408,7 +408,7 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
             <div className="bg-secondary p-4 rounded-lg">
               <div className="flex justify-between font-semibold">
                 <span>Total Amount:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>KSh {totalAmount.toFixed(2)}</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 {totalPeople} ticket{totalPeople !== 1 ? 's' : ''}
@@ -424,7 +424,7 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
             <div className="bg-secondary p-4 rounded-lg">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total to Pay:</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>KSh {totalAmount.toFixed(2)}</span>
               </div>
             </div>
 
