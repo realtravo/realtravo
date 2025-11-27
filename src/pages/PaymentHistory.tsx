@@ -7,10 +7,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Receipt } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, XCircle, Receipt, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Payment {
   id: string;
@@ -24,13 +35,18 @@ interface Payment {
   result_desc: string | null;
   created_at: string;
   updated_at: string;
+  booking_data: any;
 }
 
 export default function PaymentHistory() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [retryingPayment, setRetryingPayment] = useState<string | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [showRetryDialog, setShowRetryDialog] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -130,6 +146,62 @@ export default function PaymentHistory() {
     }
   };
 
+  const handleRetryPayment = async (payment: Payment) => {
+    if (!payment.booking_data) {
+      toast({
+        title: "Cannot retry",
+        description: "Booking data not found for this payment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRetryingPayment(payment.id);
+
+    try {
+      // Reinitiate M-Pesa STK Push
+      const { data: mpesaResponse, error: mpesaError } = await supabase.functions.invoke("mpesa-stk-push", {
+        body: {
+          phoneNumber: payment.phone_number,
+          amount: payment.amount,
+          accountReference: payment.account_reference,
+          transactionDesc: payment.transaction_desc || "Booking payment",
+          bookingData: payment.booking_data,
+        },
+      });
+
+      if (mpesaError || !mpesaResponse?.success) {
+        throw new Error(mpesaResponse?.error || "Failed to initiate payment");
+      }
+
+      toast({
+        title: "Payment initiated",
+        description: "Please check your phone to complete the M-Pesa payment",
+      });
+
+      // Refresh payments after a short delay
+      setTimeout(() => {
+        fetchPayments();
+      }, 2000);
+    } catch (error: any) {
+      console.error("Retry payment error:", error);
+      toast({
+        title: "Retry failed",
+        description: error.message || "Failed to retry payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRetryingPayment(null);
+      setShowRetryDialog(false);
+      setSelectedPayment(null);
+    }
+  };
+
+  const openRetryDialog = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setShowRetryDialog(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -207,13 +279,35 @@ export default function PaymentHistory() {
                       </div>
                     </div>
 
-                    <div className="text-right">
+                     <div className="text-right flex flex-col items-end gap-2">
                       <p className="text-sm text-muted-foreground">
                         {formatDistanceToNow(new Date(payment.created_at), { addSuffix: true })}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(payment.created_at).toLocaleDateString()}
                       </p>
+                      
+                      {payment.payment_status === "failed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openRetryDialog(payment)}
+                          disabled={retryingPayment === payment.id}
+                          className="mt-2"
+                        >
+                          {retryingPayment === payment.id ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Retrying...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Retry Payment
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -222,6 +316,33 @@ export default function PaymentHistory() {
           )}
         </div>
       </main>
+
+      {/* Retry Payment Confirmation Dialog */}
+      <AlertDialog open={showRetryDialog} onOpenChange={setShowRetryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retry Payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will initiate a new M-Pesa payment request for{" "}
+              <span className="font-semibold">KSh {selectedPayment?.amount.toLocaleString()}</span> to phone number{" "}
+              <span className="font-semibold">+{selectedPayment?.phone_number}</span>.
+              <br />
+              <br />
+              Please ensure your phone is ready to receive the STK push notification.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedPayment && handleRetryPayment(selectedPayment)}
+              disabled={retryingPayment !== null}
+            >
+              {retryingPayment ? "Processing..." : "Confirm Retry"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Footer />
       <MobileBottomBar />
     </div>
