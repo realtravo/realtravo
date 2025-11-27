@@ -175,14 +175,53 @@ export default function AttractionDetail() {
     setBookingLoading(true);
 
     try {
+      const emailData = {
+        bookingId: '',
+        email: user ? user.email : bookingData.guest_email,
+        guestName: user ? user.user_metadata?.name || bookingData.guest_name : bookingData.guest_name,
+        bookingType: "attraction",
+        itemName: attraction?.local_name || 'attraction',
+        totalAmount: calculateTotal(),
+        bookingDetails: {
+          num_adults: bookingData.num_adults,
+          num_children: bookingData.num_children,
+          facilities: selectedFacilities,
+          phone: user ? "" : bookingData.guest_phone,
+        },
+        visitDate: bookingData.visit_date,
+      };
+
       // Initiate M-Pesa STK Push if M-Pesa is selected
       if (bookingData.payment_method === "mpesa" && bookingData.payment_phone) {
+        const bookingPayload = {
+          user_id: user?.id || null,
+          item_id: id,
+          booking_type: 'attraction',
+          visit_date: bookingData.visit_date,
+          total_amount: calculateTotal(),
+          booking_details: {
+            num_adults: bookingData.num_adults,
+            num_children: bookingData.num_children,
+            facilities: selectedFacilities.length > 0 ? selectedFacilities : null,
+          },
+          is_guest_booking: !user,
+          guest_name: user ? null : bookingData.guest_name,
+          guest_email: user ? null : bookingData.guest_email,
+          guest_phone: user ? null : bookingData.guest_phone,
+          payment_method: bookingData.payment_method,
+          payment_phone: bookingData.payment_phone,
+          status: 'pending',
+          payment_status: 'pending',
+          emailData,
+        };
+
         const { data: mpesaResponse, error: mpesaError } = await supabase.functions.invoke("mpesa-stk-push", {
           body: {
             phoneNumber: bookingData.payment_phone,
             amount: calculateTotal(),
             accountReference: `ATTRACTION-${id}`,
             transactionDesc: `Booking for ${attraction?.local_name || 'attraction'}`,
+            bookingData: bookingPayload,
           },
         });
 
@@ -194,6 +233,13 @@ export default function AttractionDetail() {
           title: "Payment initiated",
           description: "Please check your phone to complete the payment",
         });
+
+        // Wait for payment confirmation (similar to booking dialogs)
+        setBookingOpen(false);
+        if (user) {
+          navigate('/payment-history');
+        }
+        return;
       }
 
       const { error } = await supabase.from('bookings').insert([{
@@ -214,10 +260,15 @@ export default function AttractionDetail() {
         payment_method: bookingData.payment_method,
         payment_phone: bookingData.payment_phone,
         status: 'pending',
-        payment_status: 'pending',
+        payment_status: 'completed',
       }]);
 
       if (error) throw error;
+
+      // Send confirmation email for non-M-Pesa payments
+      await supabase.functions.invoke("send-booking-confirmation", {
+        body: emailData,
+      });
 
       toast({
         title: "Booking successful!",

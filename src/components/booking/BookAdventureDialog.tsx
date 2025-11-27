@@ -181,6 +181,23 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
 
     setLoading(true);
     try {
+      const emailData = {
+        bookingId: '',
+        email: user ? user.email : guestEmail,
+        guestName: user ? user.user_metadata?.name || guestName : guestName,
+        bookingType: "adventure_place",
+        itemName: place.name,
+        totalAmount: calculateTotal(),
+        bookingDetails: {
+          adults,
+          children,
+          selectedFacilities,
+          selectedActivities,
+          phone: user ? "" : guestPhone,
+        },
+        visitDate,
+      };
+
       // Initiate M-Pesa STK Push if M-Pesa is selected
       if (paymentMethod === "mpesa") {
         const bookingData = {
@@ -202,6 +219,7 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
             facilities: selectedFacilities,
             activities: selectedActivities,
           },
+          emailData,
         };
 
         const { data: mpesaResponse, error: mpesaError } = await supabase.functions.invoke("mpesa-stk-push", {
@@ -247,27 +265,14 @@ export const BookAdventureDialog = ({ open, onOpenChange, place }: Props) => {
 
       if (error) throw error;
 
-      // Send confirmation email
-      const emailData = {
-        bookingId: bookingData.id,
-        email: user ? user.email : guestEmail,
-        guestName: user ? user.user_metadata?.name || guestName : guestName,
-        bookingType: "adventure_place",
-        itemName: place.name,
-        totalAmount: calculateTotal(),
-        bookingDetails: {
-          adults,
-          children,
-          selectedFacilities,
-          selectedActivities,
-          phone: user ? "" : guestPhone,
-        },
-        visitDate,
-      };
-
-      await supabase.functions.invoke("send-booking-confirmation", {
-        body: emailData,
-      });
+      // Send confirmation email for non-M-Pesa payments
+      if (paymentMethod !== "mpesa") {
+        emailData.bookingId = bookingData.id;
+        
+        await supabase.functions.invoke("send-booking-confirmation", {
+          body: emailData,
+        });
+      }
 
       toast({
         title: "Booking successful!",
