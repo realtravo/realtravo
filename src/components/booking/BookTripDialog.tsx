@@ -174,6 +174,27 @@ export const BookTripDialog = ({ open, onOpenChange, trip }: Props) => {
 
     setLoading(true);
     try {
+      // Initiate M-Pesa STK Push if M-Pesa is selected
+      if (paymentMethod === "mpesa") {
+        const { data: mpesaResponse, error: mpesaError } = await supabase.functions.invoke("mpesa-stk-push", {
+          body: {
+            phoneNumber: paymentPhone,
+            amount: totalAmount,
+            accountReference: `TRIP-${trip.id}`,
+            transactionDesc: `Booking for ${trip.name}`,
+          },
+        });
+
+        if (mpesaError || !mpesaResponse?.success) {
+          throw new Error(mpesaResponse?.error || "M-Pesa payment failed");
+        }
+
+        toast({
+          title: "Payment initiated",
+          description: "Please check your phone to complete the payment",
+        });
+      }
+
       const referralTrackingId = getReferralTrackingId();
       
       const { data: bookingData, error } = await supabase.from("bookings").insert({
