@@ -250,14 +250,14 @@ const VerificationDetail = () => {
             <div className="space-y-4">
               <Label className="text-base font-semibold">Verification Documents</Label>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm">Document Front Side</Label>
                   <div className="relative group">
                     <img
                       src={verification.document_front_url}
                       alt="Document front"
-                      className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                      className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
                       onClick={() => window.open(verification.document_front_url, "_blank")}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
@@ -275,7 +275,7 @@ const VerificationDetail = () => {
                       <img
                         src={verification.document_back_url}
                         alt="Document back"
-                        className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                        className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
                         onClick={() => window.open(verification.document_back_url, "_blank")}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
@@ -286,21 +286,21 @@ const VerificationDetail = () => {
                     </div>
                   </div>
                 )}
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Selfie Verification</Label>
-                <div className="relative group max-w-md">
-                  <img
-                    src={verification.selfie_url}
-                    alt="Selfie"
-                    className="w-full h-auto max-h-96 object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
-                    onClick={() => window.open(verification.selfie_url, "_blank")}
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                      Click to view full size
-                    </span>
+                <div className="space-y-2">
+                  <Label className="text-sm">Selfie Verification</Label>
+                  <div className="relative group">
+                    <img
+                      src={verification.selfie_url}
+                      alt="Selfie"
+                      className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
+                      onClick={() => window.open(verification.selfie_url, "_blank")}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
+                        Click to view full size
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
