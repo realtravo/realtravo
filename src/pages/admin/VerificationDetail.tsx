@@ -252,17 +252,22 @@ const VerificationDetail = () => {
               
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-sm">Document Front Side</Label>
-                  <div className="relative group">
+                  <Label className="text-sm font-semibold">Document Front Side</Label>
+                  <div className="relative group bg-muted/30 p-4 rounded-lg">
                     <img
                       src={verification.document_front_url}
                       alt="Document front"
-                      className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
+                      loading="eager"
+                      className="w-full h-auto min-h-[400px] max-h-[700px] object-scale-down rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
                       onClick={() => window.open(verification.document_front_url, "_blank")}
+                      onError={(e) => {
+                        console.error("Failed to load document front image:", verification.document_front_url);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                        Click to view full size
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/70 px-4 py-2 rounded pointer-events-none">
+                        Click to open in new tab
                       </span>
                     </div>
                   </div>
@@ -270,17 +275,22 @@ const VerificationDetail = () => {
 
                 {verification.document_back_url && (
                   <div className="space-y-2">
-                    <Label className="text-sm">Document Back Side</Label>
-                    <div className="relative group">
+                    <Label className="text-sm font-semibold">Document Back Side</Label>
+                    <div className="relative group bg-muted/30 p-4 rounded-lg">
                       <img
                         src={verification.document_back_url}
                         alt="Document back"
-                        className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
+                        loading="eager"
+                        className="w-full h-auto min-h-[400px] max-h-[700px] object-scale-down rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
                         onClick={() => window.open(verification.document_back_url, "_blank")}
+                        onError={(e) => {
+                          console.error("Failed to load document back image:", verification.document_back_url);
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                          Click to view full size
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                        <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/70 px-4 py-2 rounded pointer-events-none">
+                          Click to open in new tab
                         </span>
                       </div>
                     </div>
@@ -288,17 +298,22 @@ const VerificationDetail = () => {
                 )}
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Selfie Verification</Label>
-                  <div className="relative group">
+                  <Label className="text-sm font-semibold">Selfie Verification</Label>
+                  <div className="relative group bg-muted/30 p-4 rounded-lg">
                     <img
                       src={verification.selfie_url}
                       alt="Selfie"
-                      className="w-full max-w-2xl h-[500px] object-contain rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer bg-muted"
+                      loading="eager"
+                      className="w-full h-auto min-h-[400px] max-h-[700px] object-scale-down rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
                       onClick={() => window.open(verification.selfie_url, "_blank")}
+                      onError={(e) => {
+                        console.error("Failed to load selfie image:", verification.selfie_url);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                        Click to view full size
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/70 px-4 py-2 rounded pointer-events-none">
+                        Click to open in new tab
                       </span>
                     </div>
                   </div>
