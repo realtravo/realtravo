@@ -429,6 +429,18 @@ const Index = () => {
                 <div className="px-[8px] my-[16px]">
                     {/* Latest - MODIFIED FOR HORIZONTAL SCROLLING OR MAP VIEW */}
                     <section className="mb-4 md:mb-8">
+                        <div className="mb-2 md:mb-4 mt-2 md:mt-0 flex items-start justify-between">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                                {searchQuery ? 'Search Results' : position ? 'Featured For You' : 'Latest'}
+                            </h2>
+                            {searchQuery && listings.length > 0 && <div className="flex gap-2">
+                                    <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('list')} className="gap-1">
+                                        <Grid className="h-4 w-4" />
+                                        <span className="hidden md:inline">Lat</span>
+                                    </Button>
+                                </div>}
+                        </div>
+                        
                         {searchQuery && viewMode === 'map' ? <MapView listings={listings} /> : searchQuery ?
           // Column grid view for search results
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
