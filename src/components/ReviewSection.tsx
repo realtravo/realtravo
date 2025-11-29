@@ -99,7 +99,7 @@ export function ReviewSection({
       });
     }
   };
-  return <Card className="p-6 mt-6 py-[15px] my-0 mx-[12px] px-px">
+  return <Card className="p-6 mt-6 py-[15px] px-px mx-0 my-[2px] rounded-none shadow opacity-100 border-2">
       <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
       
       <div className="space-y-4">
