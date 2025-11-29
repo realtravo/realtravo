@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, optimizeSupabaseImage, generateImageSrcSet } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import React from 'react';
 
 interface ListingCardProps {
   id: string;
@@ -24,6 +25,10 @@ interface ListingCardProps {
   showBadge?: boolean;
   priority?: boolean;
 }
+
+// NOTE: You'll need to provide the actual implementations for:
+// - optimizeSupabaseImage, generateImageSrcSet, cn (from "@/lib/utils")
+// - Card, Badge, Button (from "@/components/ui")
 
 export const ListingCard = ({
   id,
@@ -78,8 +83,9 @@ export const ListingCard = ({
   return (
     <Card 
       onClick={handleCardClick}
+      // **CRITICAL CHANGE for horizontal scroll layout on small screens**
       className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border rounded-lg bg-card shadow-sm
-                 w-full" 
+                flex-shrink-0 w-[90vw] md:w-full" 
     >
       <div className="relative aspect-[4/3] overflow-hidden m-0">
         <img
