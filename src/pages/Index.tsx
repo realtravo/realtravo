@@ -369,7 +369,7 @@ const Index = () => {
                     </div>
                 </div>}
 
-            <main className="container px-0 md:px-4 py-0 md:py-8">
+            <main className="container md:px-4 md:py-8 py-[3px] px-px">
                 {/* Hero and Categories - Hide when search is focused */}
                 <section className={`flex flex-col gap-1 md:gap-3 ${isSearchFocused ? 'hidden' : ''}`}>
                 {/* Hero Section with Background Image */}
