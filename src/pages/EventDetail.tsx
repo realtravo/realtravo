@@ -330,7 +330,7 @@ const EventDetail = () => {
           Back
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
           <div className="w-full relative">
             <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
               EVENT
@@ -361,73 +361,70 @@ const EventDetail = () => {
               </div>
             </div>
 
+            <div className="space-y-3 p-4 border bg-card">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Event Date</p>
+                  <p className="font-semibold">{new Date(event.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-3">
+                <p className="text-sm text-muted-foreground mb-1">Entrance Fee</p>
+                <p className="text-2xl font-bold">KSh {event.price}</p>
+                {event.price_child > 0 && <p className="text-sm text-muted-foreground">Child: KSh {event.price_child}</p>}
+                <p className="text-sm text-muted-foreground mt-2">Available Tickets: {event.available_tickets}</p>
+              </div>
+
+              <Button size="lg" className="w-full" onClick={() => {
+                if (!user) {
+                  toast({ title: "Login Required", description: "Please login to book this event", variant: "destructive" });
+                  navigate('/auth');
+                  return;
+                }
+                setShowBooking(true);
+              }} disabled={event.available_tickets <= 0}>
+                {event.available_tickets <= 0 ? "Sold Out" : "Book Now"}
+              </Button>
+            </div>
+
             <div className="flex gap-2">
-              <Button onClick={openInMaps}>
+              <Button variant="outline" onClick={openInMaps} className="flex-1">
                 <MapPin className="h-4 w-4 mr-2" />
                 Map
               </Button>
-              <Button variant="outline" onClick={handleShare}>
+              <Button variant="outline" onClick={handleShare} className="flex-1">
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
               <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}>
-                <Heart className={`h-4 w-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
-                Save
+                <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 p-6 border rounded-lg bg-card">
-          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Event Details
-          </h2>
-          <div className="space-y-2">
-            <p>Date: {new Date(event.date).toLocaleDateString()}</p>
-            <p>Price (Adult): KSh {event.price}</p>
-            {event.price_child > 0 && <p>Price (Child): KSh {event.price_child}</p>}
-            <p>Available Tickets: {event.available_tickets}</p>
-          </div>
-        </div>
-
         {event.description && (
-          <div className="mt-6 p-6 border rounded-lg bg-card">
+          <div className="mt-6 p-6 border bg-card" style={{ borderRadius: 0 }}>
             <h2 className="text-xl font-semibold mb-3">About This Event</h2>
             <p className="text-muted-foreground whitespace-pre-wrap">{event.description}</p>
           </div>
         )}
 
         {event.activities && event.activities.length > 0 && (
-          <div className="mt-6">
-            <div className="p-6 border bg-card">
-              <h2 className="text-xl font-semibold mb-4">Available Activities</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {event.activities.map((activity, idx) => (
-                  <div key={idx} className="p-4 bg-background border rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{activity.name}</span>
-                      <span className="font-bold">KSh {activity.price}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Included Activities</h2>
+            <div className="flex flex-wrap gap-2">
+              {event.activities.map((activity, idx) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm flex items-center gap-2">
+                  <span className="font-medium">{activity.name}</span>
+                  <span className="text-xs opacity-90">KSh {activity.price}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
-
-        <div className="mt-6">
-          <Button size="lg" className="w-full" onClick={() => {
-            if (!user) {
-              toast({ title: "Login Required", description: "Please login to book this event", variant: "destructive" });
-              navigate('/auth');
-              return;
-            }
-            setShowBooking(true);
-          }} disabled={event.available_tickets <= 0}>
-            {event.available_tickets <= 0 ? "Sold Out" : "Book Tickets"}
-          </Button>
-        </div>
 
         {(event.phone_number || event.email) && (
           <div className="mt-6 p-6 border rounded-lg bg-card">

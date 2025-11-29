@@ -332,7 +332,7 @@ const TripDetail = () => {
           Back
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
           <div className="w-full relative">
             <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
               TRIP
@@ -361,30 +361,54 @@ const TripDetail = () => {
                   <CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
                 </>
               )}
-              
-              {displayImages.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-                  {displayImages.map((_, index) => (
-                    <div key={index} className={`w-2 h-2 rounded-full transition-all duration-300 ${index === current ? 'bg-white' : 'bg-white/40'}`} />
-                  ))}
-                </div>
-              )}
             </Carousel>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-2xl md:text-3xl font-bold">{trip.name}</h1>
-              <p className="text-sm md:text-base text-muted-foreground">{trip.location}, {trip.country}</p>
+          <div className="space-y-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
+              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>{trip.location}, {trip.country}</span>
+              </div>
             </div>
-            
-            <div className="flex gap-2">
-              <Button onClick={openInMaps} className="bg-blue-600 text-white hover:bg-blue-700">
-                <MapPin className="mr-2 h-4 w-4" />
-                View on Map
+
+            <div className="space-y-3 p-4 border bg-card">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Trip Date</p>
+                  <p className="font-semibold">{trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-3">
+                <p className="text-sm text-muted-foreground mb-1">Price</p>
+                <p className="text-2xl font-bold">KSh {trip.price}</p>
+                {trip.price_child > 0 && <p className="text-sm text-muted-foreground">Child: KSh {trip.price_child}</p>}
+                <p className="text-sm text-muted-foreground mt-2">Available Tickets: {trip.available_tickets}</p>
+              </div>
+
+              <Button size="lg" className="w-full" onClick={() => {
+                if (!user) {
+                  toast({ title: "Login Required", description: "Please login to book this trip", variant: "destructive" });
+                  navigate('/auth');
+                  return;
+                }
+                setBookingOpen(true);
+              }} disabled={trip.available_tickets <= 0}>
+                {trip.available_tickets <= 0 ? "Sold Out" : "Book Now"}
               </Button>
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4" />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={openInMaps} className="flex-1">
+                <MapPin className="h-4 w-4 mr-2" />
+                Map
+              </Button>
+              <Button variant="outline" onClick={handleShare} className="flex-1">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
               </Button>
               <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}>
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
@@ -393,74 +417,46 @@ const TripDetail = () => {
           </div>
         </div>
 
-        <div className="mt-6 p-6 border rounded-lg bg-card">
-          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Trip Details
-          </h2>
-          <div className="space-y-2">
-            <p>Price (Adult): KSh {trip.price}</p>
-            {trip.price_child > 0 && <p>Price (Child): KSh {trip.price_child}</p>}
-            <p>Date: {trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}</p>
-            <p>Available Tickets: {trip.available_tickets}</p>
-          </div>
-        </div>
-
         {trip.description && (
-          <div className="mt-6 p-6 border rounded-lg bg-card">
+          <div className="mt-6 p-6 border bg-card" style={{ borderRadius: 0 }}>
             <h2 className="text-xl font-semibold mb-3">About This Trip</h2>
-            <p className="text-muted-foreground">{trip.description}</p>
+            <p className="text-muted-foreground whitespace-pre-wrap">{trip.description}</p>
           </div>
         )}
 
         {trip.activities && trip.activities.length > 0 && (
-          <div className="mt-6">
-            <div className="p-6 border bg-card">
-              <h2 className="text-xl font-semibold mb-4">Available Activities</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {trip.activities.map((activity, idx) => (
-                  <div key={idx} className="p-4 bg-background border rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{activity.name}</span>
-                      <span className="font-bold">KSh {activity.price}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Included Activities</h2>
+            <div className="flex flex-wrap gap-2">
+              {trip.activities.map((activity, idx) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm flex items-center gap-2">
+                  <span className="font-medium">{activity.name}</span>
+                  <span className="text-xs opacity-90">KSh {activity.price}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        <div className="mt-6">
-          <Button size="lg" className="w-full" onClick={() => {
-            if (!user) {
-              toast({ title: "Login Required", description: "Please login to book this trip", variant: "destructive" });
-              navigate('/auth');
-              return;
-            }
-            setBookingOpen(true);
-          }} disabled={trip.available_tickets === 0 || (!trip.is_custom_date && new Date(trip.date) < new Date())}>
-            {!trip.is_custom_date && new Date(trip.date) < new Date() ? 'Tour Passed' : trip.available_tickets === 0 ? 'Sold Out' : 'Book Now'}
-          </Button>
-        </div>
-
-        <div className="mt-6 p-6 border rounded-lg bg-card">
-          <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-          <div className="space-y-2">
-            {trip.phone_number && (
-              <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <a href={`tel:${trip.phone_number}`} className="text-primary hover:underline">{trip.phone_number}</a>
-              </p>
-            )}
-            {trip.email && (
-              <p className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <a href={`mailto:${trip.email}`} className="text-primary hover:underline">{trip.email}</a>
-              </p>
-            )}
+        {(trip.phone_number || trip.email) && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
+            <div className="space-y-2">
+              {trip.phone_number && (
+                <p className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <a href={`tel:${trip.phone_number}`} className="text-primary hover:underline">{trip.phone_number}</a>
+                </p>
+              )}
+              {trip.email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href={`mailto:${trip.email}`} className="text-primary hover:underline">{trip.email}</a>
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="mt-6">
           <ReviewSection itemId={trip.id} itemType="trip" />

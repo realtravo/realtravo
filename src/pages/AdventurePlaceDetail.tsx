@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Share2, Mail, DollarSign, Wifi, ArrowLeft, Clock, Heart } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, DollarSign, Clock, ArrowLeft, Heart } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -43,6 +43,7 @@ interface AdventurePlace {
   opening_hours: string | null;
   closing_hours: string | null;
   days_opened: string[] | null;
+  available_slots: number;
 }
 
 const AdventurePlaceDetail = () => {
@@ -124,7 +125,7 @@ const AdventurePlaceDetail = () => {
         return;
       }
 
-      // M-Pesa flow (similar to other pages)
+      // M-Pesa flow
       if (data.payment_method === "mpesa") {
         const { data: mpesaResponse } = await supabase.functions.invoke("mpesa-stk-push", {
           body: { phoneNumber: data.payment_phone, amount: totalAmount, accountReference: `ADVENTURE-${place.id}`, transactionDesc: `Booking for ${place.name}`,
@@ -157,37 +158,157 @@ const AdventurePlaceDetail = () => {
       <Header />
       <main className="container px-4 py-6 max-w-6xl mx-auto">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4"><ArrowLeft className="mr-2 h-4 w-4" />Back</Button>
-        <div className="grid lg:grid-cols-2 gap-6">
+        
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
           <div className="w-full relative">
-            <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">ADVENTURE</Badge>
-            <Carousel opts={{ loop: true }} plugins={[Autoplay({ delay: 3000 })]} className="w-full rounded-2xl overflow-hidden"><CarouselContent>{displayImages.map((img, idx) => <CarouselItem key={idx}><img src={img} alt={`${place.name} ${idx + 1}`} className="w-full h-64 md:h-96 object-cover" /></CarouselItem>)}</CarouselContent>{displayImages.length > 1 && (<><CarouselPrevious className="left-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" /><CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" /></>)}</Carousel>
+            <Carousel opts={{ loop: true }} plugins={[Autoplay({ delay: 3000 })]} className="w-full rounded-2xl overflow-hidden">
+              <CarouselContent>
+                {displayImages.map((img, idx) => <CarouselItem key={idx}><img src={img} alt={`${place.name} ${idx + 1}`} className="w-full h-64 md:h-96 object-cover" /></CarouselItem>)}
+              </CarouselContent>
+              {displayImages.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
+                  <CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
+                </>
+              )}
+            </Carousel>
           </div>
-          <div className="flex flex-col gap-4">
-            <div><h1 className="text-2xl md:text-3xl font-bold">{place.name}</h1><p className="text-sm text-muted-foreground">{place.location}, {place.country}</p></div>
+          
+          <div className="space-y-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{place.name}</h1>
+              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>{place.location}, {place.country}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 p-4 border bg-card">
+              {(place.opening_hours || place.closing_hours) && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Operating Hours</p>
+                    <p className="font-semibold">{place.opening_hours} - {place.closing_hours}</p>
+                    {place.days_opened && place.days_opened.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">{place.days_opened.join(', ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className={`${place.opening_hours || place.closing_hours ? 'border-t pt-3' : ''}`}>
+                <p className="text-sm text-muted-foreground mb-1">Entry Fee</p>
+                <p className="text-2xl font-bold">
+                  {place.entry_fee_type === 'free' ? 'Free Entry' : 
+                   place.entry_fee ? `KSh ${place.entry_fee}` : 'Contact for pricing'}
+                </p>
+                {place.available_slots && <p className="text-sm text-muted-foreground mt-2">Available Slots: {place.available_slots}</p>}
+              </div>
+
+              <Button size="lg" className="w-full" onClick={() => {
+                if (!user) {
+                  toast({ title: "Login Required", description: "Please login to book", variant: "destructive" });
+                  navigate('/auth');
+                  return;
+                }
+                setBookingOpen(true);
+              }}>
+                Book Now
+              </Button>
+            </div>
+
             <div className="flex gap-2">
-              <Button onClick={openInMaps}><MapPin className="mr-2 h-4 w-4" />Location</Button>
-              <Button variant="outline" onClick={handleShare}><Share2 className="h-4 w-4" /></Button>
-              <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}><Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} /></Button>
+              <Button variant="outline" onClick={openInMaps} className="flex-1">
+                <MapPin className="h-4 w-4 mr-2" />
+                Map
+              </Button>
+              <Button variant="outline" onClick={handleShare} className="flex-1">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}>
+                <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+              </Button>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-5 w-5" />Entrance Fee</h2><p className="text-lg font-semibold">{place.entry_fee_type === 'free' ? 'Free Entry' : `KSh ${place.entry_fee}`}</p></div>
-        {place.description && <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3">About</h2><p className="text-muted-foreground">{place.description}</p></div>}
-        {(place.opening_hours || place.closing_hours || place.days_opened) && <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3 flex items-center gap-2"><Clock className="h-5 w-5" />Operating Hours</h2><div className="space-y-2">{place.opening_hours && place.closing_hours && <p>Hours: {place.opening_hours} - {place.closing_hours}</p>}{place.days_opened && <p>Open: {place.days_opened.join(', ')}</p>}</div></div>}
-        
-        {(place.facilities?.length > 0 || place.activities?.length > 0) && <div className="mt-6"><div className="p-6 border bg-card"><div className="grid md:grid-cols-2 gap-6">{place.facilities && place.facilities.length > 0 && <div><h2 className="text-xl font-semibold mb-4">Facilities</h2><div className="grid gap-4">{place.facilities.map((f, idx) => <div key={idx} className="p-4 bg-background border rounded-lg"><div className="flex justify-between"><div><span className="font-medium">{f.name}</span>{f.capacity && <p className="text-sm text-muted-foreground">Capacity: {f.capacity}</p>}</div><span className="font-bold">KSh {f.price}/day</span></div></div>)}</div></div>}{place.activities && place.activities.length > 0 && <div><h2 className="text-xl font-semibold mb-4">Activities</h2><div className="grid gap-4">{place.activities.map((a, idx) => <div key={idx} className="p-4 bg-background border rounded-lg flex justify-between"><span className="font-medium">{a.name}</span><span className="font-bold">KSh {a.price}</span></div>)}</div></div>}</div></div></div>}
+        {place.description && (
+          <div className="mt-6 p-6 border bg-card" style={{ borderRadius: 0 }}>
+            <h2 className="text-xl font-semibold mb-3">About This Place</h2>
+            <p className="text-muted-foreground whitespace-pre-wrap">{place.description}</p>
+          </div>
+        )}
 
-        <div className="mt-6"><Button size="lg" className="w-full" onClick={() => { if (!user) { toast({ title: "Login Required", description: "Please login", variant: "destructive" }); navigate('/auth'); return; } setBookingOpen(true); }}>Book Now</Button></div>
-        <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3">Contact</h2><div className="space-y-2">{place.phone_numbers?.map((phone, idx) => <p key={idx} className="flex items-center gap-2"><Phone className="h-4 w-4" /><a href={`tel:${phone}`} className="hover:underline">{phone}</a></p>)}{place.email && <p className="flex items-center gap-2"><Mail className="h-4 w-4" /><a href={`mailto:${place.email}`} className="hover:underline">{place.email}</a></p>}</div></div>
+        {place.amenities && place.amenities.length > 0 && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
+            <div className="flex flex-wrap gap-2">
+              {place.amenities.map((amenity: any, idx: number) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm">
+                  {amenity}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div className="mt-6"><ReviewSection itemId={place.id} itemType="adventure_place" /></div>
+        {place.activities && place.activities.length > 0 && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Facilities & Activities</h2>
+            <div className="flex flex-wrap gap-2">
+              {place.activities.map((activity: any, idx: number) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm flex items-center gap-2">
+                  <span className="font-medium">{activity.name}</span>
+                  {activity.capacity && <span className="text-xs opacity-90">Max: {activity.capacity}</span>}
+                  {activity.price && <span className="text-xs opacity-90">KSh {activity.price}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(place.phone_numbers || place.email) && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
+            <div className="space-y-2">
+              {place.phone_numbers?.map((phone, idx) => (
+                <p key={idx} className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a>
+                </p>
+              ))}
+              {place.email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href={`mailto:${place.email}`} className="text-primary hover:underline">{place.email}</a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <ReviewSection itemId={place.id} itemType="adventure_place" />
+        </div>
+
         {place && <SimilarItems currentItemId={place.id} itemType="adventure" country={place.country} />}
       </main>
 
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <MultiStepBooking onSubmit={async (data: BookingFormData) => { setIsProcessing(true); /* Similar M-Pesa flow */ setIsCompleted(true); }} facilities={place.facilities || []} activities={place.activities || []} priceAdult={place.entry_fee_type === 'free' ? 0 : place.entry_fee} priceChild={place.entry_fee_type === 'free' ? 0 : place.entry_fee} entranceType={place.entry_fee_type} isProcessing={isProcessing} isCompleted={isCompleted} itemName={place.name} />
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} 
+            facilities={place.facilities || []} 
+            activities={place.activities || []} 
+            priceAdult={place.entry_fee_type === 'free' ? 0 : place.entry_fee} 
+            priceChild={place.entry_fee_type === 'free' ? 0 : place.entry_fee} 
+            entranceType={place.entry_fee_type} 
+            isProcessing={isProcessing} 
+            isCompleted={isCompleted} 
+            itemName={place.name} 
+          />
         </DialogContent>
       </Dialog>
 

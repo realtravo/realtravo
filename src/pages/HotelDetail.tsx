@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Share2, Mail, Wifi, Clock, ArrowLeft, Heart } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, Calendar, Clock, ArrowLeft, Heart } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -50,6 +50,7 @@ interface Hotel {
   registration_number: string;
   map_link: string;
   establishment_type: string;
+  available_rooms: number;
 }
 
 const HotelDetail = () => {
@@ -261,50 +262,158 @@ const HotelDetail = () => {
           Back
         </Button>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
           <div className="w-full relative">
-            <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">HOTEL</Badge>
-            <Carousel opts={{ loop: true }} plugins={[Autoplay({ delay: 3000 })]} className="w-full rounded-2xl overflow-hidden" setApi={(api) => { if (api) api.on("select", () => setCurrent(api.selectedScrollSnap())); }}>
+            <Carousel 
+              opts={{ loop: true }} 
+              plugins={[Autoplay({ delay: 3000 })]} 
+              className="w-full rounded-2xl overflow-hidden" 
+              setApi={(api) => { if (api) api.on("select", () => setCurrent(api.selectedScrollSnap())); }}
+            >
               <CarouselContent>
-                {displayImages.map((img, idx) => <CarouselItem key={idx}><img src={img} alt={`${hotel.name} ${idx + 1}`} className="w-full h-64 md:h-96 object-cover" /></CarouselItem>)}
+                {displayImages.map((img, idx) => (
+                  <CarouselItem key={idx}>
+                    <img src={img} alt={`${hotel.name} ${idx + 1}`} className="w-full h-64 md:h-96 object-cover" />
+                  </CarouselItem>
+                ))}
               </CarouselContent>
-              {displayImages.length > 1 && (<><CarouselPrevious className="left-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" /><CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" /></>)}
+              {displayImages.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
+                  <CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
+                </>
+              )}
             </Carousel>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="space-y-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{hotel.name}</h1>
-              <p className="text-sm md:text-base text-muted-foreground">{hotel.location}, {hotel.country}</p>
+              <h1 className="text-3xl font-bold mb-2">{hotel.name}</h1>
+              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>{hotel.location}, {hotel.country}</span>
+              </div>
             </div>
-            
+
+            <div className="space-y-3 p-4 border bg-card">
+              {(hotel.opening_hours || hotel.closing_hours) && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Operating Hours</p>
+                    <p className="font-semibold">{hotel.opening_hours} - {hotel.closing_hours}</p>
+                    {hotel.days_opened && hotel.days_opened.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">{hotel.days_opened.join(', ')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className={`${hotel.opening_hours || hotel.closing_hours ? 'border-t pt-3' : ''}`}>
+                <p className="text-sm text-muted-foreground mb-1">Room Rate</p>
+                <p className="text-2xl font-bold">Starting from KSh {hotel.activities?.[0]?.price || 'Contact'}</p>
+                {hotel.available_rooms && <p className="text-sm text-muted-foreground mt-2">Available Rooms: {hotel.available_rooms}</p>}
+              </div>
+
+              <Button size="lg" className="w-full" onClick={() => {
+                if (!user) {
+                  toast({ title: "Login Required", description: "Please login to book this hotel", variant: "destructive" });
+                  navigate('/auth');
+                  return;
+                }
+                setBookingOpen(true);
+              }}>
+                Book Now
+              </Button>
+            </div>
+
             <div className="flex gap-2">
-              <Button onClick={openInMaps}><MapPin className="mr-2 h-4 w-4" />Map</Button>
-              <Button variant="outline" onClick={handleShare}><Share2 className="h-4 w-4" /></Button>
-              <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}><Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} /></Button>
+              <Button variant="outline" onClick={openInMaps} className="flex-1">
+                <MapPin className="h-4 w-4 mr-2" />
+                Map
+              </Button>
+              <Button variant="outline" onClick={handleShare} className="flex-1">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button variant="outline" onClick={handleSave} className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}>
+                <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
+              </Button>
             </div>
           </div>
         </div>
 
-        {hotel.description && <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3">About</h2><p className="text-muted-foreground">{hotel.description}</p></div>}
-        
-        {(hotel.opening_hours || hotel.closing_hours || hotel.days_opened) && <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3 flex items-center gap-2"><Clock className="h-5 w-5" />Operating Hours</h2><div className="space-y-2">{hotel.opening_hours && hotel.closing_hours && <p>Hours: {hotel.opening_hours} - {hotel.closing_hours}</p>}{hotel.days_opened && <p>Open: {hotel.days_opened.join(', ')}</p>}</div></div>}
+        {hotel.description && (
+          <div className="mt-6 p-6 border bg-card" style={{ borderRadius: 0 }}>
+            <h2 className="text-xl font-semibold mb-3">About This Hotel</h2>
+            <p className="text-muted-foreground whitespace-pre-wrap">{hotel.description}</p>
+          </div>
+        )}
 
-        {hotel.amenities && hotel.amenities.length > 0 && <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-4">Amenities</h2><div className="flex flex-wrap gap-2">{hotel.amenities.map((amenity, idx) => <span key={idx} className="bg-secondary px-3 py-1 rounded-full text-sm flex items-center gap-1"><Wifi className="h-3 w-3" />{amenity}</span>)}</div></div>}
+        {hotel.amenities && hotel.amenities.length > 0 && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
+            <div className="flex flex-wrap gap-2">
+              {hotel.amenities.map((amenity, idx) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm">
+                  {amenity}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {(hotel.facilities?.length > 0 || hotel.activities?.length > 0) && <div className="mt-6"><div className="p-6 border bg-card"><div className="grid md:grid-cols-2 gap-6">{hotel.facilities && hotel.facilities.length > 0 && <div><h2 className="text-xl font-semibold mb-4">Rooms</h2><div className="grid gap-4">{hotel.facilities.map((facility, idx) => <div key={idx} className="p-4 bg-background border rounded-lg"><div className="flex justify-between"><div><span className="font-medium">{facility.name}</span><p className="text-sm text-muted-foreground">Capacity: {facility.capacity}</p></div><span className="font-bold">KSh {facility.price}/day</span></div></div>)}</div></div>}{hotel.activities && hotel.activities.length > 0 && <div><h2 className="text-xl font-semibold mb-4">Activities</h2><div className="grid gap-4">{hotel.activities.map((activity, idx) => <div key={idx} className="p-4 bg-background border rounded-lg flex justify-between"><span className="font-medium">{activity.name}</span><span className="font-bold">KSh {activity.price}</span></div>)}</div></div>}</div></div></div>}
+        {hotel.activities && hotel.activities.length > 0 && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-4">Facilities & Rooms</h2>
+            <div className="flex flex-wrap gap-2">
+              {hotel.activities.map((activity, idx) => (
+                <div key={idx} className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm flex items-center gap-2">
+                  <span className="font-medium">{activity.name}</span>
+                  <span className="text-xs opacity-90">KSh {activity.price}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div className="mt-6"><Button size="lg" className="w-full" onClick={() => { if (!user) { toast({ title: "Login Required", description: "Please login to book", variant: "destructive" }); navigate('/auth'); return; } setBookingOpen(true); }}>Book Now</Button></div>
+        {(hotel.phone_numbers || hotel.email) && (
+          <div className="mt-6 p-6 border bg-card">
+            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
+            <div className="space-y-2">
+              {hotel.phone_numbers?.map((phone, idx) => (
+                <p key={idx} className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a>
+                </p>
+              ))}
+              {hotel.email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href={`mailto:${hotel.email}`} className="text-primary hover:underline">{hotel.email}</a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
-        <div className="mt-6 p-6 border rounded-lg bg-card"><h2 className="text-xl font-semibold mb-3">Contact</h2><div className="space-y-2">{hotel.phone_numbers?.map((phone, idx) => <p key={idx} className="flex items-center gap-2"><Phone className="h-4 w-4" /><a href={`tel:${phone}`} className="text-primary hover:underline">{phone}</a></p>)}{hotel.email && <p className="flex items-center gap-2"><Mail className="h-4 w-4" /><a href={`mailto:${hotel.email}`} className="text-primary hover:underline">{hotel.email}</a></p>}</div></div>
+        <div className="mt-6">
+          <ReviewSection itemId={hotel.id} itemType="hotel" />
+        </div>
 
-        <div className="mt-6"><ReviewSection itemId={hotel.id} itemType="hotel" /></div>
         {hotel && <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />}
       </main>
 
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <MultiStepBooking onSubmit={handleBookingSubmit} facilities={hotel.facilities || []} activities={hotel.activities || []} isProcessing={isProcessing} isCompleted={isCompleted} itemName={hotel.name} />
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} 
+            facilities={hotel.facilities || []} 
+            activities={hotel.activities || []} 
+            isProcessing={isProcessing} 
+            isCompleted={isCompleted} 
+            itemName={hotel.name} 
+          />
         </DialogContent>
       </Dialog>
 
