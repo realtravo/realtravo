@@ -406,7 +406,7 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {(hotel.phone_numbers || hotel.email) && <div className="mt-6 p-6 border bg-card">
+        {(hotel.phone_numbers || hotel.email) && <div className="mt-6 p-6 border bg-card my-[5px] px-[10px] py-[10px]">
             <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
             <div className="space-y-2">
               {hotel.phone_numbers?.map((phone, idx) => <p key={idx} className="flex items-center gap-2">
