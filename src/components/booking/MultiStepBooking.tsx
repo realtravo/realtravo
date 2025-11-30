@@ -113,12 +113,26 @@ export const MultiStepBooking = ({
   // Total steps including the conditional guest info step
   const totalSteps = 5;
 
+  // Function to check if all selected facilities have valid start/end dates
+  const areFacilityDatesValid = () => {
+    return formData.selectedFacilities.every(f => {
+      if (!f.startDate || !f.endDate) return false;
+      const start = new Date(f.startDate).getTime();
+      const end = new Date(f.endDate).getTime();
+      // End date must be >= Start date
+      return end >= start;
+    });
+  };
+
   // --- Handlers for Navigation ---
   
   const handleNext = () => {
     // Basic validation checks for moving forward
     if (currentStep === 1 && !formData.visit_date && !skipDateSelection) return;
     if (currentStep === 2 && formData.num_adults === 0 && formData.num_children === 0) return;
+    
+    // **NEW VALIDATION: Check facility dates on Step 3**
+    if (currentStep === 3 && !skipFacilitiesAndActivities && !areFacilityDatesValid()) return;
     
     // Skip facilities/activities step (Step 3) if not needed
     if (currentStep === 2 && skipFacilitiesAndActivities) {
@@ -179,10 +193,19 @@ export const MultiStepBooking = ({
         selectedFacilities: formData.selectedFacilities.filter(f => f.name !== facility.name),
       });
     } else {
+      // **INITIALIZE START/END DATE TO VISIT DATE FOR SIMPLICITY IF AVAILABLE**
+      const defaultDate = formData.visit_date || new Date().toISOString().split('T')[0];
+      
       setFormData({
         ...formData,
-        // Initialize with empty dates
-        selectedFacilities: [...formData.selectedFacilities, { ...facility, startDate: "", endDate: "" }],
+        selectedFacilities: [
+          ...formData.selectedFacilities, 
+          { 
+            ...facility, 
+            startDate: defaultDate, 
+            endDate: defaultDate 
+          }
+        ],
       });
     }
   };
@@ -241,10 +264,16 @@ export const MultiStepBooking = ({
         const dayDifferenceMs = end - start;
         const days = Math.ceil(dayDifferenceMs / (1000 * 60 * 60 * 24));
         
-        total += f.price * Math.max(days, 1);
+        // Charge at least 1 day if dates are valid, otherwise 0
+        total += f.price * Math.max(days, (days >= 0 ? 1 : 0));
       } else {
-        // Fallback: charge base price if dates are missing (e.g., single-day booking)
-        total += f.price;
+        // Charge base price if dates are missing, but only if they are not required (i.e., this section is technically incorrect logic 
+        // as we are now requiring dates, but keeping the structure for calculation safety).
+        // Since we enforce date selection, we mainly focus on the block above.
+        // For calculation safety, if we miss dates but the facility is selected, we charge 1 day's price.
+        if (f.startDate || f.endDate) {
+             total += f.price;
+        }
       }
     });
     
@@ -279,7 +308,7 @@ export const MultiStepBooking = ({
           </svg>
         </div>
         <p className="text-xl font-bold">Booking Confirmed! 🎉</p>
-        <p className="text-sm text-muted-foreground text-center">Your booking for **{itemName}** has been successfully confirmed. You will receive a confirmation email shortly.</p>
+        <p className="text-sm text-muted-foreground text-center">Your booking for {itemName} has been successfully confirmed. You will receive a confirmation email shortly.</p>
       </div>
     );
   }
@@ -364,7 +393,7 @@ export const MultiStepBooking = ({
             </div>
           </div>
           <div className="mt-4 p-4 bg-muted rounded">
-            <p className="text-sm font-medium">Guest Count: **{formData.num_adults + formData.num_children}** total</p>
+            <p className="text-sm font-medium">Guest Count: {formData.num_adults + formData.num_children} total</p>
             {(formData.num_adults === 0 && formData.num_children === 0) && (
               <p className="text-xs text-red-500">You must include at least one guest.</p>
             )}
@@ -383,6 +412,12 @@ export const MultiStepBooking = ({
               <div className="space-y-4">
                 {facilities.map((facility) => {
                   const selected = formData.selectedFacilities.find(f => f.name === facility.name);
+                  const isDateInvalid = selected && (
+                    !selected.startDate || 
+                    !selected.endDate || 
+                    new Date(selected.endDate).getTime() < new Date(selected.startDate).getTime()
+                  );
+
                   return (
                     <div key={facility.name} className="space-y-2 p-3 border rounded-md">
                       <div className="flex items-center justify-between">
@@ -399,27 +434,34 @@ export const MultiStepBooking = ({
                         <span className="text-sm font-bold text-primary">KES {facility.price} / day</span>
                       </div>
                       {selected && (
-                        <div className="ml-6 grid grid-cols-2 gap-3 pt-2">
-                          <div>
-                            <Label className="text-xs">Start Date</Label>
-                            <Input
-                              type="date"
-                              placeholder="Start Date"
-                              value={selected.startDate || ""}
-                              onChange={(e) => updateFacilityDates(facility.name, 'startDate', e.target.value)}
-                              min={formData.visit_date || new Date().toISOString().split('T')[0]}
-                            />
+                        <div className="ml-6 pt-2">
+                          <p className="text-sm font-medium mb-2">Rental Period *</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Start Date</Label>
+                              <Input
+                                type="date"
+                                placeholder="Start Date"
+                                value={selected.startDate || ""}
+                                onChange={(e) => updateFacilityDates(facility.name, 'startDate', e.target.value)}
+                                min={formData.visit_date || new Date().toISOString().split('T')[0]}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">End Date</Label>
+                              <Input
+                                type="date"
+                                placeholder="End Date"
+                                value={selected.endDate || ""}
+                                onChange={(e) => updateFacilityDates(facility.name, 'endDate', e.target.value)}
+                                // Min should be the start date of the facility rental
+                                min={selected.startDate || formData.visit_date || new Date().toISOString().split('T')[0]} 
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <Label className="text-xs">End Date</Label>
-                            <Input
-                              type="date"
-                              placeholder="End Date"
-                              value={selected.endDate || ""}
-                              onChange={(e) => updateFacilityDates(facility.name, 'endDate', e.target.value)}
-                              min={selected.startDate || formData.visit_date || new Date().toISOString().split('T')[0]}
-                            />
-                          </div>
+                          {isDateInvalid && (
+                             <p className="text-xs text-red-500 mt-2">Please select valid Start and End dates (End date must be the same or after Start date).</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -472,11 +514,17 @@ export const MultiStepBooking = ({
           {(facilities.length === 0 && activities.length === 0) && (
               <p className="text-muted-foreground text-center p-4 bg-muted rounded-lg">No additional services available for this booking.</p>
           )}
+          
+          {!areFacilityDatesValid() && formData.selectedFacilities.length > 0 && (
+            <div className="p-3 bg-red-100 border border-red-400 rounded-lg">
+                <p className="text-sm font-medium text-red-700">Please review facility dates. All selected facilities require a valid Start and End date.</p>
+            </div>
+          )}
 
           <div className="p-4 bg-primary/10 rounded-lg">
             <p className="text-sm font-medium text-primary">Total Add-ons:</p>
             <p className="text-sm text-primary/80">
-              **{formData.selectedFacilities.length}** Facility {formData.selectedFacilities.length !== 1 ? 'Rentals' : 'Rental'}, **{formData.selectedActivities.length}** Activit{formData.selectedActivities.length !== 1 ? 'ies' : 'y'}
+              {formData.selectedFacilities.length} Facility {formData.selectedFacilities.length !== 1 ? 'Rentals' : 'Rental'}, {formData.selectedActivities.length} Activit{formData.selectedActivities.length !== 1 ? 'ies' : 'y'}
             </p>
           </div>
         </div>
@@ -533,7 +581,7 @@ export const MultiStepBooking = ({
           
           {/* Booking Summary */}
           <div className="p-4 bg-primary/10 rounded-lg space-y-2 border border-primary">
-            <p className="text-sm font-medium text-primary">Booking for **{itemName}** on **{formData.visit_date}**</p>
+            <p className="text-sm font-medium text-primary">Booking for {itemName} on {formData.visit_date}</p>
             <p className="text-sm text-primary/80">
               Guests: {formData.num_adults} Adult{formData.num_adults !== 1 ? 's' : ''}, {formData.num_children} Child{formData.num_children !== 1 ? 'ren' : ''}
             </p>
@@ -568,7 +616,6 @@ export const MultiStepBooking = ({
           </div>
 
           {/* Mobile Money Input */}
-          {/* Check now only for "mpesa" (removed "airtel") */}
           {(formData.payment_method === "mpesa") && (
             <div>
               <Label htmlFor="payment_phone">Phone Number for Payment *</Label>
@@ -643,6 +690,7 @@ export const MultiStepBooking = ({
             disabled={
               (currentStep === 1 && !formData.visit_date && !skipDateSelection) ||
               (currentStep === 2 && formData.num_adults === 0 && formData.num_children === 0) ||
+              (currentStep === 3 && !skipFacilitiesAndActivities && formData.selectedFacilities.length > 0 && !areFacilityDatesValid()) || // Facility date validation
               (currentStep === 4 && (!formData.guest_name || !formData.guest_email || !formData.guest_phone)) // Guest info validation
             }
           >
@@ -654,7 +702,7 @@ export const MultiStepBooking = ({
             onClick={handleSubmit}
             className="ml-auto w-40"
             disabled={isProcessing || calculateTotal() === 0 || 
-                      // Payment validation (can be more strict)
+                      // Payment validation
                       (formData.payment_method !== 'card' && !formData.payment_phone) ||
                       (formData.payment_method === 'card' && (!formData.card_number || !formData.card_expiry || !formData.card_cvv))
             }
