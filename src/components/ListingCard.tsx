@@ -79,7 +79,7 @@ export const ListingCard = ({
     <Card 
       onClick={handleCardClick}
       className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border rounded-lg bg-card shadow-sm
-                   w-full" 
+                    w-full" 
     >
       <div className="relative aspect-[4/3] overflow-hidden m-0">
         <img
@@ -93,14 +93,12 @@ export const ListingCard = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 m-0 p-0"
         />
         
-        {/* Changed Badge to bg-red-600 */}
         {type === "TRIP" && (
           <Badge className="absolute top-2 left-2 **bg-red-600** text-primary-foreground backdrop-blur text-xs font-bold z-10 px-2 py-1">
             TRIP
           </Badge>
         )}
 
-        {/* Changed Badge to bg-red-600 */}
         {type === "EVENT" && (
           <Badge className="absolute top-2 left-2 **bg-red-600** text-primary-foreground backdrop-blur text-xs font-bold z-10 px-2 py-1">
             EVENT
@@ -120,21 +118,22 @@ export const ListingCard = ({
             onClick={handleSaveClick}
             className={cn(
               "absolute top-2 right-2 z-20 h-10 w-10 md:h-8 md:w-8 rounded-full backdrop-blur touch-manipulation active:scale-95 transition-transform",
-              isSaved 
-                ? "bg-red-500 text-white hover:bg-red-600" 
-                : "bg-background/80 hover:bg-background/90"
+              // Changed base background to be transparent and removed specific hover classes
+              "bg-transparent hover:bg-transparent" 
             )}
           >
             <Heart
               className={cn(
                 "h-5 w-5 md:h-4 md:w-4",
-                isSaved ? "fill-current" : ""
+                // Conditional styling now applies red fill/color to the icon itself
+                isSaved 
+                  ? "**text-red-500 fill-red-500**" // Saved: Icon is red (text-red-500) and filled (fill-red-500)
+                  : "**text-white drop-shadow-sm**" // Not Saved: Icon is white (for contrast on image)
               )}
             />
           </Button>
         )}
 
-        {/* Changed div to bg-red-600 and rounded-none */}
         {!hidePrice && price !== undefined && (type === "TRIP" || type === "EVENT") && (
           <div className="absolute bottom-2 left-2 **bg-red-600** text-primary-foreground px-3 py-1.5 md:px-2 md:py-1 **rounded-none** shadow-lg z-10">
             <p className="font-bold text-sm md:text-xs whitespace-nowrap">
