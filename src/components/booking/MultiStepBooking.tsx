@@ -543,7 +543,7 @@ export const MultiStepBooking = ({
             />
           </div>
           <div>
-            <Label htmlFor="guest_email">Email *</Label>
+            <Label htmlFor="guest_email">Email</Label>
             <Input
               id="guest_email"
               type="email"
@@ -554,7 +554,7 @@ export const MultiStepBooking = ({
             />
           </div>
           <div>
-            <Label htmlFor="guest_phone">Phone Number *</Label>
+            <Label htmlFor="guest_phone">Phone Number</Label>
             <Input
               id="guest_phone"
               type="tel"
@@ -562,7 +562,7 @@ export const MultiStepBooking = ({
               onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
               className="mt-2"
               required
-              placeholder="e.g., +254 7XX XXX XXX"
+              placeholder="e.g., 10 DIGITS"
             />
           </div>
         </div>
@@ -614,7 +614,7 @@ export const MultiStepBooking = ({
           {/* Mobile Money Input */}
           {(formData.payment_method === "mpesa") && (
             <div>
-              <Label htmlFor="payment_phone">Phone Number for Payment *</Label>
+              <Label htmlFor="payment_phone">Phone Number for Payment </Label>
               <Input
                 id="payment_phone"
                 type="tel"
@@ -631,7 +631,7 @@ export const MultiStepBooking = ({
           {formData.payment_method === "card" && (
             <div className="space-y-3">
               <div>
-                <Label htmlFor="card_number">Card Number *</Label>
+                <Label htmlFor="card_number">Card Number</Label>
                 <Input
                   id="card_number"
                   value={formData.card_number}
@@ -643,7 +643,7 @@ export const MultiStepBooking = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="card_expiry">Expiry (MM/YY) *</Label>
+                  <Label htmlFor="card_expiry">Expiry (MM/YY) </Label>
                   <Input
                     id="card_expiry"
                     value={formData.card_expiry}
@@ -654,7 +654,7 @@ export const MultiStepBooking = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="card_cvv">CVV *</Label>
+                  <Label htmlFor="card_cvv">CVV </Label>
                   <Input
                     id="card_cvv"
                     value={formData.card_cvv}
