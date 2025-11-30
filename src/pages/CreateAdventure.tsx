@@ -395,7 +395,7 @@ const CreateAdventure = () => {
                   value={formData.phoneNumber}
                   onChange={(value) => setFormData({...formData, phoneNumber: value})}
                   country={formData.country}
-                  placeholder="758800117"
+                  placeholder="0758800117"
                 />
                 <p className="text-sm text-muted-foreground">Enter number without leading zero</p>
               </div>
