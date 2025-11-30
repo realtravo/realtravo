@@ -112,7 +112,7 @@ const HotelDetail = () => {
       return;
     }
 
-    const refLink = await generateReferralLink(hotel.id, "hotel", hotel.name);
+    const refLink = await generateReferralLink(hotel.id, "hotel", hotel.id);
 
     if (navigator.share) {
       try {

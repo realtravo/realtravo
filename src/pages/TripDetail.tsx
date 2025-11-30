@@ -95,7 +95,7 @@ const TripDetail = () => {
       return;
     }
 
-    const refLink = await generateReferralLink(trip.id, "trip", trip.name);
+    const refLink = await generateReferralLink(trip.id, "trip", trip.id);
     setReferralLink(refLink);
 
     if (navigator.share) {

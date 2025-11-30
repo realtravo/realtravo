@@ -104,7 +104,7 @@ const EventDetail = () => {
       return;
     }
 
-    const refLink = await generateReferralLink(event.id, "event", event.name);
+    const refLink = await generateReferralLink(event.id, "event", event.id);
 
     if (navigator.share) {
       try {

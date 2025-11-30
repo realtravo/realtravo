@@ -91,7 +91,7 @@ const AdventurePlaceDetail = () => {
       return;
     }
 
-    const refLink = await generateReferralLink(place.id, "adventure_place", place.name);
+    const refLink = await generateReferralLink(place.id, "adventure_place", place.id);
 
     if (navigator.share) {
       try { 
