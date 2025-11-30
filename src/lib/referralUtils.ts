@@ -1,35 +1,66 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const generateReferralLink = (
+/**
+ * Slugify email name for public referral links
+ */
+const slugifyEmailName = (email: string): string => {
+  const namePart = email.split('@')[0];
+  return namePart.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+};
+
+/**
+ * Generate referral link based on user status
+ * - Guests: Clean base URL only
+ * - Logged-in users: Base URL + ?ref={slugified-email-name}
+ */
+export const generateReferralLink = async (
   itemId: string,
   itemType: string,
-  referrerId: string
-): string => {
+  itemSlug?: string
+): Promise<string> => {
   const baseUrl = window.location.origin;
   let path = "";
   
   switch (itemType) {
     case "trip":
-      path = `/trips/${itemId}`;
+    case "event":
+      path = `/trips/${itemSlug || itemId}`;
       break;
     case "hotel":
-      path = `/hotels/${itemId}`;
+      path = `/hotels/${itemSlug || itemId}`;
       break;
     case "adventure":
-      path = `/adventures/${itemId}`;
+    case "adventure_place":
+      path = `/adventures/${itemSlug || itemId}`;
       break;
     case "attraction":
-      path = `/attractions/${itemId}`;
+      path = `/attractions/${itemSlug || itemId}`;
       break;
     default:
       path = `/`;
   }
   
-  return `${baseUrl}${path}?ref=${referrerId}`;
+  const cleanUrl = `${baseUrl}${path}`;
+  
+  // Check if user is logged in
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user?.email) {
+    // Guest user - return clean URL without referral parameter
+    return cleanUrl;
+  }
+  
+  // Logged-in user - append slugified email name as ref parameter
+  const refSlug = slugifyEmailName(user.email);
+  return `${cleanUrl}?ref=${refSlug}`;
 };
 
+/**
+ * Track referral click using slugified email name from URL
+ * Looks up user by email slug, retrieves internal_referral_id_digits for tracking
+ */
 export const trackReferralClick = async (
-  referrerId: string,
+  refSlug: string,
   itemId?: string,
   itemType?: string,
   referralType: "booking" | "host" = "booking"
@@ -37,15 +68,41 @@ export const trackReferralClick = async (
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
+    // Look up referrer by slugified email name
+    const { data: profiles, error: lookupError } = await supabase
+      .from("profiles")
+      .select("id, email, internal_referral_id_digits")
+      .not("email", "is", null);
+    
+    if (lookupError || !profiles) {
+      console.error("Error looking up referrer:", lookupError);
+      return null;
+    }
+    
+    // Find matching profile by slugifying each email
+    const referrerProfile = profiles.find(profile => {
+      if (!profile.email) return false;
+      const slugifiedEmail = profile.email.split('@')[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      return slugifiedEmail === refSlug;
+    });
+    
+    if (!referrerProfile || !referrerProfile.internal_referral_id_digits) {
+      console.log("No valid referrer found for slug:", refSlug);
+      return null;
+    }
+    
     // Don't track if the referrer is clicking their own link
-    if (user?.id === referrerId) {
+    if (user?.id === referrerProfile.id) {
       return null;
     }
 
     const { data, error } = await supabase
       .from("referral_tracking")
       .insert({
-        referrer_id: referrerId,
+        referrer_id: referrerProfile.id,
         referred_user_id: user?.id || null,
         referral_type: referralType,
         item_id: itemId,
@@ -57,9 +114,10 @@ export const trackReferralClick = async (
 
     if (error) throw error;
     
-    // Store tracking ID in session storage for later use
+    // Store tracking ID and internal digit ID in session storage
     if (data) {
       sessionStorage.setItem("referral_tracking_id", data.id);
+      sessionStorage.setItem("referral_internal_id", referrerProfile.internal_referral_id_digits);
     }
     
     return data;

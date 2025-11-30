@@ -90,12 +90,12 @@ const TripDetail = () => {
   };
 
   const handleShare = async () => {
-    if (!user || !trip) {
-      toast({ title: "Login Required", description: "Please login to share this tour", variant: "destructive" });
+    if (!trip) {
+      toast({ title: "Unable to Share", description: "Trip information not available", variant: "destructive" });
       return;
     }
 
-    const refLink = generateReferralLink(trip.id, "trip", user.id);
+    const refLink = await generateReferralLink(trip.id, "trip", trip.name);
     setReferralLink(refLink);
 
     if (navigator.share) {
@@ -106,7 +106,7 @@ const TripDetail = () => {
       }
     } else {
       navigator.clipboard.writeText(refLink);
-      toast({ title: "Referral Link Copied", description: "Share this link to earn commission on bookings!" });
+      toast({ title: "Link Copied", description: user ? "Share this link to earn commission on bookings!" : "Share this trip with others!" });
     }
   };
 

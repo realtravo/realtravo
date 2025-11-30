@@ -16,7 +16,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
-import { getReferralTrackingId } from "@/lib/referralUtils";
+import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
 
 interface Facility {
   name: string;
@@ -71,11 +71,9 @@ const AttractionDetail = () => {
     
     // Track referral clicks
     const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get("ref");
-    if (refId && id) {
-      import("@/lib/referralUtils").then(({ trackReferralClick }) => {
-        trackReferralClick(refId, id, "attraction", "booking");
-      });
+    const refSlug = urlParams.get("ref");
+    if (refSlug && id) {
+      trackReferralClick(refSlug, id, "attraction", "booking");
     }
   }, [id]);
 
@@ -99,15 +97,22 @@ const AttractionDetail = () => {
   };
 
   const handleShare = async () => {
+    if (!attraction) {
+      toast({ title: "Unable to Share", description: "Attraction information not available", variant: "destructive" });
+      return;
+    }
+
+    const refLink = await generateReferralLink(attraction.id, "attraction", attraction.location_name);
+
     if (navigator.share) {
       try {
-        await navigator.share({ title: attraction?.location_name, text: attraction?.description, url: window.location.href });
+        await navigator.share({ title: attraction?.location_name, text: attraction?.description, url: refLink });
       } catch (error) {
         console.log("Share failed:", error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Link copied", description: "Attraction link copied to clipboard" });
+      navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied", description: user ? "Share this link to earn commission on bookings!" : "Share this attraction with others!" });
     }
   };
 

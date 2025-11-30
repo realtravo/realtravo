@@ -16,7 +16,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
-import { getReferralTrackingId } from "@/lib/referralUtils";
+import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
 interface Facility {
   name: string;
   price: number;
@@ -76,13 +76,12 @@ const HotelDetail = () => {
     
     // Track referral clicks
     const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get("ref");
-    if (refId && id) {
-      import("@/lib/referralUtils").then(({ trackReferralClick }) => {
-        trackReferralClick(refId, id, "hotel", "booking");
-      });
+    const refSlug = urlParams.get("ref");
+    if (refSlug && id) {
+      trackReferralClick(refSlug, id, "hotel", "booking");
     }
   }, [id]);
+
   const fetchHotel = async () => {
     try {
       const {
@@ -108,24 +107,29 @@ const HotelDetail = () => {
     }
   };
   const handleShare = async () => {
+    if (!hotel) {
+      toast({ title: "Unable to Share", description: "Hotel information not available", variant: "destructive" });
+      return;
+    }
+
+    const refLink = await generateReferralLink(hotel.id, "hotel", hotel.name);
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: hotel?.name,
           text: hotel?.description,
-          url: window.location.href
+          url: refLink
         });
       } catch (error) {
         console.log("Share failed:", error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link copied",
-        description: "Hotel link copied to clipboard"
-      });
+      navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied", description: user ? "Share this link to earn commission on bookings!" : "Share this hotel with others!" });
     }
   };
+
   const openInMaps = () => {
     if (hotel?.map_link) {
       window.open(hotel.map_link, '_blank');
