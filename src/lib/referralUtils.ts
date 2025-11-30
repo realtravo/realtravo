@@ -23,18 +23,20 @@ export const generateReferralLink = async (
   
   switch (itemType) {
     case "trip":
+      path = `/trip/${itemSlug || itemId}`;
+      break;
     case "event":
-      path = `/trips/${itemSlug || itemId}`;
+      path = `/event/${itemSlug || itemId}`;
       break;
     case "hotel":
-      path = `/hotels/${itemSlug || itemId}`;
+      path = `/hotel/${itemSlug || itemId}`;
       break;
     case "adventure":
     case "adventure_place":
-      path = `/adventures/${itemSlug || itemId}`;
+      path = `/adventure/${itemSlug || itemId}`;
       break;
     case "attraction":
-      path = `/attractions/${itemSlug || itemId}`;
+      path = `/attraction/${itemSlug || itemId}`;
       break;
     default:
       path = `/`;
