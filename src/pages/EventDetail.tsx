@@ -15,7 +15,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
-import { getReferralTrackingId } from "@/lib/referralUtils";
+import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
 interface Activity {
   name: string;
   price: number;
@@ -69,13 +69,12 @@ const EventDetail = () => {
     
     // Track referral clicks
     const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get("ref");
-    if (refId && id) {
-      import("@/lib/referralUtils").then(({ trackReferralClick }) => {
-        trackReferralClick(refId, id, "event", "booking");
-      });
+    const refSlug = urlParams.get("ref");
+    if (refSlug && id) {
+      trackReferralClick(refSlug, id, "event", "booking");
     }
-  }, [id, user]);
+  }, [id]);
+
   const fetchEvent = async () => {
     try {
       const {
@@ -100,41 +99,29 @@ const EventDetail = () => {
     }
   };
   const handleShare = async () => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please log in to share with referral link",
-        variant: "destructive"
-      });
-      navigate("/auth");
+    if (!event) {
+      toast({ title: "Unable to Share", description: "Event information not available", variant: "destructive" });
       return;
     }
-    try {
-      const {
-        data: trackingData
-      } = await supabase.from("referral_tracking").insert({
-        referrer_id: user.id,
-        referral_type: "item_share",
-        item_type: "event",
-        item_id: id
-      }).select().single();
-      const shareUrl = `${window.location.origin}/event/${id}?ref=${trackingData?.id}`;
-      if (navigator.share) {
+
+    const refLink = await generateReferralLink(event.id, "event", event.name);
+
+    if (navigator.share) {
+      try {
         await navigator.share({
           title: event?.name,
           text: `Check out this event: ${event?.name}`,
-          url: shareUrl
+          url: refLink
         });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        toast({
-          title: "Link copied to clipboard!"
-        });
+      } catch (error) {
+        console.log("Share failed:", error);
       }
-    } catch (error) {
-      console.error("Error sharing:", error);
+    } else {
+      navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied", description: user ? "Share this link to earn commission on bookings!" : "Share this event with others!" });
     }
   };
+
   const openInMaps = () => {
     if (event?.map_link) {
       window.open(event.map_link, "_blank");

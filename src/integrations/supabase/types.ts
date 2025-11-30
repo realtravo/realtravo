@@ -668,6 +668,7 @@ export type Database = {
           email: string | null
           gender: Database["public"]["Enums"]["gender_type"] | null
           id: string
+          internal_referral_id_digits: string | null
           name: string
           phone_number: string | null
           phone_verified: boolean | null
@@ -682,6 +683,7 @@ export type Database = {
           email?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id: string
+          internal_referral_id_digits?: string | null
           name: string
           phone_number?: string | null
           phone_verified?: boolean | null
@@ -696,6 +698,7 @@ export type Database = {
           email?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: string
+          internal_referral_id_digits?: string | null
           name?: string
           phone_number?: string | null
           phone_verified?: boolean | null
@@ -1181,6 +1184,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_referral_id: { Args: never; Returns: string }
       get_date_availability: {
         Args: { p_date: string; p_item_id: string; p_item_type: string }
         Returns: Json

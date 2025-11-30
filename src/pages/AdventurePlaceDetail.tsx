@@ -16,7 +16,7 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { useAuth } from "@/contexts/AuthContext";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
-import { getReferralTrackingId } from "@/lib/referralUtils";
+import { generateReferralLink, trackReferralClick, getReferralTrackingId } from "@/lib/referralUtils";
 
 interface Facility { name: string; price: number; capacity?: number; }
 interface Activity { name: string; price: number; }
@@ -65,11 +65,9 @@ const AdventurePlaceDetail = () => {
     
     // Track referral clicks
     const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get("ref");
-    if (refId && id) {
-      import("@/lib/referralUtils").then(({ trackReferralClick }) => {
-        trackReferralClick(refId, id, "adventure", "booking");
-      });
+    const refSlug = urlParams.get("ref");
+    if (refSlug && id) {
+      trackReferralClick(refSlug, id, "adventure_place", "booking");
     }
   }, [id]);
 
@@ -88,12 +86,22 @@ const AdventurePlaceDetail = () => {
 
   const handleSave = () => { if (id) handleSaveItem(id, "adventure_place"); };
   const handleShare = async () => {
+    if (!place) {
+      toast({ title: "Unable to Share", description: "Place information not available", variant: "destructive" });
+      return;
+    }
+
+    const refLink = await generateReferralLink(place.id, "adventure_place", place.name);
+
     if (navigator.share) {
-      try { await navigator.share({ title: place?.name, text: place?.description, url: window.location.href }); }
-      catch (error) { console.log("Share failed:", error); }
+      try { 
+        await navigator.share({ title: place?.name, text: place?.description, url: refLink }); 
+      } catch (error) { 
+        console.log("Share failed:", error); 
+      }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Link copied", description: "Place link copied to clipboard" });
+      navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied", description: user ? "Share this link to earn commission on bookings!" : "Share this place with others!" });
     }
   };
 
