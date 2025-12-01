@@ -105,7 +105,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
         <div className="flex items-center gap-3">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              {/* MODIFIED: hover:bg-white and hover:text-[#008080] for visibility */}
               <button className="inline-flex items-center justify-center h-10 w-10 rounded-md text-white hover:bg-white hover:text-[#008080] transition-colors">
                 <Menu className="h-5 w-5" />
               </button>
@@ -123,7 +122,8 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
               <span className="font-bold text-base md:text-lg text-header-foreground block">
                 TripTrac
               </span>
-              <p className="text-xs text-muted-foreground block">Your journey starts now.</p>
+              {/* MODIFIED: Changed text-muted-foreground to text-white */}
+              <p className="text-xs text-white block">Your journey starts now.</p>
             </div>
           </Link>
         </div>
@@ -156,7 +156,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           
           {/* Search Icon Button */}
           {showSearchIcon && (
-            // MODIFIED: Added group class, changed hover:bg, and added group-hover:text-[#008080]
             <button 
               onClick={() => {
                 if (onSearchClick) {
@@ -180,9 +179,16 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
 
           {/* Desktop Auth Actions (Right Side) - Notification, Theme, Account */}
           <div className="hidden md:flex items-center gap-2">
-            <NotificationBell />
-            <ThemeToggle />
-            {/* MODIFIED: Added group class, changed hover:bg, and added group-hover:text-[#008080] */}
+            {/* MODIFIED: Wrapped NotificationBell for consistent hover effect */}
+            <div className="rounded-full h-10 w-10 flex items-center justify-center bg-white/10 hover:bg-white group transition-colors">
+              <NotificationBell className="group-hover:text-[#008080]" />
+            </div>
+
+            {/* MODIFIED: Wrapped ThemeToggle for consistent hover effect */}
+            <div className="rounded-full h-10 w-10 flex items-center justify-center bg-white/10 hover:bg-white group transition-colors">
+              <ThemeToggle className="group-hover:text-[#008080]" />
+            </div>
+
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
               className="rounded-full h-10 w-10 flex items-center justify-center bg-white/10 hover:bg-white group transition-colors"
