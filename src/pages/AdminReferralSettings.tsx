@@ -214,7 +214,7 @@ export default function AdminReferralSettings() {
     <div className="min-h-screen flex flex-col">
       <Header />
       {/* The main content area uses flex-1, which allows it to grow and the content inside it to scroll if it overflows the viewport, satisfying the small screen scroll requirement. */}
-      <main className="flex-1 container mx-auto px-4 py-8 overflow-y-auto"> 
+      <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8 overflow-y-auto"> 
         <div className="max-w-2xl mx-auto">
           <Button
             variant="ghost"
