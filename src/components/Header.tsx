@@ -102,13 +102,13 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
       <div className="container flex h-full items-center justify-between px-4">
         
         {/* Logo and Drawer Trigger (Left Side) */}
-        <div className="flex items-center gap-3">
-          <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-            <SheetTrigger asChild>
-              <button className="inline-flex items-center justify-center h-10 w-10 rounded-md text-white hover:bg-[#006666] transition-colors">
-                <Menu className="h-5 w-5" />
-              </button>
-            </SheetTrigger>
+        <div className="flex items-center gap-3">
+          <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+            <SheetTrigger asChild>
+              <button className="inline-flex items-center justify-center h-10 w-10 rounded-md text-white hover:bg-[#006666] transition-colors">
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 h-screen">
               <NavigationDrawer onClose={() => setIsDrawerOpen(false)} />
             </SheetContent>
