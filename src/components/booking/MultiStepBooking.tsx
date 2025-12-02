@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, Users, Loader2, CreditCard, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/contexts/AuthContext"; // Assuming this path is correct
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface Facility {
   name: string;
@@ -69,6 +70,7 @@ export const MultiStepBooking = ({
 }: MultiStepBookingProps) => {
   // Use the custom Auth hook
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // State for step management and form data (start at step 2 if skipping date selection)
   const [currentStep, setCurrentStep] = useState(skipDateSelection ? 2 : 1);
@@ -137,6 +139,29 @@ export const MultiStepBooking = ({
             if (status === 'completed' || resultCode === '0') {
               setPaymentStatus('success');
               setPaymentMessage('Payment Successful! Your booking is confirmed.');
+              
+              // Send booking confirmation email
+              const bookingData = payload.new.booking_data as any;
+              if (bookingData) {
+                supabase.functions.invoke('send-booking-confirmation', {
+                  body: {
+                    recipientEmail: bookingData.guest_email || formData.guest_email,
+                    recipientName: bookingData.guest_name || formData.guest_name,
+                    bookingType: bookingData.booking_type,
+                    itemName: itemName,
+                    totalAmount: bookingData.total_amount || calculateTotal(),
+                    visitDate: bookingData.visit_date || formData.visit_date,
+                    bookingDetails: bookingData.booking_details || formData,
+                  }
+                }).catch(err => console.error('Email sending failed:', err));
+              }
+              
+              // Redirect after delay
+              setTimeout(() => {
+                if (user) {
+                  navigate('/bookings');
+                }
+              }, 2500);
             } else if (resultCode === '1032') {
               setPaymentStatus('cancelled');
               setPaymentMessage('Payment Cancelled. You cancelled the payment on your phone.');
