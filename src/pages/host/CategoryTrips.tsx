@@ -93,7 +93,7 @@ const CategoryTrips = () => {
             <h1 className="text-3xl font-bold">My Tours</h1>
           </div>
           {trips.length > 0 && (
-            <Button onClick={() => navigate("/CreateTripEvent")} size="sm">
+            <Button onClick={() => navigate("/create-trip")} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Tour
             </Button>
@@ -104,7 +104,7 @@ const CategoryTrips = () => {
           <Card className="p-8 text-center">
             <p className="text-muted-foreground mb-4">You haven't created any tours yet</p>
             <button
-              onClick={() => navigate("/CreateTripEvent")}
+              onClick={() => navigate("/create-trip")}
               className="text-primary hover:underline"
             >
               Create your first tour

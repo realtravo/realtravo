@@ -177,7 +177,7 @@ const BecomeHost = () => {
   };
 
   const viewItemDetails = (item: any) => {
-    navigate(`/host-item/${item.type}/${item.id}`);
+    navigate(`/host/item/${item.type}/${item.id}`);
   };
 
   if (loading) {
@@ -214,7 +214,7 @@ const BecomeHost = () => {
           {/* Tours Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
             <button
-              onClick={() => navigate("/host/category/trips")}
+              onClick={() => navigate("/host/trips")}
               className="absolute inset-0 w-full h-full"
               style={{
                 backgroundImage: 'url(https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800)',
@@ -234,7 +234,7 @@ const BecomeHost = () => {
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate("/CreateTripEvent");
+                navigate("/create-trip");
               }}
               size="sm"
               className="absolute top-2 right-2 z-10 text-white"
@@ -253,7 +253,7 @@ const BecomeHost = () => {
           {/* Hotels Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
             <button
-              onClick={() => navigate("/host/category/hotels")}
+              onClick={() => navigate("/host/hotels")}
               className="absolute inset-0 w-full h-full"
               style={{
                 backgroundImage: 'url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800)',
@@ -273,7 +273,7 @@ const BecomeHost = () => {
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate("/CreateHotel");
+                navigate("/create-hotel");
               }}
               size="sm"
               className="absolute top-2 right-2 z-10 text-white"
@@ -292,7 +292,7 @@ const BecomeHost = () => {
           {/* Attractions Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
             <button
-              onClick={() => navigate("/host/category/attractions")}
+              onClick={() => navigate("/host/attractions")}
               className="absolute inset-0 w-full h-full"
               style={{
                 backgroundImage: 'url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800)',
@@ -331,7 +331,7 @@ const BecomeHost = () => {
           {/* Experiences Card */}
           <div className="relative h-40 rounded-lg overflow-hidden group shadow-lg hover:shadow-xl transition-all">
             <button
-              onClick={() => navigate("/host/category/experiences")}
+              onClick={() => navigate("/host/experiences")}
               className="absolute inset-0 w-full h-full"
               style={{
                 backgroundImage: 'url(https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800)',
@@ -351,7 +351,7 @@ const BecomeHost = () => {
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate("/CreateAdventure");
+                navigate("/create-adventure");
               }}
               size="sm"
               className="absolute top-2 right-2 z-10 text-white"

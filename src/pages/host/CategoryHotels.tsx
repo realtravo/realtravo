@@ -93,7 +93,7 @@ const CategoryHotels = () => {
             <h1 className="text-3xl font-bold">My Hotels</h1>
           </div>
           {hotels.length > 0 && (
-            <Button onClick={() => navigate("/CreateHotel")} size="sm">
+            <Button onClick={() => navigate("/create-hotel")} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Hotel
             </Button>
@@ -104,7 +104,7 @@ const CategoryHotels = () => {
           <Card className="p-8 text-center">
             <p className="text-muted-foreground mb-4">You haven't created any hotels yet</p>
             <button
-              onClick={() => navigate("/CreateHotel")}
+              onClick={() => navigate("/create-hotel")}
               className="text-primary hover:underline"
             >
               Create your first hotel

@@ -583,7 +583,7 @@ const AdminReviewDetail = () => {
                     variant="outline" 
                     size="sm" 
                     className="w-full mt-4"
-                    onClick={() => navigate(`/admin/bookings/${type}/${id}`)}
+                    onClick={() => navigate(`/admin/bookings`)}
                   >
                     See All Bookings ({bookings.length})
                   </Button>

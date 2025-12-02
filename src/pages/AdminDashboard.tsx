@@ -133,7 +133,7 @@ const AdminDashboard = () => {
         <Card>
           <div className="divide-y divide-border">
             <button
-              onClick={() => navigate("/admin/pending-approval")}
+              onClick={() => navigate("/admin/pending")}
               className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
             >
               <div className="flex items-center gap-4">

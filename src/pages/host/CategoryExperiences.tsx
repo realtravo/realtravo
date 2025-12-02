@@ -93,7 +93,7 @@ const CategoryExperiences = () => {
             <h1 className="text-3xl font-bold">My Experiences</h1>
           </div>
           {experiences.length > 0 && (
-            <Button onClick={() => navigate("/CreateAdventure")} size="sm">
+            <Button onClick={() => navigate("/create-adventure")} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Experience
             </Button>
@@ -104,7 +104,7 @@ const CategoryExperiences = () => {
           <Card className="p-8 text-center">
             <p className="text-muted-foreground mb-4">You haven't created any experiences yet</p>
             <button
-              onClick={() => navigate("/CreateAdventure")}
+              onClick={() => navigate("/create-adventure")}
               className="text-primary hover:underline"
             >
               Create your first experience

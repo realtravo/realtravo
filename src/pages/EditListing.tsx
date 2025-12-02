@@ -1214,7 +1214,7 @@ const EditListing = () => {
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => navigate(`/host-booking-details/${type}/${id}`)}
+                      onClick={() => navigate(`/host/bookings/${type}/${id}`)}
                     >
                       See All Bookings
                     </Button>
