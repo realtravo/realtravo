@@ -25,6 +25,7 @@ interface Booking {
   slots_booked: number | null;
   visit_date: string | null;
   item_id: string;
+  isPending?: boolean;
 }
 
 const Bookings = () => {
@@ -48,14 +49,49 @@ const Bookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch confirmed bookings
+      const { data: confirmedBookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setBookings(data || []);
+      if (bookingsError) throw bookingsError;
+
+      // Fetch pending payments (not yet converted to bookings)
+      const { data: pendingPayments, error: pendingError } = await supabase
+        .from("pending_payments")
+        .select("*")
+        .eq("user_id", user?.id)
+        .in("payment_status", ["pending", "failed", "cancelled", "timeout"])
+        .order("created_at", { ascending: false });
+
+      if (pendingError) throw pendingError;
+
+      // Transform pending payments to booking format
+      const pendingAsBookings: Booking[] = (pendingPayments || []).map((pp: any) => ({
+        id: pp.id,
+        booking_type: pp.booking_data?.booking_type || "unknown",
+        total_amount: pp.amount,
+        booking_details: pp.booking_data?.booking_details || {},
+        payment_status: pp.payment_status,
+        status: "pending",
+        created_at: pp.created_at,
+        guest_name: pp.booking_data?.guest_name || null,
+        guest_email: pp.booking_data?.guest_email || null,
+        guest_phone: pp.booking_data?.guest_phone || null,
+        slots_booked: pp.booking_data?.slots_booked || 1,
+        visit_date: pp.booking_data?.visit_date || null,
+        item_id: pp.booking_data?.item_id || "",
+        isPending: true,
+      }));
+
+      // Combine and sort by date
+      const allBookings = [...(confirmedBookings || []), ...pendingAsBookings].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setBookings(allBookings);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
@@ -65,10 +101,37 @@ const Bookings = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "confirmed": return "bg-green-500/10 text-green-500";
-      case "pending": return "bg-yellow-500/10 text-yellow-500";
-      case "cancelled": return "bg-red-500/10 text-red-500";
-      default: return "bg-gray-500/10 text-gray-500";
+      case "confirmed": 
+      case "paid":
+      case "completed":
+        return "bg-green-500/10 text-green-500";
+      case "pending": 
+        return "bg-yellow-500/10 text-yellow-500";
+      case "cancelled": 
+      case "timeout":
+        return "bg-red-500/10 text-red-500";
+      case "failed":
+        return "bg-orange-500/10 text-orange-500";
+      default: 
+        return "bg-gray-500/10 text-gray-500";
+    }
+  };
+
+  const getPaymentStatusLabel = (status: string) => {
+    switch (status) {
+      case "paid":
+      case "completed":
+        return "Paid";
+      case "pending":
+        return "Awaiting Payment";
+      case "failed":
+        return "Payment Failed";
+      case "cancelled":
+        return "Cancelled";
+      case "timeout":
+        return "Timed Out";
+      default:
+        return status;
     }
   };
 
@@ -109,10 +172,18 @@ const Bookings = () => {
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3 flex-wrap">
                       <Badge variant="outline">{getTypeLabel(booking.booking_type)}</Badge>
-                      <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
-                      <Badge className={getStatusColor(booking.payment_status)}>
-                        Payment: {booking.payment_status}
-                      </Badge>
+                      {booking.isPending ? (
+                        <Badge className={getStatusColor(booking.payment_status)}>
+                          {getPaymentStatusLabel(booking.payment_status)}
+                        </Badge>
+                      ) : (
+                        <>
+                          <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
+                          <Badge className={getStatusColor(booking.payment_status)}>
+                            {getPaymentStatusLabel(booking.payment_status)}
+                          </Badge>
+                        </>
+                      )}
                     </div>
 
                     <h3 className="text-xl font-semibold">
