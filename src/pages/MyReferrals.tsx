@@ -7,22 +7,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Copy, Users, ShoppingCart, DollarSign } from "lucide-react";
+import { ArrowLeft, Users, ShoppingCart, DollarSign } from "lucide-react";
 
 export default function MyReferrals() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalReferred: 0,
     totalBookings: 0,
     totalCommission: 0,
   });
-  const [hostReferralLink, setHostReferralLink] = useState("");
+  
 
   useEffect(() => {
     if (!user) {
@@ -63,10 +60,6 @@ export default function MyReferrals() {
           totalCommission,
         });
 
-        // Generate host referral link
-        const baseUrl = window.location.origin;
-        setHostReferralLink(`${baseUrl}/become-host?ref=${user.id}`);
-
         setLoading(false);
       } catch (error) {
         console.error("Error fetching referral stats:", error);
@@ -76,14 +69,6 @@ export default function MyReferrals() {
 
     fetchStats();
   }, [user, navigate]);
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Referral link copied to clipboard",
-    });
-  };
 
   if (loading) {
     return (
@@ -163,31 +148,6 @@ export default function MyReferrals() {
             </Card>
           </div>
 
-          {/* Host Referral Link */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Host Referral Link</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Share this link to invite new hosts. You'll earn commission on their bookings for 15 days after their first booking.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={hostReferralLink}
-                  readOnly
-                  className="flex-1"
-                />
-                <Button
-                  onClick={() => copyToClipboard(hostReferralLink)}
-                  variant="outline"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
       <Footer />
