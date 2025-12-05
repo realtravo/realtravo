@@ -61,6 +61,9 @@ export const MultiStepBooking = ({
 }: MultiStepBookingProps) => {
   const { user } = useAuth();
   
+  // Logged-in users skip contact info step (Step 4 becomes just summary)
+  const totalSteps = user ? 3 : 4;
+  
   const [currentStep, setCurrentStep] = useState(skipDateSelection ? 2 : 1);
   const [formData, setFormData] = useState<BookingFormData>({
     visit_date: skipDateSelection ? fixedDate : "",
@@ -97,8 +100,6 @@ export const MultiStepBooking = ({
     fetchUserProfile();
   }, [user]);
 
-  const totalSteps = 4;
-
   const areFacilityDatesValid = () => {
     return formData.selectedFacilities.every(f => {
       if (!f.startDate || !f.endDate) return false; 
@@ -116,12 +117,10 @@ export const MultiStepBooking = ({
       return;
     }
     
+    // For logged-in users: step 2 -> step 3 (summary) when skipping facilities
+    // For guests: step 2 -> step 4 (contact + summary) when skipping facilities
     if (currentStep === 2 && skipFacilitiesAndActivities) {
-      if (user) {
-        setCurrentStep(4);
-      } else {
-        setCurrentStep(4);
-      }
+      setCurrentStep(user ? 3 : 4);
       return;
     }
     
@@ -129,9 +128,12 @@ export const MultiStepBooking = ({
   };
 
   const handlePrevious = () => {
-    if (currentStep === 4 && skipFacilitiesAndActivities) {
-      setCurrentStep(2);
-      return;
+    // Handle going back when skipping facilities
+    if (skipFacilitiesAndActivities) {
+      if ((user && currentStep === 3) || (!user && currentStep === 4)) {
+        setCurrentStep(2);
+        return;
+      }
     }
     
     const minStep = skipDateSelection ? 2 : 1;
@@ -251,7 +253,7 @@ export const MultiStepBooking = ({
       
       {/* Progress Indicator */}
       <div className="flex items-center justify-between mb-6">
-        {[1, 2, 3, 4].map((step) => (
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
           <div
             key={step}
             className={`h-2 flex-1 mx-1 rounded-full transition-colors duration-300 ${
@@ -329,8 +331,8 @@ export const MultiStepBooking = ({
         </div>
       )}
 
-      {/* Step 3: Facilities & Activities */}
-      {currentStep === 3 && !skipFacilitiesAndActivities && (
+      {/* Step 3: Facilities & Activities (guests only) OR Summary (logged-in users) */}
+      {currentStep === 3 && !skipFacilitiesAndActivities && !user && (
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Step 3: Additional Services (Optional)</h3>
           
@@ -457,28 +459,58 @@ export const MultiStepBooking = ({
         </div>
       )}
 
-      {/* Step 4: Contact Info & Summary */}
-      {currentStep === 4 && (
+      {/* Step 3: Summary for logged-in users */}
+      {currentStep === 3 && user && (
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold">Step 3: Review & Submit</h3>
+          
+          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+            Your account details will be used for this booking.
+          </p>
+          
+          {/* Booking Summary */}
+          <div className="p-4 bg-primary/10 rounded-lg space-y-2 border border-primary">
+            <p className="text-sm font-medium text-primary">Booking for {itemName}</p>
+            <p className="text-sm text-primary/80">Date: {formData.visit_date}</p>
+            <p className="text-sm text-primary/80">
+              Guests: {formData.num_adults} Adult(s), {formData.num_children} Child(ren)
+            </p>
+            {(formData.selectedFacilities.length > 0 || formData.selectedActivities.length > 0) && (
+              <p className="text-xs text-primary/70">
+                {formData.selectedFacilities.length} Facility(s), {formData.selectedActivities.length} Activity(s) added
+              </p>
+            )}
+            <div className="border-t border-primary/30 pt-2 mt-2">
+              <p className="text-xl font-bold text-primary">Total: KES {calculateTotal().toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Payment pending</p>
+            </div>
+          </div>
+
+          {/* Account Info Display */}
+          <div className="space-y-2 text-sm">
+            <p><span className="text-muted-foreground">Name:</span> {formData.guest_name}</p>
+            <p><span className="text-muted-foreground">Email:</span> {formData.guest_email}</p>
+            {formData.guest_phone && <p><span className="text-muted-foreground">Phone:</span> {formData.guest_phone}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Contact Info & Summary (guests only) */}
+      {currentStep === 4 && !user && (
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Step 4: Contact Info & Summary</h3>
           
           {/* Contact Information */}
           <div className="space-y-4">
-            {user && (
-              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                Your account details will be used for this booking.
-              </p>
-            )}
             <div>
               <Label htmlFor="guest_name">Full Name *</Label>
               <Input
                 id="guest_name"
                 value={formData.guest_name}
-                onChange={(e) => !user && setFormData({ ...formData, guest_name: e.target.value })}
-                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
+                onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
+                className="mt-2"
                 required
-                readOnly={!!user}
-                placeholder={!user ? "Enter your full name" : ""}
+                placeholder="Enter your full name"
               />
             </div>
             <div>
@@ -487,28 +519,23 @@ export const MultiStepBooking = ({
                 id="guest_email"
                 type="email"
                 value={formData.guest_email}
-                onChange={(e) => !user && setFormData({ ...formData, guest_email: e.target.value })}
-                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
+                onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
+                className="mt-2"
                 required
-                readOnly={!!user}
-                placeholder={!user ? "Enter your email" : ""}
+                placeholder="Enter your email"
               />
             </div>
             <div>
-              <Label htmlFor="guest_phone">Phone Number *</Label>
+              <Label htmlFor="guest_phone">Phone Number (Optional)</Label>
               <Input
                 id="guest_phone"
                 type="tel"
                 value={formData.guest_phone}
-                onChange={(e) => !user && setFormData({ ...formData, guest_phone: e.target.value })}
-                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
-                required
-                readOnly={!!user}
-                placeholder={!user ? "e.g., 0712345678" : ""}
+                onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
+                className="mt-2"
+                placeholder="e.g., 0712345678"
               />
-              {!user && !formData.guest_phone && (
-                <p className="text-xs text-muted-foreground mt-1">We'll use this to contact you about your booking</p>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">Optional - We may use this to contact you about your booking</p>
             </div>
           </div>
           
@@ -548,7 +575,7 @@ export const MultiStepBooking = ({
             disabled={
               (currentStep === 1 && !formData.visit_date && !skipDateSelection) ||
               (currentStep === 2 && formData.num_adults === 0 && formData.num_children === 0) ||
-              (currentStep === 3 && !skipFacilitiesAndActivities && formData.selectedFacilities.length > 0 && !areFacilityDatesValid())
+              (currentStep === 3 && !skipFacilitiesAndActivities && !user && formData.selectedFacilities.length > 0 && !areFacilityDatesValid())
             }
           >
             Next
@@ -561,8 +588,7 @@ export const MultiStepBooking = ({
             disabled={
               isProcessing || 
               !formData.guest_name || 
-              !formData.guest_email || 
-              !formData.guest_phone
+              !formData.guest_email
             }
           >
             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Submit Booking'}

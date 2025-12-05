@@ -33,12 +33,12 @@ export const useBookingSubmit = () => {
         is_guest_booking: !user,
         guest_name: data.guestName,
         guest_email: data.guestEmail,
-        guest_phone: data.guestPhone,
+        guest_phone: data.guestPhone || null, // Handle empty string as null
         slots_booked: data.slotsBooked,
         visit_date: data.visitDate,
         referral_tracking_id: getReferralTrackingId(),
         booking_details: data.bookingDetails,
-        payment_phone: data.guestPhone,
+        payment_phone: data.guestPhone || null, // Handle empty string as null
       }])
       .select()
       .single();
