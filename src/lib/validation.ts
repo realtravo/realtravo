@@ -13,7 +13,9 @@ export const guestBookingSchema = z.object({
     .max(255, "Email must be less than 255 characters"),
   phone: z.string()
     .trim()
-    .regex(/^\+?[0-9]{10,15}$/, "Invalid phone number format (10-15 digits)"),
+    .regex(/^\+?[0-9]{10,15}$/, "Invalid phone number format (10-15 digits)")
+    .optional()
+    .or(z.literal("")),
 });
 
 // Payment phone validation schema
