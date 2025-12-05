@@ -464,14 +464,21 @@ export const MultiStepBooking = ({
           
           {/* Contact Information */}
           <div className="space-y-4">
+            {user && (
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                Your account details will be used for this booking.
+              </p>
+            )}
             <div>
               <Label htmlFor="guest_name">Full Name *</Label>
               <Input
                 id="guest_name"
                 value={formData.guest_name}
-                onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
-                className="mt-2"
+                onChange={(e) => !user && setFormData({ ...formData, guest_name: e.target.value })}
+                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
                 required
+                readOnly={!!user}
+                placeholder={!user ? "Enter your full name" : ""}
               />
             </div>
             <div>
@@ -480,9 +487,11 @@ export const MultiStepBooking = ({
                 id="guest_email"
                 type="email"
                 value={formData.guest_email}
-                onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
-                className="mt-2"
+                onChange={(e) => !user && setFormData({ ...formData, guest_email: e.target.value })}
+                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
                 required
+                readOnly={!!user}
+                placeholder={!user ? "Enter your email" : ""}
               />
             </div>
             <div>
@@ -491,11 +500,15 @@ export const MultiStepBooking = ({
                 id="guest_phone"
                 type="tel"
                 value={formData.guest_phone}
-                onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
-                className="mt-2"
+                onChange={(e) => !user && setFormData({ ...formData, guest_phone: e.target.value })}
+                className={`mt-2 ${user ? 'bg-muted cursor-not-allowed' : ''}`}
                 required
-                placeholder="e.g., 0712345678"
+                readOnly={!!user}
+                placeholder={!user ? "e.g., 0712345678" : ""}
               />
+              {!user && !formData.guest_phone && (
+                <p className="text-xs text-muted-foreground mt-1">We'll use this to contact you about your booking</p>
+              )}
             </div>
           </div>
           
