@@ -92,14 +92,43 @@ export const useMpesaPayment = (options: MpesaPaymentOptions = {}) => {
       }
     }, 5000);
 
-    // Timeout after 2 minutes
-    const timeout = setTimeout(() => {
+    // Timeout after 60 seconds
+    const timeout = setTimeout(async () => {
       clearInterval(pollInterval);
-      if (paymentStatus === 'waiting' || paymentStatus === 'processing') {
-        setPaymentStatus('failed');
-        setErrorMessage('Payment timed out. Please try again.');
+      channel.unsubscribe();
+      
+      // Update pending payment and booking as failed due to timeout
+      if (checkoutRequestId) {
+        await supabase
+          .from('pending_payments')
+          .update({ 
+            payment_status: 'failed', 
+            result_desc: 'Payment timed out. User did not complete the transaction within 60 seconds.' 
+          })
+          .eq('checkout_request_id', checkoutRequestId);
+
+        // Also update the booking status to failed
+        const { data: pendingPayment } = await supabase
+          .from('pending_payments')
+          .select('booking_data')
+          .eq('checkout_request_id', checkoutRequestId)
+          .single();
+
+        const bookingData = pendingPayment?.booking_data as { booking_id?: string } | null;
+        if (bookingData?.booking_id) {
+          await supabase
+            .from('bookings')
+            .update({ 
+              payment_status: 'failed', 
+              status: 'cancelled' 
+            })
+            .eq('id', bookingData.booking_id);
+        }
       }
-    }, 120000);
+      
+      setPaymentStatus('failed');
+      setErrorMessage('Payment timed out. Please try again.');
+    }, 60000);
 
     return () => {
       channel.unsubscribe();
