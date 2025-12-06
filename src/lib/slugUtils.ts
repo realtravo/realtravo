@@ -33,19 +33,20 @@ export const createDetailPath = (
 };
 
 /**
- * Extracts ID from a slug-id combination or returns the ID directly
- * Prioritizes full UUID format, then falls back to slug extraction
+ * Extracts ID from a slug-id combination
+ * The ID is the last 8 characters after the final hyphen
  */
 export const extractIdFromSlug = (slugWithId: string): string => {
-  if (!slugWithId) return '';
-  
-  // Check if it's a full UUID format - return directly
-  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  const uuidMatch = slugWithId.match(uuidPattern);
-  if (uuidMatch) {
-    return uuidMatch[0];
+  // Check if it's a UUID format (contains hyphens in UUID pattern)
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidPattern.test(slugWithId)) {
+    return slugWithId;
   }
   
-  // Return the slug as-is if it looks like a valid ID (for backward compatibility)
+  // Otherwise extract the last 8 chars as ID prefix
+  const lastHyphenIndex = slugWithId.lastIndexOf('-');
+  if (lastHyphenIndex !== -1) {
+    return slugWithId.substring(lastHyphenIndex + 1);
+  }
   return slugWithId;
 };
