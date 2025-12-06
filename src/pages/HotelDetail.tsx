@@ -61,27 +61,19 @@ const ORANGE_COLOR = "#FF9800";
 const RED_COLOR = "#EF4444"; 
 
 const HotelDetail = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
-  const {
-    user
-  } = useAuth();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [current, setCurrent] = useState(0);
-  const {
-    savedItems,
-    handleSave: handleSaveItem
-  } = useSavedItems();
+  const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const isSaved = savedItems.has(id || "");
+
   useEffect(() => {
     fetchHotel();
     
@@ -95,10 +87,7 @@ const HotelDetail = () => {
 
   const fetchHotel = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("hotels").select("*").eq("id", id).single();
+      const { data, error } = await supabase.from("hotels").select("*").eq("id", id).single();
       if (error) throw error;
       setHotel(data as any);
     } catch (error) {
@@ -112,11 +101,13 @@ const HotelDetail = () => {
       setLoading(false);
     }
   };
+
   const handleSave = () => {
     if (id) {
       handleSaveItem(id, "hotel");
     }
   };
+
   const handleCopyLink = async () => {
     if (!hotel) {
       toast({ title: "Unable to Copy", description: "Hotel information not available", variant: "destructive" });
@@ -183,10 +174,11 @@ const HotelDetail = () => {
     try {
       const totalAmount = data.selectedFacilities.reduce((sum, f) => { 
         if (f.startDate && f.endDate) {
+          // Calculate number of full days booked (minimum 1 day)
           const days = Math.ceil((new Date(f.endDate).getTime() - new Date(f.startDate).getTime()) / (1000 * 60 * 60 * 24));
           return sum + (f.price * Math.max(days, 1));
         }
-        return sum + f.price;
+        return sum + f.price; // Fallback if dates are somehow missing
       }, 0) +
       data.selectedActivities.reduce((sum, a) => sum + (a.price * a.numberOfPeople), 0);
       const totalPeople = data.num_adults + data.num_children;
@@ -237,21 +229,22 @@ const HotelDetail = () => {
   return <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       
-      <main className="container max-w-6xl mx-auto py-6 px-4">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+      <main className="container max-w-6xl mx-auto py-6 **sm:py-4** px-4">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 **sm:mb-2**">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
 
-        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6 **sm:gap-4**">
+          {/* --- Image Carousel Section --- */}
           <div className="w-full relative">
             <Carousel opts={{
-            loop: true
-          }} plugins={[Autoplay({
-            delay: 3000
-          })]} className="w-full rounded-2xl overflow-hidden" setApi={api => {
-            if (api) api.on("select", () => setCurrent(api.selectedScrollSnap()));
-          }}>
+              loop: true
+            }} plugins={[Autoplay({
+              delay: 3000
+            })]} className="w-full rounded-2xl overflow-hidden" setApi={api => {
+              if (api) api.on("select", () => setCurrent(api.selectedScrollSnap()));
+            }}>
               <CarouselContent>
                 {displayImages.map((img, idx) => <CarouselItem key={idx}>
                     <img src={img} alt={`${hotel.name} ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-64 md:h-96 object-cover" />
@@ -267,42 +260,44 @@ const HotelDetail = () => {
             {/* START: Description Section with slide-down and border radius */}
             {hotel.description && 
               <div 
-                className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10 
+                className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 **sm:p-2** z-10 
                            rounded-b-2xl 
                            shadow-lg 
                            transform translate-y-2" // Slide down effect
               >
-                <h2 className="text-lg font-semibold mb-2">About This Hotel</h2>
+                <h2 className="text-lg **sm:text-base** font-semibold mb-2">About This Hotel</h2>
                 <p className="text-sm line-clamp-3">{hotel.description}</p>
               </div>
             }
             {/* END: Description Section */}
           </div>
 
-          <div className="space-y-4">
+          {/* --- Detail/Booking Section (Right Column on large screens, Stacked on small) --- */}
+          <div className="space-y-4 **sm:space-y-3**">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{hotel.name}</h1>
+              <h1 className="text-3xl **sm:text-2xl** font-bold mb-2">{hotel.name}</h1>
               {hotel.local_name && (
-                <p className="text-lg text-muted-foreground mb-2">"{hotel.local_name}"</p>
+                <p className="text-lg **sm:text-base** text-muted-foreground mb-2">"{hotel.local_name}"</p>
               )}
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                {/* MapPin Icon Teal (As requested and confirmed) */}
+                {/* MapPin Icon Teal */}
                 <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                <span>{hotel.location}, {hotel.country}</span>
+                <span className="**sm:text-sm**">{hotel.location}, {hotel.country}</span>
               </div>
               {hotel.place && (
-                <p className="text-sm text-muted-foreground mb-4">Place: {hotel.place}</p>
+                <p className="text-sm text-muted-foreground mb-4 **sm:mb-2**">Place: {hotel.place}</p>
               )}
             </div>
 
+            {/* Operating Hours Card */}
             {(hotel.opening_hours || hotel.closing_hours) && 
-              <div className="p-4 border bg-card mb-4" style={{ borderColor: TEAL_COLOR }}>
+              <div className="p-4 **sm:p-3** border bg-card mb-4 **sm:mb-2**" style={{ borderColor: TEAL_COLOR }}>
                 <div className="flex items-center gap-2">
                   {/* Clock Icon Teal */}
                   <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
                   <div>
-                    <p className="text-sm text-muted-foreground">Operating Hours</p>
-                    <p className="font-semibold">{hotel.opening_hours} - {hotel.closing_hours}</p>
+                    <p className="text-sm **sm:text-xs** text-muted-foreground">Operating Hours</p>
+                    <p className="font-semibold **sm:text-sm**">{hotel.opening_hours} - {hotel.closing_hours}</p>
                     {hotel.days_opened && hotel.days_opened.length > 0 && <p className="text-xs text-muted-foreground mt-1">{hotel.days_opened.join(', ')}</p>}
                   </div>
                 </div>
@@ -313,7 +308,7 @@ const HotelDetail = () => {
               {/* Book Now Button Teal and dark hover */}
               <Button 
                 size="lg" 
-                className="w-full text-white" 
+                className="w-full text-white **h-10 sm:h-9**" 
                 onClick={() => setBookingOpen(true)}
                 style={{ backgroundColor: TEAL_COLOR }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#005555')}
@@ -323,13 +318,14 @@ const HotelDetail = () => {
               </Button>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2">
               {/* Map Button: Border/Icon Teal */}
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={openInMaps} 
-                className="flex-1 md:size-lg" 
+                className="flex-1 **h-9**" 
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <MapPin className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -340,7 +336,7 @@ const HotelDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleCopyLink} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Copy className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -351,7 +347,7 @@ const HotelDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleShare} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Share2 className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -362,7 +358,7 @@ const HotelDetail = () => {
                 variant="outline" 
                 size="icon" 
                 onClick={handleSave} 
-                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+                className={`**h-9 w-9** ${isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}`}
                 style={{ borderColor: TEAL_COLOR, color: isSaved ? 'white' : TEAL_COLOR }}
               >
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
@@ -371,14 +367,15 @@ const HotelDetail = () => {
           </div>
         </div>
 
-        {hotel.amenities && hotel.amenities.length > 0 && <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
-            <div className="flex flex-wrap gap-2">
+        {/* --- Amenities Section --- */}
+        {hotel.amenities && hotel.amenities.length > 0 && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Amenities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {hotel.amenities.map((amenity, idx) => 
                 // Amenities Badge Red
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs**"
                   style={{ backgroundColor: RED_COLOR }}
                 >
                   {amenity}
@@ -386,31 +383,33 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {hotel.facilities && hotel.facilities.length > 0 && <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Facilities (Room Types)</h2>
-            <div className="flex flex-wrap gap-2">
+        {/* --- Facilities (Room Types) Section --- */}
+        {hotel.facilities && hotel.facilities.length > 0 && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Facilities (Room Types)</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {hotel.facilities.map((facility, idx) => 
                 // Facilities Badge Teal
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: TEAL_COLOR }}
                 >
                   <span className="font-medium">{facility.name}</span>
                   <span className="text-xs opacity-90">{facility.price === 0 ? 'Free' : `KSh ${facility.price}/day`}</span>
-                  {facility.capacity && <span className="text-xs opacity-90">• Capacity: {facility.capacity}</span>}
+                  {facility.capacity > 0 && <span className="text-xs opacity-90">• Capacity: {facility.capacity}</span>}
                 </div>)}
             </div>
           </div>}
 
-        {hotel.activities && hotel.activities.length > 0 && <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Activities</h2>
-            <div className="flex flex-wrap gap-2">
+        {/* --- Activities Section --- */}
+        {hotel.activities && hotel.activities.length > 0 && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Activities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {hotel.activities.map((activity, idx) => 
                 // Activities Badge Orange
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: ORANGE_COLOR }}
                 >
                   <span className="font-medium">{activity.name}</span>
@@ -419,16 +418,17 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {(hotel.phone_numbers || hotel.email) && <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <div className="space-y-2">
+        {/* --- Contact Information Section --- */}
+        {(hotel.phone_numbers || hotel.email) && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-3 **sm:mb-2**">Contact Information</h2>
+            <div className="space-y-2 **sm:space-y-1**">
               {hotel.phone_numbers?.map((phone, idx) => 
-                <p key={idx} className="flex items-center gap-2">
+                <p key={idx} className="flex items-center gap-2 **sm:text-sm**">
                   {/* Phone Icon Teal */}
                   <Phone className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   <a href={`tel:${phone}`} className="hover:underline" style={{ color: TEAL_COLOR }}>{phone}</a>
                 </p>)}
-              {hotel.email && <p className="flex items-center gap-2">
+              {hotel.email && <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Mail Icon Teal */}
                   <Mail className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   <a href={`mailto:${hotel.email}`} className="hover:underline" style={{ color: TEAL_COLOR }}>{hotel.email}</a>
@@ -436,21 +436,25 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        <div className="mt-6">
+        {/* --- Review Section --- */}
+        <div className="mt-6 **sm:mt-4**">
           <ReviewSection itemId={hotel.id} itemType="hotel" />
         </div>
 
-        {/* Note on SimilarItems: 
-            To apply the TEAL_COLOR to the location icon and a RED_COLOR class (e.g., text-red-600) 
-            to the price in the SimilarItems cards, you must modify the internal implementation of the 
-            <SimilarItems /> component itself, as it is an external import here.
-        */}
+        {/* --- Similar Items Section --- */}
         {hotel && <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />}
       </main>
 
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <MultiStepBooking onSubmit={handleBookingSubmit} facilities={hotel.facilities || []} activities={hotel.activities || []} isProcessing={isProcessing} isCompleted={isCompleted} itemName={hotel.name} />
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} 
+            facilities={hotel.facilities || []} 
+            activities={hotel.activities || []} 
+            isProcessing={isProcessing} 
+            isCompleted={isCompleted} 
+            itemName={hotel.name} 
+          />
         </DialogContent>
       </Dialog>
 

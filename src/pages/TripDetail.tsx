@@ -223,15 +223,16 @@ const TripDetail = () => {
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       
-      <main className="container px-4 py-6 max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+      <main className="container px-4 py-6 **sm:py-4** max-w-6xl mx-auto">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 **sm:mb-2**">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
 
-        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6 **sm:gap-4**">
+          {/* --- Image Carousel Section --- */}
           <div className="w-full relative">
-            <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
+            <Badge className="absolute top-4 left-4 **sm:top-2 sm:left-2** bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
               TRIP
             </Badge>
             <Carousel
@@ -263,50 +264,51 @@ const TripDetail = () => {
             {/* START: Modified Description Section for slide-down and border radius */}
             {trip.description && (
               <div 
-                className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10 
+                className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 **sm:p-2** z-10 
                            rounded-b-2xl 
                            shadow-lg 
                            transform translate-y-2" // The key styling for the "slide down" effect
               >
-                <h2 className="text-lg font-semibold mb-2">About This Trip</h2>
+                <h2 className="text-lg **sm:text-base** font-semibold mb-2 **sm:mb-1**">About This Trip</h2>
                 <p className="text-sm line-clamp-3">{trip.description}</p>
               </div>
             )}
             {/* END: Modified Description Section */}
           </div>
 
-          <div className="space-y-4">
+          {/* --- Detail/Booking Section (Right Column on large screens, Stacked on small) --- */}
+          <div className="space-y-4 **sm:space-y-3**">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <h1 className="text-3xl **sm:text-2xl** font-bold mb-2">{trip.name}</h1>
+              <div className="flex items-center gap-2 text-muted-foreground mb-4 **sm:mb-2**">
                 {/* Location Icon Teal */}
                 <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                <span>{trip.location}, {trip.country}</span>
+                <span className="**sm:text-sm**">{trip.location}, {trip.country}</span>
               </div>
             </div>
 
-            <div className="space-y-3 p-4 border bg-card">
+            <div className="space-y-3 p-4 **sm:p-3** border bg-card">
               <div className="flex items-center gap-2">
                 {/* Calendar Icon Teal */}
                 <Calendar className="h-5 w-5" style={{ color: TEAL_COLOR }} />
                 <div>
-                  <p className="text-sm text-muted-foreground">Trip Date</p>
-                  <p className="font-semibold">{trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}</p>
+                  <p className="text-sm **sm:text-xs** text-muted-foreground">Trip Date</p>
+                  <p className="font-semibold **sm:text-sm**">{trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}</p>
                 </div>
               </div>
               
-              <div className="border-t pt-3">
-                <p className="text-sm text-muted-foreground mb-1">Price</p>
+              <div className="border-t pt-3 **sm:pt-2**">
+                <p className="text-sm **sm:text-xs** text-muted-foreground mb-1">Price (Per Adult)</p>
                 {/* Price in Red */}
-                <p className="text-2xl font-bold" style={{ color: RED_COLOR }}>KSh {trip.price}</p>
-                {trip.price_child > 0 && <p className="text-sm text-muted-foreground">Child: KSh {trip.price_child}</p>}
-                <p className="text-sm text-muted-foreground mt-2">Available Tickets: {trip.available_tickets}</p>
+                <p className="text-2xl **sm:text-xl** font-bold" style={{ color: RED_COLOR }}>KSh {trip.price}</p>
+                {trip.price_child > 0 && <p className="text-sm **sm:text-xs** text-muted-foreground">Child: KSh {trip.price_child}</p>}
+                <p className="text-sm **sm:text-xs** text-muted-foreground mt-2 **sm:mt-1**">Available Tickets: {trip.available_tickets}</p>
               </div>
 
               {/* Book Now Button Teal and dark hover */}
               <Button 
                 size="lg" 
-                className="w-full text-white" 
+                className="w-full text-white **h-10 sm:h-9**" 
                 onClick={() => setBookingOpen(true)} 
                 disabled={trip.available_tickets <= 0}
                 style={{ backgroundColor: TEAL_COLOR }}
@@ -317,13 +319,14 @@ const TripDetail = () => {
               </Button>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2">
               {/* Map Button: Border/Icon Teal */}
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={openInMaps} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <MapPin className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -334,7 +337,7 @@ const TripDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleCopyLink} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Copy className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -345,7 +348,7 @@ const TripDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleShare} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Share2 className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -356,7 +359,7 @@ const TripDetail = () => {
                 variant="outline" 
                 size="icon" 
                 onClick={handleSave} 
-                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+                className={`**h-9 w-9** ${isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}`}
                 style={{ borderColor: TEAL_COLOR, color: isSaved ? 'white' : TEAL_COLOR }}
               >
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
@@ -365,15 +368,16 @@ const TripDetail = () => {
           </div>
         </div>
 
+        {/* --- Included Activities Section --- */}
         {trip.activities && trip.activities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Included Activities</h2>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Included Activities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {trip.activities.map((activity, idx) => (
                 // Activities Badge Orange
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: ORANGE_COLOR }}
                 >
                   <span className="font-medium">{activity.name}</span>
@@ -384,12 +388,13 @@ const TripDetail = () => {
           </div>
         )}
 
+        {/* --- Contact Information Section --- */}
         {(trip.phone_number || trip.email) && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <div className="space-y-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-3 **sm:mb-2**">Contact Information</h2>
+            <div className="space-y-2 **sm:space-y-1**">
               {trip.phone_number && (
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Phone Icon Teal */}
                   <Phone className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   {/* Phone Link Teal */}
@@ -397,7 +402,7 @@ const TripDetail = () => {
                 </p>
               )}
               {trip.email && (
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Mail Icon Teal */}
                   <Mail className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   {/* Mail Link Teal */}
@@ -408,13 +413,12 @@ const TripDetail = () => {
           </div>
         )}
 
-        <div className="mt-6">
+        {/* --- Review Section --- */}
+        <div className="mt-6 **sm:mt-4**">
           <ReviewSection itemId={trip.id} itemType="trip" />
         </div>
 
-        {/* Similar Items Section */}
-        {/* NOTE: Styling for price (red) and location icon (teal) on individual cards 
-            within SimilarItems must be implemented inside the SimilarItems component itself. */}
+        {/* --- Similar Items Section --- */}
         {trip && <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />}
       </main>
 

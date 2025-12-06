@@ -224,6 +224,7 @@ const AttractionDetail = () => {
         </Button>
 
         <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
+          {/* --- Image Carousel Section --- */}
           <div className="w-full relative">
             <Carousel
               opts={{ loop: true }}
@@ -254,32 +255,34 @@ const AttractionDetail = () => {
             </Carousel>
             
             {attraction.description && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10">
-                <h2 className="text-lg font-semibold mb-2">About This Attraction</h2>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 **sm:p-2** z-10">
+                <h2 className="text-lg **sm:text-base** font-semibold mb-2">About This Attraction</h2>
                 <p className="text-sm line-clamp-3">{attraction.description}</p>
               </div>
             )}
           </div>
 
+          {/* --- Detail/Booking Section (Right Column on large screens, Stacked on small) --- */}
           <div className="space-y-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{attraction.location_name}</h1>
-              {attraction.local_name && <p className="text-xl text-muted-foreground mb-2">{attraction.local_name}</p>}
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <h1 className="text-3xl **sm:text-2xl** font-bold mb-2">{attraction.location_name}</h1>
+              {attraction.local_name && <p className="text-xl **sm:text-base** text-muted-foreground mb-2">{attraction.local_name}</p>}
+              <div className="flex items-center gap-2 text-muted-foreground mb-4 **sm:mb-2**">
                 {/* Location Icon Teal */}
                 <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} /> 
-                <span>{attraction.country}</span>
+                <span className="**sm:text-sm**">{attraction.country}</span>
               </div>
             </div>
 
-            <div className="space-y-3 p-4 border bg-card">
+            {/* Price and Operating Card */}
+            <div className="space-y-3 **sm:space-y-2** p-4 **sm:p-3** border bg-card">
               {(attraction.opening_hours || attraction.closing_hours) && (
                 <div className="flex items-center gap-2">
                   {/* Clock Icon Teal */}
                   <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} /> 
                   <div>
-                    <p className="text-sm text-muted-foreground">Operating Hours</p>
-                    <p className="font-semibold">{attraction.opening_hours} - {attraction.closing_hours}</p>
+                    <p className="text-sm **sm:text-xs** text-muted-foreground">Operating Hours</p>
+                    <p className="font-semibold **sm:text-sm**">{attraction.opening_hours} - {attraction.closing_hours}</p>
                     {attraction.days_opened && attraction.days_opened.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">{attraction.days_opened.join(', ')}</p>
                     )}
@@ -287,19 +290,19 @@ const AttractionDetail = () => {
                 </div>
               )}
               
-              <div className={`${attraction.opening_hours || attraction.closing_hours ? 'border-t pt-3' : ''}`}>
-                <p className="text-sm text-muted-foreground mb-1">Entrance Fee</p>
-                <p className="text-2xl font-bold">
+              <div className={`${attraction.opening_hours || attraction.closing_hours ? 'border-t pt-3 **sm:pt-2**' : ''}`}>
+                <p className="text-sm **sm:text-xs** text-muted-foreground mb-1">Entrance Fee</p>
+                <p className="text-2xl **sm:text-xl** font-bold">
                   {attraction.entrance_type === 'free' ? 'Free Entry' : 
                     attraction.price_adult ? `KSh ${attraction.price_adult}` : 'Contact for pricing'}
                 </p>
-                {attraction.price_child > 0 && <p className="text-sm text-muted-foreground">Child: KSh {attraction.price_child}</p>}
+                {attraction.price_child > 0 && <p className="text-sm **sm:text-xs** text-muted-foreground">Child: KSh {attraction.price_child}</p>}
               </div>
 
               {/* Book Now Button Teal and dark hover */}
               <Button 
                 size="lg" 
-                className="w-full text-white" 
+                className="w-full text-white **h-10 sm:h-9**" 
                 onClick={() => setBookingOpen(true)}
                 style={{ backgroundColor: TEAL_COLOR }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#005555')}
@@ -309,13 +312,14 @@ const AttractionDetail = () => {
               </Button>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2">
               {/* Map Button: Border/Icon Teal */}
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={openInMaps} 
-                className="flex-1 md:size-lg" 
+                className="flex-1 **h-9**" 
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <MapPin className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -326,7 +330,7 @@ const AttractionDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleCopyLink} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Copy className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -337,7 +341,7 @@ const AttractionDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleShare} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**"
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Share2 className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -348,7 +352,7 @@ const AttractionDetail = () => {
                 variant="outline" 
                 size="icon" 
                 onClick={handleSave} 
-                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+                className={`**h-9 w-9** ${isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}`}
                 style={{ borderColor: TEAL_COLOR, color: isSaved ? 'white' : TEAL_COLOR }}
               >
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
@@ -357,15 +361,16 @@ const AttractionDetail = () => {
           </div>
         </div>
 
+        {/* --- Amenities Section --- */}
         {attraction.amenities && attraction.amenities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Amenities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {attraction.amenities.map((amenity: string, idx: number) => (
                 // Amenities Badge Red
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs**"
                   style={{ backgroundColor: RED_COLOR }} 
                 >
                   {amenity}
@@ -375,15 +380,16 @@ const AttractionDetail = () => {
           </div>
         )}
 
+        {/* --- Facilities Section --- */}
         {attraction.facilities && attraction.facilities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Facilities</h2>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Facilities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {attraction.facilities.map((facility: any, idx: number) => (
                 // Facilities Badge Teal
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: TEAL_COLOR }}
                 >
                   <span className="font-medium">{facility.name}</span>
@@ -397,15 +403,16 @@ const AttractionDetail = () => {
           </div>
         )}
 
+        {/* --- Activities Section --- */}
         {attraction.activities && attraction.activities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Activities</h2>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Activities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {attraction.activities.map((activity: Activity, idx: number) => (
                 // Activities Badge Orange
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: ORANGE_COLOR }} 
                 >
                   <span className="font-medium">{activity.name}</span>
@@ -416,19 +423,20 @@ const AttractionDetail = () => {
           </div>
         )}
 
+        {/* --- Contact Information Section --- */}
         {(attraction.phone_number || attraction.email) && (
-          <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <div className="space-y-2">
+          <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-3 **sm:mb-2**">Contact Information</h2>
+            <div className="space-y-2 **sm:space-y-1**">
               {attraction.phone_number && (
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Phone Icon Teal */}
                   <Phone className="h-4 w-4" style={{ color: TEAL_COLOR }} /> 
                   <a href={`tel:${attraction.phone_number}`} className="hover:underline" style={{ color: TEAL_COLOR }}>{attraction.phone_number}</a>
                 </p>
               )}
               {attraction.email && (
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Mail Icon Teal */}
                   <Mail className="h-4 w-4" style={{ color: TEAL_COLOR }} /> 
                   <a href={`mailto:${attraction.email}`} className="hover:underline" style={{ color: TEAL_COLOR }}>{attraction.email}</a>
@@ -438,10 +446,12 @@ const AttractionDetail = () => {
           </div>
         )}
 
-        <div className="mt-6">
+        {/* --- Review Section --- */}
+        <div className="mt-6 **sm:mt-4**">
           <ReviewSection itemId={attraction.id} itemType="attraction" />
         </div>
 
+        {/* --- Similar Items Section --- */}
         {attraction && <SimilarItems currentItemId={attraction.id} itemType="attraction" country={attraction.country} />}
       </main>
 

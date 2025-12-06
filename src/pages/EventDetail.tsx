@@ -63,7 +63,7 @@ const EventDetail = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); // Not used in current carousel, but kept in case
   const {
     savedItems,
     handleSave: handleSaveItem
@@ -235,6 +235,7 @@ const EventDetail = () => {
         </Button>
 
         <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
+          {/* --- Image Carousel Section --- */}
           <div className="w-full relative opacity-100">
             <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
               EVENT
@@ -251,43 +252,45 @@ const EventDetail = () => {
                 </>}
             </Carousel>
             
-            {event.description && <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10">
-                <h2 className="text-lg font-semibold mb-2 text-justify">About This Event</h2>
+            {event.description && <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10 **sm:p-2**">
+                <h2 className="text-lg **sm:text-base** font-semibold mb-2 text-justify">About This Event</h2>
                 <p className="text-sm line-clamp-3">{event.description}</p>
               </div>}
           </div>
 
+          {/* --- Detail/Booking Section (Right Column on large screens, Stacked on small) --- */}
           <div className="space-y-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{event.name}</h1>
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+              <h1 className="text-3xl **sm:text-2xl** font-bold mb-2">{event.name}</h1>
+              <div className="flex items-center gap-2 text-muted-foreground mb-4 **sm:mb-2**">
                 {/* Map Pin Icon Teal */}
                 <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                <span>{event.location}, {event.country}</span>
+                <span className="**sm:text-sm**">{event.location}, {event.country}</span>
               </div>
             </div>
 
-            <div className="space-y-3 p-4 border bg-card px-px py-0">
+            {/* Price and Booking Card */}
+            <div className="space-y-3 **sm:space-y-2** p-4 **sm:p-2** border bg-card">
               <div className="flex items-center gap-2">
                 {/* Calendar Icon Teal */}
                 <Calendar className="h-5 w-5" style={{ color: TEAL_COLOR }} />
                 <div>
-                  <p className="text-sm text-muted-foreground">Event Date</p>
-                  <p className="font-semibold">{new Date(event.date).toLocaleDateString()}</p>
+                  <p className="text-sm **sm:text-xs** text-muted-foreground">Event Date</p>
+                  <p className="font-semibold **sm:text-sm**">{new Date(event.date).toLocaleDateString()}</p>
                 </div>
               </div>
               
-              <div className="border-t pt-3">
-                <p className="text-sm text-muted-foreground mb-1">Entrance Fee</p>
-                <p className="text-2xl font-bold">KSh {event.price}</p>
-                {event.price_child > 0 && <p className="text-sm text-muted-foreground">Child: KSh {event.price_child}</p>}
-                <p className="text-sm text-muted-foreground mt-2">Available Tickets: {event.available_tickets}</p>
+              <div className="border-t pt-3 **sm:pt-2**">
+                <p className="text-sm **sm:text-xs** text-muted-foreground mb-1">Entrance Fee</p>
+                <p className="text-2xl **sm:text-xl** font-bold">KSh {event.price}</p>
+                {event.price_child > 0 && <p className="text-sm **sm:text-xs** text-muted-foreground">Child: KSh {event.price_child}</p>}
+                <p className="text-sm **sm:text-xs** text-muted-foreground mt-2 **sm:mt-1**">Available Tickets: {event.available_tickets}</p>
               </div>
 
               {/* Book Now Button Teal and dark hover */}
               <Button 
                 size="lg" 
-                className="w-full text-white" 
+                className="w-full text-white **h-10 sm:h-9**" // Reduced height for small screens
                 onClick={() => setShowBooking(true)} 
                 disabled={event.available_tickets <= 0}
                 style={{ backgroundColor: TEAL_COLOR }}
@@ -298,13 +301,14 @@ const EventDetail = () => {
               </Button>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2">
               {/* Map Button: Border/Icon Teal */}
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={openInMaps} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**" // Reduced height for small screens
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <MapPin className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -315,7 +319,7 @@ const EventDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleCopyLink} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**" // Reduced height for small screens
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Copy className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -326,7 +330,7 @@ const EventDetail = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleShare} 
-                className="flex-1 md:size-lg"
+                className="flex-1 **h-9**" // Reduced height for small screens
                 style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
               >
                 <Share2 className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
@@ -337,7 +341,7 @@ const EventDetail = () => {
                 variant="outline" 
                 size="icon" 
                 onClick={handleSave} 
-                className={isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}
+                className={`**h-9 w-9** ${isSaved ? "bg-red-500 text-white hover:bg-red-600" : ""}`} // Reduced size for small screens
                 style={{ borderColor: TEAL_COLOR, color: isSaved ? 'white' : TEAL_COLOR }}
               >
                 <Heart className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
@@ -346,33 +350,35 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {event.activities && event.activities.length > 0 && <div className="mt-6 p-6 border bg-card">
-            <h2 className="text-xl font-semibold mb-4">Included Activities</h2>
-            <div className="flex flex-wrap gap-2">
+        {/* --- Activities Section --- */}
+        {event.activities && event.activities.length > 0 && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-4 **sm:mb-2**">Included Activities</h2>
+            <div className="flex flex-wrap gap-2 **sm:gap-1**">
               {event.activities.map((activity, idx) => 
                 // Activities Badge Orange
                 <div 
                   key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
+                  className="px-4 py-2 **sm:px-3 sm:py-1** text-white rounded-full text-sm **sm:text-xs** flex items-center gap-2 **sm:gap-1**"
                   style={{ backgroundColor: ORANGE_COLOR }} 
                 >
                   <span className="font-medium">{activity.name}</span>
-                  <span className="text-xs opacity-90">KSh {activity.price}</span>
+                  <span className="text-xs opacity-90">{activity.price > 0 ? `KSh ${activity.price}` : 'Free'}</span>
                 </div>
               )}
             </div>
           </div>}
 
-        {(event.phone_number || event.email) && <div className="mt-6 p-6 border bg-card my-[2px] rounded-none">
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <div className="space-y-2">
-              {event.phone_number && <p className="flex items-center gap-2">
+        {/* --- Contact Information Section --- */}
+        {(event.phone_number || event.email) && <div className="mt-6 **sm:mt-4** p-6 **sm:p-3** border bg-card my-[2px] rounded-none">
+            <h2 className="text-xl **sm:text-lg** font-semibold mb-3 **sm:mb-2**">Contact Information</h2>
+            <div className="space-y-2 **sm:space-y-1**">
+              {event.phone_number && <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Phone Icon Teal */}
                   <Phone className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   {/* Phone Link Teal */}
                   <a href={`tel:${event.phone_number}`} className="hover:underline" style={{ color: TEAL_COLOR }}>{event.phone_number}</a>
                 </p>}
-              {event.email && <p className="flex items-center gap-2">
+              {event.email && <p className="flex items-center gap-2 **sm:text-sm**">
                   {/* Mail Icon Teal */}
                   <Mail className="h-4 w-4" style={{ color: TEAL_COLOR }} />
                   {/* Email Link Teal */}
@@ -381,10 +387,12 @@ const EventDetail = () => {
             </div>
           </div>}
 
-        <div className="mt-6 rounded-none my-[10px]">
+        {/* --- Review Section --- */}
+        <div className="mt-6 **sm:mt-4** rounded-none my-[10px] **sm:my-[5px]**">
           <ReviewSection itemId={event.id} itemType="event" />
         </div>
 
+        {/* --- Similar Items Section --- */}
         <SimilarItems currentItemId={event.id} itemType="trip" location={event.location} country={event.country} />
       </main>
 
