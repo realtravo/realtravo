@@ -472,7 +472,6 @@ const AttractionDetail = () => {
       </main>
 
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        {/* Calendar Icon used internally in MultiStepBooking may need internal update for Teal */}
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <MultiStepBooking 
             onSubmit={handleBookingSubmit} 
@@ -487,6 +486,7 @@ const AttractionDetail = () => {
             itemId={attraction.id}
             bookingType="attraction"
             hostId={attraction.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
           />
         </DialogContent>
       </Dialog>

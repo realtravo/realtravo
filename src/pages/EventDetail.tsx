@@ -424,6 +424,7 @@ const EventDetail = () => {
             itemId={event.id}
             bookingType="event"
             hostId={event.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
           />
         </DialogContent>
       </Dialog>

@@ -464,6 +464,7 @@ const AdventurePlaceDetail = () => {
             itemId={place.id}
             bookingType="adventure_place"
             hostId={place.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
           />
         </DialogContent>
       </Dialog>
