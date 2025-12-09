@@ -305,20 +305,25 @@ const HotelDetail = () => {
               )}
             </div>
 
-            {/* Operating Hours/Availability Card */}
-            <div className="p-4 sm:p-3 border bg-card mb-4 sm:mb-2" style={{ borderColor: TEAL_COLOR }}>
-              {(hotel.opening_hours || hotel.closing_hours) && (
-                <div className="flex items-center gap-2">
-                  {/* Clock Icon Teal */}
-                  <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
-                  <div>
-                    <p className="text-sm sm:text-xs text-muted-foreground">Operating Hours</p>
-                    <p className="font-semibold sm:text-sm">{hotel.opening_hours} - {hotel.closing_hours}</p>
-                    {hotel.days_opened && hotel.days_opened.length > 0 && <p className="text-xs text-muted-foreground mt-1">{hotel.days_opened.join(', ')}</p>}
-                  </div>
+            {/* Operating Hours/Availability Card */}
+            {(hotel.opening_hours || hotel.closing_hours || (hotel.days_opened && hotel.days_opened.length > 0)) && (
+              <div className="p-4 sm:p-3 border bg-card mb-4 sm:mb-2" style={{ borderColor: TEAL_COLOR }}>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
+                  <div>
+                    <p className="text-sm sm:text-xs text-muted-foreground">Working Hours & Days</p>
+                    {(hotel.opening_hours || hotel.closing_hours) && (
+                      <p className="font-semibold sm:text-sm">{hotel.opening_hours || 'N/A'} - {hotel.closing_hours || 'N/A'}</p>
+                    )}
+                    {hotel.days_opened && hotel.days_opened.length > 0 && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="font-medium">Working Days:</span> {hotel.days_opened.join(', ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
               </div>
+            )}
 
             <div className="space-y-3">
               {/* Book Now Button Teal and dark hover */}
