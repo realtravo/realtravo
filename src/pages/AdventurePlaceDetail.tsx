@@ -301,7 +301,7 @@ const AdventurePlaceDetail = () => {
               <Button 
                 size="lg" 
                 className="w-full text-white h-10 sm:h-9" 
-                onClick={() => setBookingOpen(true)}
+                onClick={() => { setIsCompleted(false); setBookingOpen(true); }}
                 style={{ backgroundColor: TEAL_COLOR }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#005555')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = TEAL_COLOR)}
