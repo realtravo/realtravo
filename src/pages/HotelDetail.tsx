@@ -475,20 +475,21 @@ const HotelDetail = () => {
         {hotel && <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />}
       </main>
 
-      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <MultiStepBooking 
-            onSubmit={handleBookingSubmit} 
-            facilities={hotel.facilities || []} 
-            activities={hotel.activities || []} 
-            isProcessing={isProcessing} 
-            isCompleted={isCompleted} 
-            itemName={hotel.name}
-            itemId={hotel.id}
-            bookingType="hotel"
-            hostId={hotel.created_by || ""}
-          />
-        </DialogContent>
+      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} 
+            facilities={hotel.facilities || []} 
+            activities={hotel.activities || []} 
+            isProcessing={isProcessing} 
+            isCompleted={isCompleted} 
+            itemName={hotel.name}
+            itemId={hotel.id}
+            bookingType="hotel"
+            hostId={hotel.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
+          />
+        </DialogContent>
       </Dialog>
 
       <MobileBottomBar />

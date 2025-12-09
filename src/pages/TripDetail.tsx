@@ -456,6 +456,7 @@ const TripDetail = () => {
             itemId={trip.id}
             bookingType="trip"
             hostId={trip.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
           />
         </DialogContent>
       </Dialog>
