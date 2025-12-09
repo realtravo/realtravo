@@ -97,11 +97,14 @@ export const MultiStepBooking = ({
     // NEW STATE: Payment Method
     const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card'>('mpesa');
 
+    // Track if payment succeeded for dialog close handling
+    const [paymentSucceeded, setPaymentSucceeded] = useState(false);
+
     // M-Pesa payment integration
     const { paymentStatus, errorMessage, initiatePayment, resetPayment, isPaymentInProgress } = useMpesaPayment({
         onSuccess: () => {
-            // Note: We intentionally moved the call to onPaymentSuccess to the PaymentStatusDialog's onClose
-            // to ensure the dialog is seen before closing the whole form/popup.
+            // Mark payment as succeeded so we can handle dialog close properly
+            setPaymentSucceeded(true);
         },
     });
 
@@ -704,15 +707,17 @@ export const MultiStepBooking = ({
                 status={paymentStatus}
                 errorMessage={errorMessage}
                 onClose={() => {
+                    // Check if payment succeeded before resetting
+                    const wasSuccessful = paymentSucceeded || paymentStatus === 'success';
                     resetPayment();
-                    // --- MODIFICATION HERE ---
-                    // If payment was successful (either M-Pesa or a free booking), call the parent's close function.
-                    if (paymentStatus === 'success' && onPaymentSuccess) {
+                    // If payment was successful, call the parent's close function
+                    if (wasSuccessful && onPaymentSuccess) {
+                        setPaymentSucceeded(false);
                         onPaymentSuccess(); 
                     }
-                    // For failed/cancelled payments, only reset the payment state, keeping the booking popup open.
                 }}
                 onRetry={() => {
+                    setPaymentSucceeded(false);
                     resetPayment();
                 }}
             />

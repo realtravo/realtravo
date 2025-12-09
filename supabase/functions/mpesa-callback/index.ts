@@ -167,14 +167,25 @@ async function sendNotificationsAndEmails(
 ) {
   try {
     const itemName = bookingData.emailData?.itemName || 'your booking';
+    
+    console.log('=== SENDING NOTIFICATIONS AND EMAILS ===');
+    console.log('Booking ID:', booking.id);
+    console.log('Guest Email:', bookingData.guest_email);
+    console.log('Guest Name:', bookingData.guest_name);
+    console.log('Item Name:', itemName);
+    console.log('Is Guest Booking:', bookingData.is_guest_booking);
+    console.log('User ID:', bookingData.user_id);
 
-    // Send confirmation email to user/guest
-    if (bookingData.guest_email) {
-      console.log('Sending confirmation email to:', bookingData.guest_email);
+    // Send confirmation email to user/guest - this should always work for both logged-in and guest users
+    const guestEmail = bookingData.guest_email;
+    const guestName = bookingData.guest_name || 'Guest';
+    
+    if (guestEmail) {
+      console.log('📧 Attempting to send confirmation email to:', guestEmail);
       
       const emailResult = await sendConfirmationEmail(
-        bookingData.guest_email,
-        bookingData.guest_name,
+        guestEmail,
+        guestName,
         booking.id,
         bookingData.booking_type,
         itemName,
@@ -185,10 +196,13 @@ async function sendNotificationsAndEmails(
       );
       
       if (emailResult.success) {
-        console.log('✅ Confirmation email sent to user');
+        console.log('✅ Confirmation email sent successfully to:', guestEmail);
       } else {
-        console.error('❌ Failed to send confirmation email:', emailResult.error);
+        console.error('❌ Failed to send confirmation email to:', guestEmail, 'Error:', emailResult.error);
       }
+    } else {
+      console.warn('⚠️ No guest email found in booking data. Cannot send confirmation email.');
+      console.log('Booking data keys:', Object.keys(bookingData));
     }
 
     // Create notification for user if logged in
