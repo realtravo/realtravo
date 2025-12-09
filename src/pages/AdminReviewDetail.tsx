@@ -309,22 +309,19 @@ const AdminReviewDetail = () => {
                       <p className="font-medium">{item.available_tickets}</p>
                     </div>
                   )}
-                  {item.opening_hours && (
-                    <div className="flex items-center gap-2">
+                  {(item.opening_hours || item.closing_hours) && (
+                    <div className="flex items-center gap-2 col-span-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Opening Hours</p>
-                        <p className="font-medium">{item.opening_hours}</p>
+                        <p className="text-xs text-muted-foreground">Working Hours</p>
+                        <p className="font-medium">{item.opening_hours || 'N/A'} - {item.closing_hours || 'N/A'}</p>
                       </div>
                     </div>
                   )}
-                  {item.closing_hours && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Closing Hours</p>
-                        <p className="font-medium">{item.closing_hours}</p>
-                      </div>
+                  {item.days_opened && item.days_opened.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">Working Days</p>
+                      <p className="font-medium">{item.days_opened.join(', ')}</p>
                     </div>
                   )}
                   {item.entrance_type && (
