@@ -425,7 +425,7 @@ export const MultiStepBooking = ({
                 </div>
             )}
 
-            {/* Step 3: Facilities & Activities (for all users) */}
+            {/* Step 3: Facilities & Activities (shown for hotel, attraction, adventure place - not trips/events) */}
             {currentStep === 3 && !skipFacilitiesAndActivities && (
                 <div className="space-y-6">
                     <h3 className="text-lg font-semibold">Step 3: Additional Services (Optional)</h3>
