@@ -41,6 +41,10 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
     
+    /* Popup/Dialog accent color - Teal */
+    --popup-accent: 174 100% 25%;
+    --popup-accent-foreground: 0 0% 100%;
+    
     /* Header colors */
     --header-bg: 210 100% 25%;
     --header-foreground: 0 0% 100%;
@@ -105,6 +109,10 @@ All colors MUST be HSL.
     --border: 210 25% 25%;
     --input: 210 25% 22%;
     --ring: 210 100% 55%;
+    
+    /* Popup/Dialog accent color - Teal (same in dark mode) */
+    --popup-accent: 174 100% 25%;
+    --popup-accent-foreground: 0 0% 100%;
     
     /* Header colors - darker and more contrasting in dark mode */
     --header-bg: 210 30% 8%;

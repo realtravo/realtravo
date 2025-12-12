@@ -114,17 +114,17 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
             </SheetContent>
           </Sheet>
           
-          <Link to="/" className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center text-primary font-bold text-lg">
-              T
-            </div>
-            <div>
-              <span className="font-bold text-base md:text-lg text-header-foreground block">
-                TripTrac
-              </span>
-              <p className="text-xs text-muted-foreground block">Your journey starts now.</p>
-            </div>
-          </Link>
+          <Link to="/" className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#0066cc] font-bold text-lg">
+              T
+            </div>
+            <div>
+              <span className="font-bold text-base md:text-lg text-white block">
+                TripTrac
+              </span>
+              <p className="text-xs text-white/70 block">Your journey starts now.</p>
+            </div>
+          </Link>
         </div>
 
         {/* Desktop Navigation (Centered) */}
