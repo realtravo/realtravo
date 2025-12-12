@@ -22,7 +22,7 @@ export const SplashScreen = ({ onComplete, minDuration = 1500 }: SplashScreenPro
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/80 transition-all duration-500",
+        "fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-header transition-all duration-500",
         isExiting && "opacity-0 scale-105"
       )}
     >
@@ -33,10 +33,10 @@ export const SplashScreen = ({ onComplete, minDuration = 1500 }: SplashScreenPro
       )}>
         {/* App Icon */}
         <div className="relative">
-          <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl animate-scale-in">
+          <div className="w-24 h-24 rounded-2xl bg-header-foreground/20 backdrop-blur-sm flex items-center justify-center shadow-2xl animate-scale-in">
             <svg 
               viewBox="0 0 24 24" 
-              className="w-14 h-14 text-white"
+              className="w-14 h-14 text-header-foreground"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -49,24 +49,24 @@ export const SplashScreen = ({ onComplete, minDuration = 1500 }: SplashScreenPro
             </svg>
           </div>
           {/* Glow effect */}
-          <div className="absolute inset-0 w-24 h-24 rounded-2xl bg-white/30 blur-xl -z-10 animate-pulse" />
+          <div className="absolute inset-0 w-24 h-24 rounded-2xl bg-header-foreground/30 blur-xl -z-10 animate-pulse" />
         </div>
 
         {/* App Name */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-header-foreground tracking-tight">
             TripTrac
           </h1>
-          <p className="text-white/70 text-sm mt-1">
+          <p className="text-header-foreground/70 text-sm mt-1">
             Explore Amazing Experiences
           </p>
         </div>
 
         {/* Loading indicator */}
         <div className="flex items-center gap-1.5 mt-4">
-          <div className="w-2 h-2 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: "0ms" }} />
-          <div className="w-2 h-2 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: "150ms" }} />
-          <div className="w-2 h-2 rounded-full bg-white/80 animate-bounce" style={{ animationDelay: "300ms" }} />
+          <div className="w-2 h-2 rounded-full bg-header-foreground/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="w-2 h-2 rounded-full bg-header-foreground/80 animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="w-2 h-2 rounded-full bg-header-foreground/80 animate-bounce" style={{ animationDelay: "300ms" }} />
         </div>
       </div>
     </div>

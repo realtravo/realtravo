@@ -69,9 +69,13 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash on first visit per session
+    // Only show splash on small screens when running as PWA (standalone mode)
     const hasShownSplash = sessionStorage.getItem('splashShown');
-    return !hasShownSplash;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         (window.navigator as any).standalone === true;
+    const isSmallScreen = window.innerWidth < 768; // md breakpoint
+    
+    return !hasShownSplash && isStandalone && isSmallScreen;
   });
 
   const handleSplashComplete = () => {
