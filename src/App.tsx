@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PageLayout } from "@/components/PageLayout";
+import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Saved from "./pages/Saved";
 import Bookings from "./pages/Bookings";
@@ -65,81 +66,95 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <InstallPrompt />
-          <PageLayout>
-            <div className="w-full">
-              <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/saved" element={<Saved />} />
-              <Route path="/bookings" element={<Bookings />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/vlog" element={<Vlog />} />
-              <Route path="/category/:category" element={<CategoryDetail />} />
-              <Route path="/trip/:slug" element={<TripDetail />} />
-              <Route path="/event/:slug" element={<EventDetail />} />
-              <Route path="/hotel/:slug" element={<HotelDetail />} />
-              <Route path="/adventure/:slug" element={<AdventurePlaceDetail />} />
-              <Route path="/attraction/:slug" element={<AttractionDetail />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/edit" element={<ProfileEdit />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/pending" element={<PendingApprovalItems />} />
-              <Route path="/admin/approved" element={<ApprovedItems />} />
-              <Route path="/admin/rejected" element={<RejectedItems />} />
-              <Route path="/admin/review/:itemType/:id" element={<AdminReviewDetail />} />
-              <Route path="/admin/bookings" element={<AdminBookings />} />
-              <Route path="/admin/all-bookings" element={<AllBookings />} />
-              <Route path="/admin/verification" element={<AdminVerification />} />
-              <Route path="/admin/verification/list/:status" element={<VerificationList />} />
-              <Route path="/admin/verification-detail/:id" element={<VerificationDetail />} />
-              <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
-              <Route path="/admin/referral-settings" element={<AdminReferralSettings />} />
-              <Route path="/become-host" element={<BecomeHost />} />
-              <Route path="/create-trip" element={<CreateTripEvent />} />
-              <Route path="/create-hotel" element={<CreateHotel />} />
-              <Route path="/create-adventure" element={<CreateAdventure />} />
-              <Route path="/create-attraction" element={<CreateAttraction />} />
-              <Route path="/host/item/:itemType/:id" element={<HostItemDetail />} />
-              <Route path="/host/bookings/:itemType" element={<HostBookings />} />
-              <Route path="/host/bookings/:itemType/:id" element={<HostBookingDetails />} />
-              <Route path="/host/trips" element={<CategoryTrips />} />
-              <Route path="/host/hotels" element={<CategoryHotels />} />
-              <Route path="/host/attractions" element={<CategoryAttractions />} />
-              <Route path="/host/experiences" element={<CategoryExperiences />} />
-              <Route path="/my-listing" element={<MyListing />} />
-              <Route path="/creator-dashboard" element={<CreatorDashboard />} />
-              <Route path="/edit-listing/:itemType/:id" element={<EditListing />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/host-verification" element={<HostVerification />} />
-              <Route path="/verification-status" element={<VerificationStatus />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/payment" element={<Payment />} />
-              <Route path="/payment-history" element={<PaymentHistory />} />
-              <Route path="/my-referrals" element={<MyReferrals />} />
-              <Route path="/install" element={<Install />} />
-              <Route path="/host-bookings" element={<HostBookings />} />
-              <Route path="/host-bookings/:itemType/:id" element={<HostBookingDetails />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-          </PageLayout>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash on first visit per session
+    const hasShownSplash = sessionStorage.getItem('splashShown');
+    return !hasShownSplash;
+  });
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('splashShown', 'true');
+    setShowSplash(false);
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+        <BrowserRouter>
+          <AuthProvider>
+            <InstallPrompt />
+            <PageLayout>
+              <div className="w-full">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/saved" element={<Saved />} />
+                  <Route path="/bookings" element={<Bookings />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/vlog" element={<Vlog />} />
+                  <Route path="/category/:category" element={<CategoryDetail />} />
+                  <Route path="/trip/:slug" element={<TripDetail />} />
+                  <Route path="/event/:slug" element={<EventDetail />} />
+                  <Route path="/hotel/:slug" element={<HotelDetail />} />
+                  <Route path="/adventure/:slug" element={<AdventurePlaceDetail />} />
+                  <Route path="/attraction/:slug" element={<AttractionDetail />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/edit" element={<ProfileEdit />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/pending" element={<PendingApprovalItems />} />
+                  <Route path="/admin/approved" element={<ApprovedItems />} />
+                  <Route path="/admin/rejected" element={<RejectedItems />} />
+                  <Route path="/admin/review/:itemType/:id" element={<AdminReviewDetail />} />
+                  <Route path="/admin/bookings" element={<AdminBookings />} />
+                  <Route path="/admin/all-bookings" element={<AllBookings />} />
+                  <Route path="/admin/verification" element={<AdminVerification />} />
+                  <Route path="/admin/verification/list/:status" element={<VerificationList />} />
+                  <Route path="/admin/verification-detail/:id" element={<VerificationDetail />} />
+                  <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
+                  <Route path="/admin/referral-settings" element={<AdminReferralSettings />} />
+                  <Route path="/become-host" element={<BecomeHost />} />
+                  <Route path="/create-trip" element={<CreateTripEvent />} />
+                  <Route path="/create-hotel" element={<CreateHotel />} />
+                  <Route path="/create-adventure" element={<CreateAdventure />} />
+                  <Route path="/create-attraction" element={<CreateAttraction />} />
+                  <Route path="/host/item/:itemType/:id" element={<HostItemDetail />} />
+                  <Route path="/host/bookings/:itemType" element={<HostBookings />} />
+                  <Route path="/host/bookings/:itemType/:id" element={<HostBookingDetails />} />
+                  <Route path="/host/trips" element={<CategoryTrips />} />
+                  <Route path="/host/hotels" element={<CategoryHotels />} />
+                  <Route path="/host/attractions" element={<CategoryAttractions />} />
+                  <Route path="/host/experiences" element={<CategoryExperiences />} />
+                  <Route path="/my-listing" element={<MyListing />} />
+                  <Route path="/creator-dashboard" element={<CreatorDashboard />} />
+                  <Route path="/edit-listing/:itemType/:id" element={<EditListing />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/host-verification" element={<HostVerification />} />
+                  <Route path="/verification-status" element={<VerificationStatus />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/payment" element={<Payment />} />
+                  <Route path="/payment-history" element={<PaymentHistory />} />
+                  <Route path="/my-referrals" element={<MyReferrals />} />
+                  <Route path="/install" element={<Install />} />
+                  <Route path="/host-bookings" element={<HostBookings />} />
+                  <Route path="/host-bookings/:itemType/:id" element={<HostBookingDetails />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+            </PageLayout>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
