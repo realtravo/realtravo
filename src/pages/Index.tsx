@@ -427,14 +427,18 @@ const Index = () => {
             {isSearchFocused && <div className="sticky top-[64px] z-[100] bg-background p-4 border-b shadow-md">
                     <div className="max-w-3xl mx-auto">
                         <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => {
-          fetchAllData(searchQuery);
+          if (searchQuery.trim()) {
+            fetchAllData(searchQuery);
+          }
         }} onSuggestionSearch={query => {
+          setSearchQuery(query);
           fetchAllData(query);
         }} onFocus={() => setIsSearchFocused(true)} onBlur={() => {
           // Keep search focused when there's content
         }} onBack={() => {
           setIsSearchFocused(false);
           setSearchQuery("");
+          fetchAllData(); // Reset to all listings
         }} showBackButton={true} />
                     </div>
                 </div>}
@@ -460,7 +464,16 @@ const Index = () => {
                                 
                                 {/* Search Bar Below Paragraph */}
                                 <div className="w-full mt-2 md:mt-4 relative z-[200]">
-                                    <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => fetchAllData(searchQuery)} onSuggestionSearch={query => fetchAllData(query)} onFocus={() => setIsSearchFocused(true)} />
+                                    <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => {
+                                      if (searchQuery.trim()) {
+                                        setIsSearchFocused(true);
+                                        fetchAllData(searchQuery);
+                                      }
+                                    }} onSuggestionSearch={query => {
+                                      setSearchQuery(query);
+                                      setIsSearchFocused(true);
+                                      fetchAllData(query);
+                                    }} onFocus={() => setIsSearchFocused(true)} />
                                 </div>
                             </div>
                         </div>
