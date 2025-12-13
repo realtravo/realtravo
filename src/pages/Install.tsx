@@ -12,37 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-// Define the specified Teal color
-const TEAL_COLOR = "#008080"; // The primary branding color (Teal)
-const TEAL_HOVER_COLOR = "#005555"; // A darker shade of teal for hover effect
-
-// Helper function for primary button styles (Inlining styles to override default button styles)
-const getTealButtonStyle = (variant: 'default' | 'outline' = 'default') => {
-  if (variant === 'default') {
-    return {
-      backgroundColor: TEAL_COLOR,
-      borderColor: TEAL_COLOR,
-      color: 'white',
-      transition: 'background-color 0.15s',
-    };
-  }
-  return {}; // default for other variants
-};
-
-// Helper function to handle button hover effect
-const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-  if (!e.currentTarget.disabled) {
-    (e.currentTarget.style as any).backgroundColor = TEAL_HOVER_COLOR;
-  }
-};
-
-// Helper function to handle button hover exit effect
-const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-  if (!e.currentTarget.disabled) {
-    // Revert to the base TEAL_COLOR
-    (e.currentTarget.style as any).backgroundColor = TEAL_COLOR;
-  }
-};
+// Primary color is now defined in the design system (index.css) as teal #008080
 
 export default function Install() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -73,8 +43,6 @@ export default function Install() {
       toast({
         title: "App Installed!",
         description: "TripTrac has been installed on your device.",
-        // Using custom style for the successful toast's border color
-        style: { borderColor: TEAL_COLOR },
       });
     };
 
@@ -100,8 +68,6 @@ export default function Install() {
             title: "Install on iOS",
             description: "Tap the Share button in Safari, then select 'Add to Home Screen'",
             duration: 8000,
-            // Using custom style for the information toast's border color
-            style: { borderColor: TEAL_COLOR },
           });
           setHasShownManualInstallToast(true);
         }
@@ -146,9 +112,8 @@ export default function Install() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            {/* Check icon with Teal background and foreground */}
-            <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4" style={{ backgroundColor: TEAL_COLOR + '10' }}>
-              <Check className="h-8 w-8" style={{ color: TEAL_COLOR }} />
+            <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Check className="h-8 w-8 text-primary" />
             </div>
             <CardTitle>Already Installed!</CardTitle>
             <CardDescription>
@@ -156,13 +121,9 @@ export default function Install() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Teal "Go to Home" button */}
             <Button
               onClick={() => navigate("/")}
-              className="w-full"
-              style={getTealButtonStyle()}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Go to Home
             </Button>
@@ -174,16 +135,12 @@ export default function Install() {
 
   // --- RENDER: INSTALL PAGE ---
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background" style={{
-      // Inline style for gradient start color using 5% opacity of Teal
-      background: `linear-gradient(to bottom, ${TEAL_COLOR}0D, var(--background))`
-    }}>
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-12">
-            {/* Logo 'T' with Teal background */}
-            <div className="inline-flex h-20 w-20 rounded-2xl bg-primary items-center justify-center text-primary-foreground font-bold text-3xl mb-6" style={{ backgroundColor: TEAL_COLOR, color: 'white' }}>
+            <div className="inline-flex h-20 w-20 rounded-2xl bg-primary items-center justify-center text-primary-foreground font-bold text-3xl mb-6">
               T
             </div>
             <h1 className="text-4xl font-bold mb-4">Install TripTrac</h1>
@@ -196,8 +153,7 @@ export default function Install() {
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             <Card>
               <CardHeader>
-                {/* Teal Wifi icon */}
-                <Wifi className="h-8 w-8 mb-2" style={{ color: TEAL_COLOR }} />
+                <Wifi className="h-8 w-8 mb-2 text-primary" />
                 <CardTitle className="text-lg">Works Offline</CardTitle>
               </CardHeader>
               <CardContent>
@@ -209,8 +165,7 @@ export default function Install() {
 
             <Card>
               <CardHeader>
-                {/* Teal Zap icon */}
-                <Zap className="h-8 w-8 mb-2" style={{ color: TEAL_COLOR }} />
+                <Zap className="h-8 w-8 mb-2 text-primary" />
                 <CardTitle className="text-lg">Lightning Fast</CardTitle>
               </CardHeader>
               <CardContent>
@@ -222,8 +177,7 @@ export default function Install() {
 
             <Card>
               <CardHeader>
-                {/* Teal Smartphone icon */}
-                <Smartphone className="h-8 w-8 mb-2" style={{ color: TEAL_COLOR }} />
+                <Smartphone className="h-8 w-8 mb-2 text-primary" />
                 <CardTitle className="text-lg">Native Feel</CardTitle>
               </CardHeader>
               <CardContent>
@@ -235,7 +189,7 @@ export default function Install() {
           </div>
 
           {/* Install CTA */}
-          <Card className="border-2 border-primary/20" style={{ borderColor: TEAL_COLOR + '20' }}>
+          <Card className="border-2 border-primary/20">
             <CardContent className="pt-6">
               <div className="text-center space-y-6">
                 <div>
@@ -245,21 +199,17 @@ export default function Install() {
                   </p>
                 </div>
 
-                {/* Teal "Install Now" Button */}
                 <Button
                   size="lg"
                   onClick={handleInstallClick}
                   disabled={isInstalling}
-                  className="w-full sm:w-auto px-8"
-                  style={getTealButtonStyle()}
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
+                  className="w-full sm:w-auto px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <Download className="h-5 w-5 mr-2" />
                   {isInstalling ? "Installing..." : "Install Now"}
                 </Button>
 
-                {/* iOS Instructions Section (Manual PWA installation guide) */}
+                {/* iOS Instructions Section */}
                 {/iPhone|iPad|iPod/.test(navigator.userAgent) && (
                   <div className="mt-8 p-4 bg-muted rounded-lg text-left">
                     <h4 className="font-semibold mb-2">For iOS/Safari Users:</h4>
