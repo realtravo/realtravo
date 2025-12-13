@@ -110,8 +110,8 @@ const CategoryDetail = () => {
     setLoading(false);
   };
   useEffect(() => {
-    setFilteredItems(items);
-  }, [items]);
+    setFilteredItems(getSortedItems(items));
+  }, [items, position]);
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -182,11 +182,17 @@ const CategoryDetail = () => {
       }
     }
 
-    // Sort: past events/trips last
-    const sortedData = allData.sort((a, b) => {
+    return allData;
+  };
+
+  // Sort items: by distance when location available, otherwise by date/created_at
+  const getSortedItems = (itemsToSort: any[]) => {
+    return [...itemsToSort].sort((a, b) => {
+      // For trips/events, sort by date
       const aDate = a.date ? new Date(a.date) : null;
       const bDate = b.date ? new Date(b.date) : null;
       const now = new Date();
+      
       if (aDate && bDate) {
         const aIsPast = aDate < now;
         const bIsPast = bDate < now;
@@ -194,11 +200,25 @@ const CategoryDetail = () => {
         if (!aIsPast && bIsPast) return -1;
         return aDate.getTime() - bDate.getTime();
       }
+      
+      // For non-date items, sort by distance if location available
+      if (position && !aDate && !bDate) {
+        const aHasCoords = a.latitude && a.longitude;
+        const bHasCoords = b.latitude && b.longitude;
+        
+        if (aHasCoords && bHasCoords) {
+          const aDist = calculateDistance(position.latitude, position.longitude, a.latitude, a.longitude);
+          const bDist = calculateDistance(position.latitude, position.longitude, b.latitude, b.longitude);
+          return aDist - bDist;
+        }
+        if (aHasCoords && !bHasCoords) return -1;
+        if (!aHasCoords && bHasCoords) return 1;
+      }
+      
       if (aDate && !bDate) return -1;
       if (!aDate && bDate) return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-    return sortedData;
   };
   const loadInitialData = async () => {
     setLoading(true);
@@ -285,8 +305,8 @@ const CategoryDetail = () => {
           const isAttraction = item.table === "attractions";
           const isEvent = item.table === "trips" && (item.type === "event" || category === "events");
           const isTripOrEvent = item.table === "trips";
-          // Calculate distance for attractions with coordinates
-          const itemDistance = position && isAttraction && item.latitude && item.longitude
+          // Calculate distance for all items with coordinates (except trips/events)
+          const itemDistance = position && !isTripOrEvent && item.latitude && item.longitude
             ? calculateDistance(position.latitude, position.longitude, item.latitude, item.longitude)
             : undefined;
           return <ListingCard key={item.id} id={item.id} type={item.table === "trips" ? isEvent ? "EVENT" : "TRIP" : item.table === "hotels" ? "HOTEL" : isAttraction ? "ATTRACTION" : "ADVENTURE PLACE"} name={isAttraction ? item.local_name || item.location_name : item.name} imageUrl={isAttraction ? item.photo_urls?.[0] || "" : item.image_url} location={isAttraction ? item.location_name : item.location} country={item.country} price={isAttraction ? item.price_adult || 0 : item.price || item.entry_fee || 0} date={item.date} isCustomDate={item.is_custom_date} onSave={handleSave} isSaved={savedItems.has(item.id)} amenities={item.amenities} activities={item.activities} showBadge={false} hideEmptySpace={true} distance={itemDistance} />;

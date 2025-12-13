@@ -38,8 +38,10 @@ export type Database = {
           image_url: string
           images: string[] | null
           is_hidden: boolean | null
+          latitude: number | null
           local_name: string | null
           location: string
+          longitude: number | null
           map_link: string | null
           name: string
           opening_hours: string | null
@@ -70,8 +72,10 @@ export type Database = {
           image_url: string
           images?: string[] | null
           is_hidden?: boolean | null
+          latitude?: number | null
           local_name?: string | null
           location: string
+          longitude?: number | null
           map_link?: string | null
           name: string
           opening_hours?: string | null
@@ -102,8 +106,10 @@ export type Database = {
           image_url?: string
           images?: string[] | null
           is_hidden?: boolean | null
+          latitude?: number | null
           local_name?: string | null
           location?: string
+          longitude?: number | null
           map_link?: string | null
           name?: string
           opening_hours?: string | null
@@ -446,8 +452,10 @@ export type Database = {
           image_url: string
           images: string[] | null
           is_hidden: boolean | null
+          latitude: number | null
           local_name: string | null
           location: string
+          longitude: number | null
           map_link: string | null
           name: string
           opening_hours: string | null
@@ -477,8 +485,10 @@ export type Database = {
           image_url: string
           images?: string[] | null
           is_hidden?: boolean | null
+          latitude?: number | null
           local_name?: string | null
           location: string
+          longitude?: number | null
           map_link?: string | null
           name: string
           opening_hours?: string | null
@@ -508,8 +518,10 @@ export type Database = {
           image_url?: string
           images?: string[] | null
           is_hidden?: boolean | null
+          latitude?: number | null
           local_name?: string | null
           location?: string
+          longitude?: number | null
           map_link?: string | null
           name?: string
           opening_hours?: string | null
