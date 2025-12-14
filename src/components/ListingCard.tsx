@@ -91,7 +91,7 @@ export const ListingCard = ({
 
   // Define the custom Teal background and text classes (0, 128, 128)
   const tealBgClass = "bg-[rgb(0,128,128)] text-white";
-  const tealTextClass = "text-[rgb(0,128,128)]";
+  const tealTextClass = "text-[rgb(0,100,100)]"; // Darker teal for better contrast on light backgrounds
 
   // --- MODIFICATION: Determine if "Few slots remaining" will be shown ---
   const remainingTickets = availableTickets !== undefined ? availableTickets - (bookedTickets || 0) : undefined;
@@ -180,7 +180,7 @@ export const ListingCard = ({
                                     Flexible Date
                                 </span>}
                         </div>
-                        {fewSlotsRemaining && <span className="text-[8px] md:text-[10px] font-medium text-destructive px-1 py-0.5 bg-destructive/10 rounded-sm whitespace-nowrap">
+                        {fewSlotsRemaining && <span className="text-[8px] md:text-[10px] font-medium text-[rgb(180,0,0)] px-1 py-0.5 bg-red-100 rounded-sm whitespace-nowrap">
                                 Few left!
                             </span>}
                     </div>}
