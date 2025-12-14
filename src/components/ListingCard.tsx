@@ -115,16 +115,15 @@ export const ListingCard = ({
     quality: 70
   });
 
-  return (
-    <Card 
-      onClick={handleCardClick} 
-      className={cn(
-        "group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border bg-card shadow-sm w-[320px] flex flex-col",
-        "rounded-none",
-        "mb-4", // ADDED: Margin bottom for gap between cards
-        compact ? "h-auto" : "h-auto"
-      )}
-    >
+  return (
+    <Card 
+      onClick={handleCardClick} 
+      className={cn(
+        "group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border bg-card shadow-sm w-full flex flex-col",
+        "rounded-lg",
+        compact ? "h-auto" : "h-auto"
+      )}
+    >
             {/* Image Container with intersection observer */}
             {/* The m-0 class here ensures the image container has zero margin on its top */}
             <div ref={imageContainerRef} className="relative overflow-hidden m-0 bg-muted" style={{ paddingBottom: '50%' }}>
