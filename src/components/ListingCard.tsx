@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { MapPin, Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, optimizeSupabaseImage, generateImageSrcSet } from "@/lib/utils";
+import { cn, optimizeSupabaseImage } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { createDetailPath } from "@/lib/slugUtils";
-// Note: Assuming ListingCardProps interface is defined elsewhere
+
 interface ListingCardProps {
   id: string;
   type: 'TRIP' | 'EVENT' | 'HOTEL' | 'ADVENTURE PLACE' | 'ACCOMMODATION' | 'ATTRACTION';
@@ -25,11 +26,12 @@ interface ListingCardProps {
   bookedTickets?: number;
   showBadge?: boolean;
   priority?: boolean;
-  minimalDisplay?: boolean; // Only show name and location
-  hideEmptySpace?: boolean; // Hide space when no content to display
-  compact?: boolean; // Smaller height, hide location
-  distance?: number; // Distance in km from user's location
+  minimalDisplay?: boolean;
+  hideEmptySpace?: boolean;
+  compact?: boolean;
+  distance?: number;
 }
+
 export const ListingCard = ({
   id,
   type,
@@ -54,13 +56,16 @@ export const ListingCard = ({
   compact = false,
   distance
 }: ListingCardProps) => {
-  // Extract activity names from activities array
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   const getActivityNames = (activities: any[] | undefined): string[] => {
     if (!activities || !Array.isArray(activities)) return [];
     return activities.map(item => typeof item === 'object' && item.name ? item.name : typeof item === 'string' ? item : null).filter(Boolean).slice(0, 5) as string[];
   };
   const activityNames = getActivityNames(activities);
   const navigate = useNavigate();
+  
   const handleCardClick = () => {
     const typeMap: Record<string, string> = {
       "TRIP": "trip",
@@ -73,6 +78,7 @@ export const ListingCard = ({
     const path = createDetailPath(typeMap[type], id, name, location);
     navigate(path);
   };
+  
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     const options: Intl.DateTimeFormatOptions = {
@@ -82,6 +88,7 @@ export const ListingCard = ({
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+  
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onSave) {
@@ -89,30 +96,53 @@ export const ListingCard = ({
     }
   };
 
-  // Define the custom Teal background and text classes (0, 128, 128)
   const tealBgClass = "bg-[rgb(0,128,128)] text-white";
-  const tealTextClass = "text-[rgb(0,100,100)]"; // Darker teal for better contrast on light backgrounds
+  const tealTextClass = "text-[rgb(0,100,100)]";
 
-  // --- MODIFICATION: Determine if "Few slots remaining" will be shown ---
   const remainingTickets = availableTickets !== undefined ? availableTickets - (bookedTickets || 0) : undefined;
-
-  // Show "Few slots remaining" if it's a TRIP or EVENT and remaining tickets are 20 or less.
   const fewSlotsRemaining = (type === "TRIP" || type === "EVENT") && remainingTickets !== undefined && remainingTickets > 0 && remainingTickets <= 20;
-
-  // Determine if the card is a type that uses the special price/date and ticket warning logic
   const isTripOrEvent = type === "TRIP" || type === "EVENT";
+
+  // Optimized image URL - smaller size for faster loading
+  const optimizedImageUrl = optimizeSupabaseImage(imageUrl, {
+    width: 320,
+    height: 200,
+    quality: 70
+  });
+
   return <Card onClick={handleCardClick} className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border rounded-lg bg-card shadow-sm w-full flex flex-col", compact ? "h-auto" : "h-auto")}>
-            {/* Image Container - reduced height */}
-            <div className="relative overflow-hidden m-0" style={{
-      paddingBottom: '50%'
-    }}>
-                <img src={optimizeSupabaseImage(imageUrl, {
-        width: 640,
-        height: 480,
-        quality: 85
-      })} srcSet={generateImageSrcSet(imageUrl, [320, 640, 960])} sizes="(max-width: 640px) 320px, (max-width: 1024px) 640px, 640px" alt={name} width={640} height={480} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 m-0 p-0" />
+            {/* Image Container with skeleton */}
+            <div className="relative overflow-hidden m-0 bg-muted" style={{ paddingBottom: '50%' }}>
+                {/* Skeleton placeholder */}
+                {!imageLoaded && !imageError && (
+                    <div className="absolute inset-0 bg-muted animate-pulse" />
+                )}
                 
-                {/* Category Badges use Teal BG (0, 128, 128) */}
+                {/* Actual image */}
+                <img 
+                  src={optimizedImageUrl}
+                  alt={name} 
+                  width={320} 
+                  height={200} 
+                  loading={priority ? "eager" : "lazy"} 
+                  fetchPriority={priority ? "high" : "auto"} 
+                  decoding="async"
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageError(true)}
+                  className={cn(
+                    "absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-all duration-500 m-0 p-0",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )} 
+                />
+                
+                {/* Error fallback */}
+                {imageError && (
+                    <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-xs">No image</span>
+                    </div>
+                )}
+                
+                {/* Category Badges */}
                 {type === "TRIP" && <Badge className={cn("absolute top-1.5 left-1.5 backdrop-blur text-[10px] md:text-xs font-bold z-10 px-1.5 py-0.5 md:px-2 md:py-1", tealBgClass)}>
                         TRIP
                     </Badge>}
@@ -124,7 +154,6 @@ export const ListingCard = ({
                 {type !== "EVENT" && type !== "TRIP" && showBadge && <Badge className={cn("absolute top-1.5 left-1.5 backdrop-blur text-[8px] md:text-[0.6rem] z-10 px-1 py-0.5 md:p-1", tealBgClass)}>
                         {type}
                     </Badge>}
-
 
                 {onSave && <Button size="icon" onClick={handleSaveClick} aria-label={isSaved ? "Remove from wishlist" : "Add to wishlist"} className={cn("absolute top-1.5 right-1.5 z-20 h-8 w-8 md:h-8 md:w-8 p-0 bg-transparent touch-manipulation active:scale-95 transition-transform", "border-none shadow-none", "outline-none focus-visible:ring-0 focus-visible:bg-transparent hover:bg-transparent")}>
                         <Heart className={cn("h-4 w-4 md:h-4 md:w-4", isSaved ? "text-red-500 fill-red-500" : "text-black stroke-[2.5] drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]")} />
