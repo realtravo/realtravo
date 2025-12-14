@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { approvalStatusSchema } from "@/lib/validation";
 import { EmailVerification } from "@/components/creation/EmailVerification";
+import { compressImages } from "@/lib/imageCompression";
 
 interface Facility {
   name: string;
@@ -231,7 +232,7 @@ const EditListing = () => {
     setEditMode({ ...editMode, [field]: !editMode[field] });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       if (existingImages.length + newImages.length + files.length > 10) {
@@ -242,7 +243,16 @@ const EditListing = () => {
         });
         return;
       }
-      setNewImages([...newImages, ...files]);
+      
+      try {
+        // Compress images before adding
+        const compressed = await compressImages(files);
+        setNewImages([...newImages, ...compressed.map(c => c.file)]);
+      } catch (error) {
+        console.error("Error compressing images:", error);
+        // Fall back to original files if compression fails
+        setNewImages([...newImages, ...files]);
+      }
     }
   };
 
