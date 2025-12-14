@@ -80,7 +80,6 @@ const Index = () => {
   const featuredHotelsRef = useRef<HTMLDivElement>(null);
   const featuredAttractionsRef = useRef<HTMLDivElement>(null);
   const featuredTripsRef = useRef<HTMLDivElement>(null);
-  const vlogsRef = useRef<HTMLDivElement>(null);
 
   // Scroll position tracking
   const [scrollPositions, setScrollPositions] = useState<Record<string, number>>({
@@ -89,8 +88,7 @@ const Index = () => {
     featuredCampsites: 0,
     featuredHotels: 0,
     featuredAttractions: 0,
-    featuredTrips: 0,
-    vlogs: 0
+    featuredTrips: 0
   });
 
   // Touch swipe tracking
@@ -820,68 +818,6 @@ const Index = () => {
                                         <ListingCard id={trip.id} type={isEvent ? "EVENT" : "TRIP"} name={trip.name} imageUrl={trip.image_url} location={trip.location} country={trip.country} price={trip.price} date={trip.date} isCustomDate={trip.is_custom_date} onSave={handleSave} isSaved={savedItems.has(trip.id)} showBadge={isEvent} availableTickets={trip.available_tickets} bookedTickets={bookingStats[trip.id] || 0} activities={trip.activities} />
                                     </div>;
               })}
-                            </div>
-                        </div>
-                    </section>
-
-
-                    {/* Vlogs Section */}
-                    <section className="mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                                Travel Vlogs
-                            </h2>
-                            <Link to="/vlog" className="text-primary text-3xs md:text-sm hover:underline">
-                                View All
-                            </Link>
-                        </div>
-                        <div className="relative">
-                            <Button variant="ghost" size="icon" aria-label="Scroll left" onClick={() => scrollSection(vlogsRef, 'left')} className="absolute left-2 top-[30%] -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
-                                <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
-                            </Button>
-                            <Button variant="ghost" size="icon" aria-label="Scroll right" onClick={() => scrollSection(vlogsRef, 'right')} className="absolute right-2 top-[30%] -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
-                                <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
-                            </Button>
-                            <div ref={vlogsRef} onScroll={handleScroll('vlogs')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(vlogsRef)} className="flex gap-2 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory md:snap-none pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
-                            {[{
-                id: "1",
-                title: "Exploring the Swiss Alps",
-                description: "Join us on an incredible journey through the majestic Swiss Alps",
-                image_url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&h=600&fit=crop"
-              }, {
-                id: "2",
-                title: "Tokyo Street Food Adventure",
-                description: "Dive into the vibrant food culture of Tokyo",
-                image_url: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=600&fit=crop"
-              }, {
-                id: "3",
-                title: "Safari Adventure in Kenya",
-                description: "Witness the incredible wildlife of Kenya",
-                image_url: "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800&h=600&fit=crop"
-              }, {
-                id: "4",
-                title: "Diving the Great Barrier Reef",
-                description: "Explore the underwater wonders of Australia",
-                image_url: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800&h=600&fit=crop"
-              }, {
-                id: "5",
-                title: "Northern Lights in Iceland",
-                description: "Chase the aurora borealis across Iceland",
-                image_url: "https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=800&h=600&fit=crop"
-              }].map(vlog => <div key={vlog.id} className="flex-shrink-0 w-[62vw] md:w-64 snap-center md:snap-align-none">
-                                    <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden h-full">
-                                        <img src={vlog.image_url} alt={vlog.title} loading="lazy" decoding="async" className="w-full h-32 md:h-48 object-cover" />
-                                        <div className="p-2 md:p-4">
-                                            <h3 className="font-bold text-xs md:text-base mb-1 md:mb-2 line-clamp-1">{vlog.title}</h3>
-                                            <p className="text-[10px] md:text-sm text-muted-foreground line-clamp-2">{vlog.description}</p>
-                                        </div>
-                                    </Card>
-                                </div>)}
-                            </div>
-                            <div className="flex justify-center gap-2 mt-2">
-                                {Array.from({
-                length: 2
-              }).map((_, idx) => <div key={idx} className={`h-2 rounded-full transition-all ${idx === 0 ? 'w-8 bg-primary' : 'w-2 bg-muted-foreground/30'}`} />)}
                             </div>
                         </div>
                     </section>

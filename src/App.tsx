@@ -21,7 +21,7 @@ const Saved = lazy(() => import("./pages/Saved"));
 const Bookings = lazy(() => import("./pages/Bookings"));
 const Contact = lazy(() => import("./pages/Contact"));
 const About = lazy(() => import("./pages/About"));
-const Vlog = lazy(() => import("./pages/Vlog"));
+
 const Profile = lazy(() => import("./pages/Profile"));
 const TripDetail = lazy(() => import("./pages/TripDetail"));
 const EventDetail = lazy(() => import("./pages/EventDetail"));
@@ -98,7 +98,7 @@ const App = () => {
                     <Route path="/bookings" element={<Bookings />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/about" element={<About />} />
-                    <Route path="/vlog" element={<Vlog />} />
+                    
                     <Route path="/category/:category" element={<CategoryDetail />} />
                     <Route path="/trip/:slug" element={<TripDetail />} />
                     <Route path="/event/:slug" element={<EventDetail />} />
