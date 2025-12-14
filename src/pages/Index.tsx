@@ -434,13 +434,13 @@ const Index = () => {
   };
   const categories = [{
     icon: Calendar,
-    title: "Trips",
+    title: "Trips & tours",
     path: "/category/trips",
     bgImage: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop&auto=format&q=80",
     description: "Explore guided tours and day trips"
   }, {
     icon: Compass,
-    title: "Events",
+    title: "Sports & events",
     path: "/category/events",
     bgImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&auto=format&q=80",
     description: "Discover exciting events"
@@ -509,7 +509,7 @@ const Index = () => {
                             {/* Content */}
                             <div className="relative z-10 flex flex-col items-center gap-4 md:gap-6 max-w-3xl mx-auto">
                                 <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-4 text-center drop-shadow-lg">
-                                    Discover Your Next Adventure
+                                    Discover Your Next adventure and experience.
                                 </h1>
                                 
                                 {/* Search Bar Below Paragraph */}
@@ -630,7 +630,7 @@ const Index = () => {
                     <section className="mb-2 md:mb-6">
                         <div className="mb-1.5 md:mb-3 flex items-start justify-between">
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                                Events
+                                Sports and events.
                             </h2>
                             <Link to="/category/events" className="text-primary text-3xs md:text-sm hover:underline">
                                 View All
@@ -705,7 +705,7 @@ const Index = () => {
                     <section className="mb-2 md:mb-6">
                         <div className="mb-1.5 md:mb-3 flex items-start justify-between">
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                                Hotels
+                                Hotels and accommodations.
                             </h2>
                             <Link to="/category/hotels" className="text-primary text-3xs md:text-sm hover:underline">
                                 View All
@@ -791,7 +791,7 @@ const Index = () => {
                     <section className="mb-2 md:mb-6">
                         <div className="mb-1.5 md:mb-3 flex items-start justify-between">
                             <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
-                                Trips
+                                Trips and tours.
                             </h2>
                             <Link to="/category/trips" className="text-primary text-3xs md:text-sm hover:underline">
                                 View All
