@@ -541,7 +541,7 @@ const Index = () => {
             }}>
                                     <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center p-2 md:p-4">
                                         <cat.icon className="h-4 w-4 md:h-12 md:w-12 lg:h-16 lg:w-16 text-white mb-0.5 md:mb-3" />
-                                        <h3 className="font-bold text-white text-3xs md:text-base lg:text-lg">{cat.title}</h3>
+                                        <span className="font-bold text-white text-3xs md:text-base lg:text-lg" role="heading" aria-level={3}>{cat.title}</span>
                                         <p className="text-white/80 text-2xs md:text-sm text-center mt-0.5 md:mt-1 hidden md:block">{cat.description}</p>
                                     </div>
                                 </div>)}
