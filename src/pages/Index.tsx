@@ -458,55 +458,59 @@ const Index = () => {
 
             <main className="container md:px-4 md:py-8 px-px py-[24px]">
                 {/* Hero and Categories - Hide when search is focused */}
-                <section className={`flex flex-col gap-1 md:gap-3 ${isSearchFocused ? 'hidden' : ''}`}>
-                {/* Hero Section with Background Image */}
-                    <div className="w-full -mt-6 md:-mt-8">
-                        <div className="relative w-full overflow-hidden flex flex-col items-center justify-center p-4 md:p-12 py-12 md:py-[80px]">
-                            {/* Hero background image with high priority for faster LCP */}
-                            <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&h=800&fit=crop&auto=format&q=80" alt="" fetchPriority="high" loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover" width={1920} height={800} />
-                            {/* Overlay for better text readability */}
-                            <div className="absolute inset-0 bg-black/40" />
-                            
-                            {/* Content */}
-                            <div className="relative z-10 flex flex-col items-center gap-4 md:gap-6 max-w-3xl mx-auto">
-                                <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-4 text-center drop-shadow-lg">
-                                    Discover Your Next adventure and experiences.
-                                </h1>
-                                
-                                {/* Search Bar Below Paragraph */}
-                                <div className="w-full mt-2 md:mt-4 relative z-[200]">
-                                    <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => {
-                  if (searchQuery.trim()) {
-                    setIsSearchFocused(true);
-                    fetchAllData(searchQuery);
-                  }
-                }} onSuggestionSearch={query => {
-                  setSearchQuery(query);
-                  setIsSearchFocused(true);
-                  fetchAllData(query);
-                }} onFocus={() => setIsSearchFocused(true)} />
-                                </div>
-                            </div>
-                        </div>
+               <section className={`flex flex-col gap-1 md:gap-3 ${isSearchFocused ? 'hidden' : ''}`}>
+    {/* Hero Section with Background Image */}
+    <div className="w-full -mt-6 md:-mt-8">
+        <div className="relative w-full overflow-hidden flex flex-col items-center justify-center p-4 md:p-12 py-12 md:py-[80px]">
+            {/* Hero background image with high priority for faster LCP */}
+            <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&h=800&fit=crop&auto=format&q=80" alt="" fetchPriority="high" loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover" width={1920} height={800} />
+            {/* Overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/40" />
+
+            {/* Content */}
+            <div className="relative z-10 flex flex-col items-center gap-4 md:gap-6 max-w-3xl mx-auto">
+                <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-4 text-center drop-shadow-lg">
+                    Discover Your Next adventure and experiences.
+                </h1>
+
+                {/* Search Bar Below Paragraph */}
+                <div className="w-full mt-2 md:mt-4 relative z-[200]">
+                    <SearchBarWithSuggestions value={searchQuery} onChange={setSearchQuery} onSubmit={() => {
+                        if (searchQuery.trim()) {
+                            setIsSearchFocused(true);
+                            fetchAllData(searchQuery);
+                        }
+                    }} onSuggestionSearch={query => {
+                        setSearchQuery(query);
+                        setIsSearchFocused(true);
+                        fetchAllData(query);
+                    }} onFocus={() => setIsSearchFocused(true)} />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {/* Categories Section - Below on all screens (Modified for 4-column layout) */}
+    <div className="w-full px-4 md:px-8 -mt-10 md:-mt-16"> {/* Increased padding on medium/large screens (md:px-8) and lifted the section up (-mt-X) to overlap the hero slightly, matching the image. */}
+        {/* max-w-7xl and mx-auto ensure content is centered and fits full width up to max-width */}
+        <div className="max-w-7xl mx-auto"> 
+            {/* grid-cols-2 on mobile, grid-cols-4 on medium/large screens (md:grid-cols-4) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+                {categories.map(cat => <div key={cat.title} onClick={() => navigate(cat.path)} className="relative h-40 md:h-48 cursor-pointer overflow-hidden group rounded-lg shadow-lg" style={{
+                    backgroundImage: `url(${cat.bgImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                }}>
+                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center text-center p-2 md:p-4">
+                        <cat.icon className="h-5 w-5 md:h-10 md:w-10 text-white mb-2" />
+                        <span className="font-bold text-white text-base md:text-xl leading-tight" role="heading" aria-level={3}>{cat.title}</span>
+                        <p className="text-white/80 text-xs mt-1 hidden md:block">{cat.description}</p>
                     </div>
-                    
-                    {/* Categories Section - Below on all screens */}
-                    <div className="w-full px-2 md:px-0">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 justify-items-center">
-                            {categories.map(cat => <div key={cat.title} onClick={() => navigate(cat.path)} className="relative h-20 md:h-40 lg:h-48 cursor-pointer overflow-hidden group rounded-lg" style={{
-              backgroundImage: `url(${cat.bgImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}>
-                                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center text-center p-2 md:p-4">
-                                        <cat.icon className="h-5 w-5 md:h-12 md:w-12 lg:h-16 lg:w-16 text-white mb-1 md:mb-3" />
-                                        <span className="font-bold text-white text-xs md:text-base lg:text-lg leading-tight" role="heading" aria-level={3}>{cat.title}</span>
-                                        <p className="text-white/80 text-2xs md:text-sm text-center mt-0.5 md:mt-1 hidden md:block">{cat.description}</p>
-                                    </div>
-                                </div>)}
-                        </div>
-                    </div>
-                </section>
+                </div>)}
+            </div>
+        </div>
+    </div>
+</section>
                 
                 {/* Search Results - Show when search is focused */}
                 {isSearchFocused && <div className="px-4 mt-4">
