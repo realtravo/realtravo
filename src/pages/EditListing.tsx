@@ -523,20 +523,15 @@ const EditListing = () => {
       else if (type === "trip") table = "trips";
       else if (type === "attraction") table = "attractions";
 
-      let updateData: any = {};
+      let updateData: any = {
+        gallery_images: allImages,
+      };
 
       if (type === "attraction") {
-        // Attractions only use photo_urls column
-        updateData = {
-          photo_urls: allImages,
-        };
+        updateData.photo_urls = allImages;
       } else {
-        // Other types use gallery_images, images, and image_url
-        updateData = {
-          gallery_images: allImages,
-          image_url: allImages[0] || existingImages[0],
-          images: allImages,
-        };
+        updateData.image_url = allImages[0] || existingImages[0];
+        updateData.images = allImages;
       }
 
       const { error } = await supabase
