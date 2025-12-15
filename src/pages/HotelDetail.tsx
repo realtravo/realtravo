@@ -32,31 +32,31 @@ interface Activity {
   price: number;
 }
 interface Hotel {
-  id: string;
-  name: string;
-  local_name: string | null;
-  location: string;
-  place: string;
-  country: string;
-  image_url: string;
-  images: string[];
-  gallery_images: string[];
-  description: string;
-  amenities: string[];
-  phone_numbers: string[];
-  email: string;
-  facilities: Facility[];
-  activities: Activity[];
-  opening_hours: string;
-  closing_hours: string;
-  days_opened: string[];
-  registration_number: string;
-  map_link: string;
-  establishment_type: string;
-  available_rooms: number;
-  created_by: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  id: string;
+  name: string;
+  local_name: string | null;
+  location: string;
+  place: string;
+  country: string;
+  image_url: string;
+  images: string[];
+  gallery_images: string[];
+  description: string;
+  amenities: string[];
+  phone_numbers: string[];
+  email: string;
+  facilities: Facility[];
+  activities: Activity[];
+  opening_hours: string;
+  closing_hours: string;
+  days_opened: string[];
+  registration_number: string;
+  map_link: string;
+  establishment_type: string;
+  available_rooms: number;
+  created_by: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // Define the custom colors
@@ -65,42 +65,42 @@ const ORANGE_COLOR = "#FF9800";
 const RED_COLOR = "#EF4444"; 
 
 const HotelDetail = () => {
-  const { slug } = useParams();
-  const id = slug ? extractIdFromSlug(slug) : null;
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const { position, requestLocation } = useGeolocation();
-  
-  // Request location on first user interaction
-  useEffect(() => {
-    const handleInteraction = () => {
-      requestLocation();
-      window.removeEventListener('scroll', handleInteraction);
-      window.removeEventListener('click', handleInteraction);
-    };
-    window.addEventListener('scroll', handleInteraction, { once: true });
-    window.addEventListener('click', handleInteraction, { once: true });
-    return () => {
-      window.removeEventListener('scroll', handleInteraction);
-      window.removeEventListener('click', handleInteraction);
-    };
-  }, [requestLocation]);
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [current, setCurrent] = useState(0);
-  const { savedItems, handleSave: handleSaveItem } = useSavedItems();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const isSaved = savedItems.has(id || "");
+  const { slug } = useParams();
+  const id = slug ? extractIdFromSlug(slug) : null;
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { position, requestLocation } = useGeolocation();
+  
+  // Request location on first user interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      requestLocation();
+      window.removeEventListener('scroll', handleInteraction);
+      window.removeEventListener('click', handleInteraction);
+    };
+    window.addEventListener('scroll', handleInteraction, { once: true });
+    window.addEventListener('click', handleInteraction, { once: true });
+    return () => {
+      window.removeEventListener('scroll', handleInteraction);
+      window.removeEventListener('click', handleInteraction);
+    };
+  }, [requestLocation]);
+  const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const { savedItems, handleSave: handleSaveItem } = useSavedItems();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const isSaved = savedItems.has(id || "");
 
-  // Calculate distance if position and hotel coordinates available
-  const distance = position && hotel?.latitude && hotel?.longitude
-    ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude)
-    : undefined;
+  // Calculate distance if position and hotel coordinates available
+  const distance = position && hotel?.latitude && hotel?.longitude
+    ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude)
+    : undefined;
 
-  useEffect(() => {
+  useEffect(() => {
     fetchHotel();
     
     // Track referral clicks
@@ -269,26 +269,25 @@ const HotelDetail = () => {
   return <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       
-      <main className="container max-w-6xl mx-auto py-6 sm:py-4 px-4">
-        {/* REMOVED original back button: 
-            <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 sm:mb-2">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button> */}
-
-        <div className="grid lg:grid-cols-[2fr,1fr] gap-6 sm:gap-4">
+      {/* REMOVED 'container max-w-6xl mx-auto' from main tag */}
+      <main className="py-6 sm:py-4"> 
+        
+        {/* Added max-w-6xl mx-auto back to the grid for content section, but kept image section full width */}
+        <div className="grid lg:grid-cols-[2fr,1fr] gap-6 sm:gap-4 max-w-6xl mx-auto px-4">
           {/* --- Image Carousel Section --- */}
-          <div className="w-full relative">
-            {/* NEW ABSOLUTE BACK BUTTON OVER IMAGE */}
-            <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => navigate(-1)} 
-                className="absolute top-4 left-4 z-20 h-10 w-10 bg-black/50 hover:bg-black/70 text-white border-none rounded-full"
-            >
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            {/* REMOVED rounded-2xl CLASS HERE */}
+          {/* Changed this div to be full-width on mobile/small screens for the image carousel */}
+          <div className="w-full relative col-span-full lg:col-span-1">
+            {/* NEW ABSOLUTE BACK BUTTON OVER IMAGE */}
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => navigate(-1)} 
+                className="absolute top-4 left-4 z-20 h-10 w-10 bg-black/50 hover:bg-black/70 text-white border-none rounded-full"
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            {/* Carousel is now intended to be full-width if the outer container allows it */}
             <Carousel opts={{
               loop: true
             }} plugins={[Autoplay({
@@ -298,6 +297,7 @@ const HotelDetail = () => {
             }}>
               <CarouselContent>
                 {displayImages.map((img, idx) => <CarouselItem key={idx}>
+                    {/* This image now stretches to the full width of its parent */}
                     <img src={img} alt={`${hotel.name} ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-64 md:h-96 object-cover" />
                   </CarouselItem>)}
               </CarouselContent>
@@ -324,47 +324,48 @@ const HotelDetail = () => {
           </div>
 
           {/* --- Detail/Booking Section (Right Column on large screens, Stacked on small) --- */}
-          <div className="space-y-4 sm:space-y-3">
+          {/* This column is within the max-w-6xl mx-auto px-4 div for appropriate spacing */}
+          <div className="space-y-4 sm:space-y-3 col-span-full lg:col-span-1">
             <div>
               <h1 className="text-3xl sm:text-2xl font-bold mb-2">{hotel.name}</h1>
               {hotel.local_name && (
                 <p className="text-lg sm:text-base text-muted-foreground mb-2">"{hotel.local_name}"</p>
               )}
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                {/* MapPin Icon Teal */}
-                <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                <span className="sm:text-sm">{hotel.location}, {hotel.country}</span>
-                {distance !== undefined && (
-                  <span className="text-xs font-medium ml-auto" style={{ color: TEAL_COLOR }}>
-                    {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)}km away`}
-                  </span>
-                )}
-              </div>
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                {/* MapPin Icon Teal */}
+                <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
+                <span className="sm:text-sm">{hotel.location}, {hotel.country}</span>
+                {distance !== undefined && (
+                  <span className="text-xs font-medium ml-auto" style={{ color: TEAL_COLOR }}>
+                    {distance < 1 ? `${Math.round(distance * 1000)}m away` : `${distance.toFixed(1)}km away`}
+                  </span>
+                )}
+              </div>
               {hotel.place && (
                 <p className="text-sm text-muted-foreground mb-4 sm:mb-2">Place: {hotel.place}</p>
               )}
             </div>
 
-            {/* Operating Hours/Availability Card */}
-            <div className="p-4 sm:p-3 border bg-card mb-4 sm:mb-2" style={{ borderColor: TEAL_COLOR }}>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
-                <div>
-                  <p className="text-sm sm:text-xs text-muted-foreground">Working Hours & Days</p>
-                  <p className="font-semibold sm:text-sm">
-                    {(hotel.opening_hours || hotel.closing_hours) 
-                      ? `${hotel.opening_hours || 'N/A'} - ${hotel.closing_hours || 'N/A'}`
-                      : 'Not specified'}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <span className="font-medium">Working Days:</span>{' '}
-                    {hotel.days_opened && hotel.days_opened.length > 0 
-                      ? hotel.days_opened.join(', ')
-                      : 'Not specified'}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Operating Hours/Availability Card */}
+            <div className="p-4 sm:p-3 border bg-card mb-4 sm:mb-2" style={{ borderColor: TEAL_COLOR }}>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
+                <div>
+                  <p className="text-sm sm:text-xs text-muted-foreground">Working Hours & Days</p>
+                  <p className="font-semibold sm:text-sm">
+                    {(hotel.opening_hours || hotel.closing_hours) 
+                      ? `${hotel.opening_hours || 'N/A'} - ${hotel.closing_hours || 'N/A'}`
+                      : 'Not specified'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    <span className="font-medium">Working Days:</span>{' '}
+                    {hotel.days_opened && hotel.days_opened.length > 0 
+                      ? hotel.days_opened.join(', ')
+                      : 'Not specified'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-3">
               {/* Book Now Button Teal and dark hover */}
@@ -429,8 +430,11 @@ const HotelDetail = () => {
           </div>
         </div>
 
-        {/* --- Amenities Section --- */}
-        {hotel.amenities && hotel.amenities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
+        {/* The following sections now also need to be contained or given padding, 
+            so I'm wrapping them in a div that applies the original container spacing */}
+        <div className="max-w-6xl mx-auto px-4">
+          {/* --- Amenities Section --- */}
+          {hotel.amenities && hotel.amenities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
             <h2 className="text-xl sm:text-lg font-semibold mb-4 sm:mb-2">Amenities</h2>
             <div className="flex flex-wrap gap-2 sm:gap-1">
               {hotel.amenities.map((amenity, idx) => 
@@ -445,8 +449,8 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {/* --- Facilities (Room Types) Section --- */}
-        {hotel.facilities && hotel.facilities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
+          {/* --- Facilities (Room Types) Section --- */}
+          {hotel.facilities && hotel.facilities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
             <h2 className="text-xl sm:text-lg font-semibold mb-4 sm:mb-2">Facilities (Room Types)</h2>
             <div className="flex flex-wrap gap-2 sm:gap-1">
               {hotel.facilities.map((facility, idx) => 
@@ -463,8 +467,8 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {/* --- Activities Section --- */}
-        {hotel.activities && hotel.activities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
+          {/* --- Activities Section --- */}
+          {hotel.activities && hotel.activities.length > 0 && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
             <h2 className="text-xl sm:text-lg font-semibold mb-4 sm:mb-2">Activities</h2>
             <div className="flex flex-wrap gap-2 sm:gap-1">
               {hotel.activities.map((activity, idx) => 
@@ -480,8 +484,8 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {/* --- Contact Information Section --- */}
-        {(hotel.phone_numbers || hotel.email) && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
+          {/* --- Contact Information Section --- */}
+          {(hotel.phone_numbers || hotel.email) && <div className="mt-6 sm:mt-4 p-6 sm:p-3 border bg-card">
             <h2 className="text-xl sm:text-lg font-semibold mb-3 sm:mb-2">Contact Information</h2>
             <div className="space-y-2 sm:space-y-1">
               {hotel.phone_numbers?.map((phone, idx) => 
@@ -498,30 +502,31 @@ const HotelDetail = () => {
             </div>
           </div>}
 
-        {/* --- Review Section --- */}
-        <div className="mt-6 sm:mt-4">
-          <ReviewSection itemId={hotel.id} itemType="hotel" />
-        </div>
+          {/* --- Review Section --- */}
+          <div className="mt-6 sm:mt-4">
+            <ReviewSection itemId={hotel.id} itemType="hotel" />
+          </div>
 
-        {/* --- Similar Items Section --- */}
-        {hotel && <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />}
+          {/* --- Similar Items Section --- */}
+          {hotel && <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />}
+        </div>
       </main>
 
-      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <MultiStepBooking 
-            onSubmit={handleBookingSubmit} 
-            facilities={hotel.facilities || []} 
-            activities={hotel.activities || []} 
-            isProcessing={isProcessing} 
-            isCompleted={isCompleted} 
-            itemName={hotel.name}
-            itemId={hotel.id}
-            bookingType="hotel"
-            hostId={hotel.created_by || ""}
-            onPaymentSuccess={() => setIsCompleted(true)}
-          />
-        </DialogContent>
+      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} 
+            facilities={hotel.facilities || []} 
+            activities={hotel.activities || []} 
+            isProcessing={isProcessing} 
+            isCompleted={isCompleted} 
+            itemName={hotel.name}
+            itemId={hotel.id}
+            bookingType="hotel"
+            hostId={hotel.created_by || ""}
+            onPaymentSuccess={() => setIsCompleted(true)}
+          />
+        </DialogContent>
       </Dialog>
 
       <MobileBottomBar />
