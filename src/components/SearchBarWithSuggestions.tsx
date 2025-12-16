@@ -351,10 +351,12 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
 
       {showSuggestions && (
         <div 
-          // MODIFIED CLASS: Removed md:top-full 
+          // Class remains the same: fixed position for mobile, absolute for desktop
             className="fixed md:absolute left-0 right-0 md:left-0 md:right-0 bg-card border border-border rounded-b-lg shadow-lg max-h-[60vh] md:max-h-96 overflow-y-auto z-[9999]"
             style={{ 
-              top: inputRef.current ? `${inputRef.current.getBoundingClientRect().bottom}px` : '100%',
+              // MODIFIED: Subtract 1px to visually overlap the input's bottom border for a seamless look.
+              top: inputRef.current ? `${inputRef.current.getBoundingClientRect().bottom - 1}px` : '100%',
+              borderTop: "none" // Explicitly remove the top border to prevent a double border gap
             }}
         >
           {/* Show search history and trending when no value */}
