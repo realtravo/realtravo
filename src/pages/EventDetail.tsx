@@ -252,13 +252,6 @@ const EventDetail = () => {
           <Heart className={`h-5 w-5 ${isSaved ? "fill-white" : ""}`} />
         </Button>
         
-        {/*
-          // REMOVED: Badge component that says "EVENT"
-          <Badge className="absolute top-4 right-20 sm:top-4 sm:right-20 bg-primary text-primary-foreground z-30 text-xs font-bold px-3 py-1 rounded-full">
-            EVENT
-          </Badge>
-        */}
-
         <Carousel 
           opts={{ loop: true }} 
           plugins={[Autoplay({ delay: 3000 })]}
@@ -281,7 +274,7 @@ const EventDetail = () => {
                   alt={`${event.name} ${idx + 1}`} 
                   loading="lazy" 
                   decoding="async" 
-                  className="w-full h-[60vh] md:h-96 lg:h-[500px] object-cover" 
+                  className="w-full h-[42vh] md:h-96 lg:h-[500px] object-cover" // <-- HEIGHT MODIFIED HERE (from h-[60vh] to h-[42vh])
                 />
               </CarouselItem>
             ))}
@@ -304,6 +297,7 @@ const EventDetail = () => {
             ))}
           </div>
         )}
+        
       </div>
       
       {/* Main Content starts here, contained by the max-width wrapper */}

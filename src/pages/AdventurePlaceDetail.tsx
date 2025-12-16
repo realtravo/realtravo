@@ -290,7 +290,7 @@ const AdventurePlaceDetail = () => {
                   alt={`${place.name} ${idx + 1}`} 
                   loading="lazy" 
                   decoding="async" 
-                  className="w-full h-[60vh] md:h-96 lg:h-[500px] object-cover" // Ensure height consistency
+                  className="w-full h-[42vh] md:h-96 lg:h-[500px] object-cover" // <-- HEIGHT MODIFIED: h-[60vh] -> h-[42vh]
                 />
               </CarouselItem>
             ))}
