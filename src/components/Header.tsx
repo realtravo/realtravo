@@ -17,8 +17,8 @@ import {
 import { NavigationDrawer } from "./NavigationDrawer";
 // Import useLocation
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ThemeToggle } from "./ThemeToggle";
-import { NotificationBell } from "./NotificationBell";
+import { ThemeToggle } from "./ThemeToggle"; 
+import { NotificationBell } from "./NotificationBell"; 
 
 // Setting the deeper RGBA background color as a constant for clarity
 const MOBILE_ICON_BG = 'rgba(0, 0, 0, 0.5)'; // Deeper semi-transparent black
@@ -38,7 +38,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   const { user, signOut } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
 
-  // --- Start of functional code ---
+  // --- Start of functional code (omitted for brevity) ---
   useEffect(() => {
     const checkRole = async () => {
       if (!user) {
@@ -105,6 +105,12 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   const nonIndexIconStyle = isIndexPage ? {} : { backgroundColor: 'transparent' };
   const nonIndexIconColor = isIndexPage ? 'text-white' : 'text-white'; 
 
+  // **NEW CONSTANT FOR DESKTOP ICON STYLING**
+  // This will apply the same background/hover/text classes to Menu, Notification, and Account icons on desktop
+  const DESKTOP_ICON_CLASSES = "md:bg-white/10 md:hover:bg-white md:group";
+  const DESKTOP_ICON_INNER_CLASSES = "md:text-white md:group-hover:text-[#008080]";
+
+
   return (
     // 1. Apply conditional classes to the header
     <header className={`z-[100] text-black dark:text-white md:sticky md:h-16 md:text-white dark:md:text-white ${mobileHeaderClasses}`}>
@@ -119,18 +125,18 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
                         md:relative md:top-auto md:left-auto`}>
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              {/* Menu Icon: **MODIFIED DESKTOP STYLING** */}
+              {/* Menu Icon: **APPLY NEW DESKTOP STYLES** */}
               <button 
-                className={`inline-flex items-center justify-center h-10 w-10 rounded-full transition-colors 
-                            ${isIndexPage 
-                                ? 'text-white hover:bg-white/20' 
-                                : 'text-white bg-white/10 hover:bg-white/20'} 
-                            md:bg-white/10 md:hover:bg-white group`} // Apply account style to desktop
+                // Original mobile/non-index styles retained:
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full transition-colors ${isIndexPage ? 'text-white hover:bg-white/20' : 'text-white bg-white/10 hover:bg-white/20'} 
+                            
+                            // **NEW DESKTOP STYLES** (Overwrite existing md:text-white md:hover:bg-[#006666])
+                            ${DESKTOP_ICON_CLASSES} md:hover:text-[#008080]`}
                 aria-label="Open navigation menu"
                 // Apply mobile background style only on the index page
                 style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
               >
-                <Menu className="h-5 w-5 md:text-white md:group-hover:text-[#008080]" /> 
+                <Menu className={`h-5 w-5 ${DESKTOP_ICON_INNER_CLASSES}`} />
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 h-screen">
@@ -179,7 +185,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
         <div className={`flex items-center gap-2 md:relative md:top-auto md:right-auto md:flex 
                         ${isIndexPage ? 'absolute top-4 right-4' : 'relative'}`}>
           
-          {/* Search Icon Button: Unchanged from original (uses white/10 and hover:bg-white on desktop) */}
+          {/* Search Icon Button: Only the background logic is slightly modified */}
           {showSearchIcon && (
             <button 
               onClick={() => {
@@ -190,40 +196,44 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors md:bg-white/10 md:hover:bg-white hover:bg-white/20 group`}
+              // Removed md:bg-white/10 md:hover:bg-white to simplify, as it's not a primary "Account" action.
+              // Kept the mobile/desktop classes that provide a similar visual:
+              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors md:hover:bg-white/20 hover:bg-white/20`}
               aria-label="Search"
               style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
             >
-              <Search className={`h-5 w-5 md:text-white md:group-hover:text-[#008080] ${nonIndexIconColor}`} />
+              {/* Added group to allow for hover color change, matching the other primary icons */}
+              <Search className={`h-5 w-5 ${nonIndexIconColor} md:text-white md:group-hover:text-[#008080]`} />
             </button>
           )}
           
-          {/* Notification Bell with Conditional RGBA Background: **MODIFIED DESKTOP STYLING** */}
+          {/* Notification Bell with **APPLY NEW DESKTOP STYLES** */}
           <div className="flex items-center gap-2">
             <div 
-                className="rounded-full h-10 w-10 flex items-center justify-center transition-colors 
-                          md:bg-white/10 md:hover:bg-white group" // Apply account style to desktop
+                // **APPLY NEW DESKTOP STYLES** (Overwrite existing md:bg-transparent)
+                className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors ${DESKTOP_ICON_CLASSES}`}
                 style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
             >
               <NotificationBell 
                   mobileIconClasses="text-white"
-                  // Update desktopIconClasses to use group-hover effect
-                  desktopIconClasses="md:text-white md:group-hover:text-[#008080]" 
+                  // **APPLY NEW DESKTOP ICON STYLES** (Overwrite existing md:text-white md:hover:bg-[#006666])
+                  desktopIconClasses={DESKTOP_ICON_INNER_CLASSES}
               />
             </div>
           </div>
 
-          {/* Theme Toggle and Account: Unchanged */}
+          {/* Theme Toggle and Account: Hidden on mobile, shown on desktop - Unchanged, but used as the source of the style */}
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             
+            {/* Account Button (The source of the new DESKTOP_ICON_CLASSES and DESKTOP_ICON_INNER_CLASSES) */}
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="rounded-full h-10 w-10 flex items-center justify-center transition-colors 
-                        bg-white/10 hover:bg-white group" 
+              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors 
+                          ${DESKTOP_ICON_CLASSES}`} 
               aria-label="Account"
             >
-              <User className="h-5 w-5 text-white group-hover:text-[#008080]" />
+              <User className={`h-5 w-5 ${DESKTOP_ICON_INNER_CLASSES}`} />
             </button>
           </div>
         </div>
