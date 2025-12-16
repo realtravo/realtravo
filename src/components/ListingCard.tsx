@@ -7,7 +7,6 @@ import { cn, optimizeSupabaseImage } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { createDetailPath } from "@/lib/slugUtils";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
-
 interface ListingCardProps {
   id: string;
   type: 'TRIP' | 'EVENT' | 'HOTEL' | 'ADVENTURE PLACE' | 'ACCOMMODATION' | 'ATTRACTION';
@@ -32,7 +31,6 @@ interface ListingCardProps {
   compact?: boolean;
   distance?: number;
 }
-
 export const ListingCard = ({
   id,
   type,
@@ -61,16 +59,17 @@ export const ListingCard = ({
   const [imageError, setImageError] = useState(false);
 
   // Use intersection observer for lazy loading - load when 200px before entering viewport
-  const { ref: imageContainerRef, isIntersecting } = useIntersectionObserver({
+  const {
+    ref: imageContainerRef,
+    isIntersecting
+  } = useIntersectionObserver({
     rootMargin: '200px',
-    triggerOnce: true,
+    triggerOnce: true
   });
 
   // For priority images, always load immediately
   const shouldLoadImage = priority || isIntersecting;
-
   const navigate = useNavigate();
-
   const handleCardClick = () => {
     const typeMap: Record<string, string> = {
       "TRIP": "trip",
@@ -83,7 +82,6 @@ export const ListingCard = ({
     const path = createDetailPath(typeMap[type], id, name, location);
     navigate(path);
   };
-
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "";
     const options: Intl.DateTimeFormatOptions = {
@@ -93,17 +91,14 @@ export const ListingCard = ({
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onSave) {
       onSave(id, type);
     }
   };
-
   const tealBgClass = "bg-[rgb(0,128,128)] text-white";
   const tealTextClass = "text-[rgb(0,100,100)]";
-
   const remainingTickets = availableTickets !== undefined ? availableTickets - (bookedTickets || 0) : undefined;
   const fewSlotsRemaining = (type === "TRIP" || type === "EVENT") && remainingTickets !== undefined && remainingTickets > 0 && remainingTickets <= 20;
   const isTripOrEvent = type === "TRIP" || type === "EVENT";
@@ -114,58 +109,31 @@ export const ListingCard = ({
     height: 200,
     quality: 70
   });
-
-  return (
-    <Card 
-      onClick={handleCardClick} 
-      className={cn(
-        "group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border bg-card shadow-sm w-full flex flex-col",
-        // Changed "rounded-lg" to "rounded-none" to remove border radius
-        "rounded-none", 
-        compact ? "h-auto" : "h-auto"
-      )}
-    >
+  return <Card onClick={handleCardClick} className={cn("group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border bg-card shadow-sm w-full flex flex-col",
+  // Changed "rounded-lg" to "rounded-none" to remove border radius
+  "rounded-none", compact ? "h-auto" : "h-auto")}>
       {/* Image Container with intersection observer */}
       {/* INCREASED paddingBottom from '60%' to '75%' for a taller card */}
-      <div ref={imageContainerRef} className="relative overflow-hidden m-0 bg-muted" style={{ paddingBottom: '75%' }}>
+      <div ref={imageContainerRef} className="relative overflow-hidden m-0 bg-muted" style={{
+      paddingBottom: '75%'
+    }}>
         {/* Skeleton placeholder - show when not loading or image not loaded */}
-        {(!shouldLoadImage || (!imageLoaded && !imageError)) && (
-            <div className="absolute inset-0 bg-muted animate-pulse" />
-        )}
+        {(!shouldLoadImage || !imageLoaded && !imageError) && <div className="absolute inset-0 bg-muted animate-pulse" />}
         
         {/* Actual image - only render when in viewport */}
-        {shouldLoadImage && (
-          <img 
-            src={optimizedImageUrl}
-            alt={name} 
-            width={320} 
-            height={200} 
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-all duration-300 m-0 p-0",
-              imageLoaded ? "opacity-100" : "opacity-0"
-            )} 
-          />
-        )}
+        {shouldLoadImage && <img src={optimizedImageUrl} alt={name} width={320} height={200} loading="lazy" decoding="async" onLoad={() => setImageLoaded(true)} onError={() => setImageError(true)} className={cn("absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-all duration-300 m-0 p-0", imageLoaded ? "opacity-100" : "opacity-0")} />}
         
         {/* Error fallback */}
-        {imageError && (
-            <div className="absolute inset-0 bg-muted flex items-center justify-center">
+        {imageError && <div className="absolute inset-0 bg-muted flex items-center justify-center">
               <span className="text-muted-foreground text-xs">No image</span>
-            </div>
-        )}
+            </div>}
         
         {/* Category Badges */}
         {type === "TRIP" && <Badge className={cn("absolute top-1.5 left-1.5 backdrop-blur text-[10px] md:text-xs font-bold z-10 px-1.5 py-0.5 md:px-2 md:py-1", tealBgClass)}>
             TRIP
         </Badge>}
 
-        {type === "EVENT" && <Badge className={cn("absolute top-1.5 left-1.5 backdrop-blur text-[10px] md:text-xs font-bold z-10 px-1.5 py-0.5 md:px-2 md:py-1", tealBgClass)}>
-            EVENT
-        </Badge>}
+        {type === "EVENT"}
 
         {type !== "EVENT" && type !== "TRIP" && showBadge && <Badge className={cn("absolute top-1.5 left-1.5 backdrop-blur text-[8px] md:text-[0.6rem] z-10 px-1 py-0.5 md:p-1", tealBgClass)}>
             {type}
@@ -189,11 +157,9 @@ export const ListingCard = ({
                 {location}
             </p>
             {/* Distance inline for non-trip/event types */}
-            {distance !== undefined && type !== "TRIP" && type !== "EVENT" && (
-                <span className={cn("text-[8px] md:text-xs px-1.5 py-0.5 rounded-full bg-primary/10 font-medium whitespace-nowrap", tealTextClass)}>
+            {distance !== undefined && type !== "TRIP" && type !== "EVENT" && <span className={cn("text-[8px] md:text-xs px-1.5 py-0.5 rounded-full bg-primary/10 font-medium whitespace-nowrap", tealTextClass)}>
                     📍 {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
-                </span>
-            )}
+                </span>}
         </div>
         
         {/* Price, Date and Few slots remaining for Trips/Events - on same row */}
@@ -214,6 +180,5 @@ export const ListingCard = ({
             </span>}
         </div>}
       </div>
-    </Card>
-  );
+    </Card>;
 };
