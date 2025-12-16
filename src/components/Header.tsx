@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, Heart, Ticket, Shield, Home, FolderOpen, User, Search, Bell } from "lucide-react";
+import { Menu, Heart, Ticket, Shield, Home, FolderOpen, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,9 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavigationDrawer } from "./NavigationDrawer";
-import { Link, useNavigate, useLocation } from "react-router-dom"; // <-- Added useLocation
-import { ThemeToggle } from "./ThemeToggle";
-import { NotificationBell } from "./NotificationBell";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // <-- Import useLocation
+import { ThemeToggle } from "./ThemeToggle"; 
+import { NotificationBell } from "./NotificationBell"; 
 
 interface HeaderProps {
   onSearchClick?: () => void;
@@ -26,78 +26,132 @@ interface HeaderProps {
 
 export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) => {
   const navigate = useNavigate();
-  const location = useLocation(); // <-- Get current path
+  const location = useLocation(); // <-- Get current location
+  const isIndexPage = location.pathname === '/'; // <-- Check if it's the index page
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   
-  // 1. New state for scroll detection
+  // 1. New state for scroll background
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  // Check if we are on the index page ('/')
-  const isIndexPage = location.pathname === '/';
 
-  // 2. useEffect for scroll listener (Only on index page)
+  // 2. useEffect to track scroll position
   useEffect(() => {
-    if (!isIndexPage) {
-      setIsScrolled(true); // Default to colored header if not index page
-      return;
-    }
+    // Only apply scroll effect on the index page
+    if (!isIndexPage) return; 
 
     const handleScroll = () => {
-      // Set scroll status based on a small threshold (e.g., 50px)
-      setIsScrolled(window.scrollY > 50);
+      // Threshold of 100px is common for triggering header changes
+      setIsScrolled(window.scrollY > 100);
     };
 
     window.addEventListener("scroll", handleScroll);
     
-    // Initial check on mount
-    handleScroll();
-
+    // Cleanup function
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isIndexPage]);
+  }, [isIndexPage]); // <-- Dependency on isIndexPage
 
-  // Determine the mobile header background color
-  const mobileBgClass = (isIndexPage && !isScrolled)
-    ? "bg-transparent border-b-transparent" // Transparent on top of index page
-    : "bg-[#008080] border-b-[#008080]";    // Teal when scrolled or on other pages
-
-  // Determine the dynamic text/icon color for mobile (default to white/light)
-  const mobileContentColor = (isIndexPage && !isScrolled)
-    ? "text-white"
-    : "text-white"; // Keep white for teal background
-
-  /* --- Omitted Supabase/User Role/Name logic for brevity but assume it remains the same --- */
-  useEffect(() => { /* ... existing checkRole logic ... */ }, [user]);
-  useEffect(() => { /* ... existing fetchUserProfile logic ... */ }, [user]);
-  const getUserInitials = () => { /* ... existing logic ... */ return "U"; };
-
-  const [userName, setUserName] = useState<string>("");
+  // --- (Existing user and role fetching logic remains here) ---
   useEffect(() => {
-    // A placeholder for the actual user data fetching
-    if (user) setUserName(user.email || "User"); else setUserName("");
+    const checkRole = async () => {
+      if (!user) {
+        setUserRole(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      if (data && data.length > 0) {
+        const roles = data.map(r => r.role);
+        if (roles.includes("admin")) setUserRole("admin");
+        else setUserRole("user");
+      }
+    };
+
+    checkRole();
   }, [user]);
 
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile?.name) {
+          setUserName(profile.name);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  const getUserInitials = () => {
+    if (userName) {
+      const names = userName.trim().split(' ');
+      if (names.length >= 2) {
+        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+      }
+      return userName.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  const [showMobileAccountDialog, setShowMobileAccountDialog] = useState(false);
+
+  const handleMobileAccountTap = () => {
+    if (!user) {
+      window.location.href = "/auth";
+    } else {
+      setShowMobileAccountDialog(!showMobileAccountDialog);
+    }
+  };
+  // -----------------------------------------------------------
+
+
+  // Conditional header classes
+  const headerClass = isIndexPage && !isScrolled
+    ? "bg-transparent border-b-transparent text-white" // Transparent background, white text for contrast
+    : "bg-[#008080] border-b-border text-white"; // Solid background (default for other pages or scrolled
+
+  // Background class for the icons when header is transparent
+  const iconBgClass = isIndexPage && !isScrolled
+    ? "bg-[rgba(0,0,0,0.4)] hover:bg-[rgba(0,0,0,0.6)]" // Darker RGBA background for visibility
+    : "bg-white/10 hover:bg-white/20"; // Default (current solid background style
+
+  // Icon color when transparent: white. When solid: white.
+  const iconColorClass = "text-white group-hover:text-white"; 
+
+  // Icon color on hover when header is solid (e.g. for Account button)
+  const iconColorSolidHoverClass = isIndexPage && !isScrolled 
+      ? 'group-hover:text-white' // Keep white on hover when transparent
+      : 'group-hover:text-[#008080]'; // Teal on hover when solid (like previous implementation
+
   return (
-    // 3. Dynamic header class list for small screens and fixed for medium/large screens
-    <header className={`sticky top-0 z-50 w-full border-b border-border h-16 transition-colors duration-300
-                       md:bg-[#008080] md:border-b-[#008080] md:text-white dark:md:bg-[#008080] dark:md:text-white
-                       ${mobileBgClass} ${mobileContentColor}`}>
+    <header className={`sticky top-0 z-50 w-full border-b transition-colors duration-300 h-16 ${headerClass}`}>
       <div className="container flex h-full items-center justify-between px-4">
         
         {/* Logo and Drawer Trigger (Left Side) */}
         <div className="flex items-center gap-3">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              {/* Menu icon always has a background color for visibility on transparent header */}
               <button 
-                className={`inline-flex items-center justify-center h-10 w-10 rounded-md transition-colors 
-                           bg-black/20 hover:bg-black/40 text-white`} 
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full transition-colors ${iconBgClass}`} 
                 aria-label="Open navigation menu"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5 text-white" />
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 h-screen">
@@ -105,12 +159,12 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
             </SheetContent>
           </Sheet>
           
-          {/* Logo and Name - HIDDEN on small screens, SHOWN on medium/large screens */}
-          <Link to="/" className="hidden md:flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#0066cc] font-bold text-lg">
+          <Link to="/" className="flex items-center gap-3">
+            {/* Hiding logo and name/description on small screen when header is transparent */}
+            <div className={`h-8 w-8 rounded-lg bg-white items-center justify-center text-[#0066cc] font-bold text-lg ${isIndexPage && !isScrolled ? 'hidden lg:flex' : 'flex'}`}>
               T
             </div>
-            <div>
+            <div className={`${isIndexPage && !isScrolled ? 'hidden lg:block' : 'block'}`}>
               <span className="font-bold text-base md:text-lg text-white block">
                 TripTrac
               </span>
@@ -119,7 +173,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           </Link>
         </div>
 
-        {/* Desktop Navigation (Centered) - No Change */}
+        {/* Desktop Navigation (Centered) - No change needed for desktop */}
         <nav className="hidden lg:flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 font-bold hover:text-muted-foreground transition-colors">
             <Home className="h-4 w-4" />
@@ -145,43 +199,39 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
         {/* Account Controls (Right Side) */}
         <div className="flex items-center gap-2">
           
-          {/* Search Bar - Replaced with a placeholder div to represent the search bar area on small screens */}
-          <div className="md:hidden flex-grow max-w-xs px-2">
-              <div 
-                  onClick={() => {
-                    if (onSearchClick) { onSearchClick(); } 
-                    else { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-                  }}
-                  // Search bar: background color rgba darker color for visibility
-                  className="w-full h-10 flex items-center rounded-full bg-black/20 text-white pl-4 pr-2 cursor-pointer"
-              >
-                  <Search className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-light opacity-80">Search destinations...</span>
-              </div>
-          </div>
+          {/* Search Icon Button */}
+          {showSearchIcon && (
+            <button 
+              onClick={() => {
+                if (onSearchClick) {
+                  onSearchClick();
+                } else {
+                  navigate('/');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors group ${iconBgClass}`}
+              aria-label="Search"
+            >
+              <Search className={`h-5 w-5 ${iconColorSolidHoverClass}`} />
+            </button>
+          )}
           
-          {/* Notification Bell - Mobile & Desktop */}
-          {/* Notification Bell background color rgba darker color for visibility on transparent header */}
-          <div className="md:hidden"> 
-            <NotificationBell 
-                iconClassName="text-white" 
-                buttonClassName="rounded-full h-10 w-10 flex items-center justify-center transition-colors bg-black/20 hover:bg-black/40" 
-            />
-          </div>
-
-          {/* Desktop Auth Actions (Right Side) - Notification, Theme, Account */}
+          {/* Notification Bell */}
+          {/* Note: NotificationBell component needs to be updated to accept and use the iconBgClass/iconColorSolidHoverClass */}
+          <NotificationBell className={iconBgClass} iconClassName={iconColorSolidHoverClass} />
+          
+          {/* Desktop Auth Actions (Right Side) - Theme, Account */}
           <div className="hidden md:flex items-center gap-2">
-            <NotificationBell />
             <ThemeToggle />
             
-            {/* Account Button - No Change for desktop */}
+            {/* Account Button */}
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="rounded-full h-10 w-10 flex items-center justify-center transition-colors 
-                        bg-white/10 hover:bg-white group"
+              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors group ${iconBgClass}`}
               aria-label="Account"
             >
-              <User className="h-5 w-5 text-white group-hover:text-[#008080]" />
+              <User className={`h-5 w-5 ${iconColorSolidHoverClass}`} />
             </button>
           </div>
         </div>
