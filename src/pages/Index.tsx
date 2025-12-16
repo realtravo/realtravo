@@ -437,49 +437,52 @@ const Index = () => {
             <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} />
             
             {/* Hero Section with Search Bar and Background Image - Hidden when search focused */}
-            {!isSearchFocused && (
-              <div 
-                ref={searchRef}
-                className="relative w-full h-48 md:h-72 lg:h-80"
-                style={{
-                  backgroundImage: `url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&h=600&fit=crop&auto=format&q=80)`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              >
-                <div className="absolute inset-0 bg-black/40" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="container md:px-4 px-4">
-                    <h1 className="text-white text-2xl md:text-4xl lg:text-5xl font-bold text-center mb-4 md:mb-6">
-                      Discover Your Next Adventure
-                    </h1>
-                    <SearchBarWithSuggestions 
-                      value={searchQuery} 
-                      onChange={setSearchQuery} 
-                      onSubmit={() => {
-                        if (searchQuery.trim()) {
-                          fetchAllData(searchQuery);
-                          setIsSearchFocused(true);
-                        }
-                      }} 
-                      onSuggestionSearch={query => {
-                        setSearchQuery(query);
-                        fetchAllData(query);
-                        setIsSearchFocused(true);
-                      }} 
-                      onFocus={() => setIsSearchFocused(true)} 
-                      onBlur={() => {}}
-                      onBack={() => {
-                        setIsSearchFocused(false);
-                        setSearchQuery("");
-                        fetchAllData();
-                      }} 
-                      showBackButton={false} 
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+{!isSearchFocused && (
+  <div 
+    ref={searchRef}
+    // Remove existing classes like h-48 md:h-72 lg:h-80 and add h-1/2 or h-screen/2 if available, 
+    // but 50vh in style is the most reliable.
+    className="relative w-full"
+    style={{
+      height: '50vh', // <--- This sets the height to 50% of the viewport height
+      backgroundImage: `url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&h=600&fit:crop&auto=format&q:80)`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}
+  >
+    <div className="absolute inset-0 bg-black/40" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="container md:px-4 px-4">
+        <h1 className="text-white text-2xl md:text-4xl lg:text-5xl font-bold text-center mb-4 md:mb-6">
+          Discover Your Next Adventure
+        </h1>
+        <SearchBarWithSuggestions 
+          value={searchQuery} 
+          onChange={setSearchQuery} 
+          onSubmit={() => {
+            if (searchQuery.trim()) {
+              fetchAllData(searchQuery);
+              setIsSearchFocused(true);
+            }
+          }} 
+          onSuggestionSearch={query => {
+            setSearchQuery(query);
+            fetchAllData(query);
+            setIsSearchFocused(true);
+          }} 
+          onFocus={() => setIsSearchFocused(true)} 
+          onBlur={() => {}}
+          onBack={() => {
+            setIsSearchFocused(false);
+            setSearchQuery("");
+            fetchAllData();
+          }} 
+          showBackButton={false} 
+        />
+      </div>
+    </div>
+  </div>
+ )}
             
             {/* Search Bar - Appears below header when focused on all screens */}
             {isSearchFocused && <div className="sticky top-[64px] z-[100] bg-background p-4 border-b shadow-md">
