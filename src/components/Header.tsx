@@ -15,7 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavigationDrawer } from "./NavigationDrawer";
-import { Link, useNavigate } from "react-router-dom";
+// Import useLocation
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle"; 
 import { NotificationBell } from "./NotificationBell"; 
 
@@ -29,6 +30,11 @@ interface HeaderProps {
 
 export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) => {
   const navigate = useNavigate();
+  // 1. Get the current location
+  const location = useLocation();
+  // Check if it's the index page (root path '/')
+  const isIndexPage = location.pathname === '/';
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -89,19 +95,32 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
   };
   // --- End of unchanged functional code ---
 
+  // Conditional classes for the main header element
+  const mobileHeaderClasses = isIndexPage 
+    // Classes for the index page (fixed, semi-transparent background is implied by icon styles below)
+    ? "fixed top-0 left-0 right-0" 
+    // Classes for all other pages (relative/sticky, full background)
+    : "sticky top-0 left-0 right-0 border-b border-border bg-[#008080] dark:bg-[#008080] text-white dark:text-white";
+
+  // Conditional icon styling for non-index pages (where the header is opaque)
+  const nonIndexIconStyle = isIndexPage ? {} : { backgroundColor: 'transparent' };
+  const nonIndexIconColor = isIndexPage ? 'text-white' : 'text-white'; // Icons are white on both, but index gets a hover effect with its specific background.
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] text-black dark:text-white md:sticky md:h-16 md:border-b md:border-border md:bg-[#008080] md:text-white dark:md:bg-[#008080] dark:md:text-white">
+    // 2. Apply conditional classes to the header
+    <header className={`z-[100] text-black dark:text-white md:sticky md:h-16 md:text-white dark:md:text-white ${mobileHeaderClasses}`}>
       <div className="container md:flex md:h-full md:items-center md:justify-between md:px-4">
         
-        {/* Mobile Left Icons (Menu) - Fixed Position */}
-        <div className="absolute top-4 left-4 flex items-center gap-3 md:relative md:top-auto md:left-auto">
+        {/* Mobile Left Icons (Menu) - Conditional Fixed/Relative Position */}
+        <div className={`flex items-center gap-3 ${isIndexPage ? 'absolute top-4 left-4' : 'relative'} md:relative md:top-auto md:left-auto`}>
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              {/* Menu Icon: Updated to White Icon and Deeper RGBA Background */}
+              {/* Menu Icon: Conditionally apply RGBA Background and White Icon */}
               <button 
-                className="inline-flex items-center justify-center h-10 w-10 rounded-full text-white transition-colors md:text-white md:hover:bg-[#006666] hover:bg-white/20"
+                className={`inline-flex items-center justify-center h-10 w-10 rounded-full transition-colors md:text-white md:hover:bg-[#006666] ${isIndexPage ? 'text-white hover:bg-white/20' : 'text-white bg-white/10 hover:bg-white/20'}`}
                 aria-label="Open navigation menu"
-                style={{ backgroundColor: MOBILE_ICON_BG }}
+                // Apply mobile background style only on the index page
+                style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -113,7 +132,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           
           {/* Logo/Description: Hidden on mobile */}
           <Link to="/" className="hidden md:flex items-center gap-3">
-             <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#0066cc] font-bold text-lg">
+              <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center text-[#0066cc] font-bold text-lg">
                 T
               </div>
               <div>
@@ -125,7 +144,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           </Link>
         </div>
 
-        {/* Desktop Navigation (Centered) - Visible from lg: breakpoint up */}
+        {/* Desktop Navigation (Centered) - Unchanged */}
         <nav className="hidden lg:flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 font-bold hover:text-muted-foreground transition-colors">
             <Home className="h-4 w-4" />
@@ -148,10 +167,10 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
           </button>
         </nav>
 
-        {/* Mobile Right Icons (Search, Notification) - Fixed Position */}
-        <div className="absolute top-4 right-4 flex items-center gap-2 md:relative md:top-auto md:right-auto md:flex">
+        {/* Mobile Right Icons (Search, Notification) - Conditional Fixed/Relative Position */}
+        <div className={`flex items-center gap-2 ${isIndexPage ? 'absolute top-4 right-4' : 'relative'} md:relative md:top-auto md:right-auto md:flex`}>
           
-          {/* Search Icon Button: Updated to White Icon and Deeper RGBA Background */}
+          {/* Search Icon Button: Conditionally apply RGBA Background and White Icon */}
           {showSearchIcon && (
             <button 
               onClick={() => {
@@ -162,37 +181,37 @@ export const Header = ({ onSearchClick, showSearchIcon = true }: HeaderProps) =>
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className="rounded-full h-10 w-10 flex items-center justify-center transition-colors text-white md:bg-white/10 md:hover:bg-white hover:bg-white/20"
+              className={`rounded-full h-10 w-10 flex items-center justify-center transition-colors md:bg-white/10 md:hover:bg-white hover:bg-white/20`}
               aria-label="Search"
-              style={{ backgroundColor: MOBILE_ICON_BG }}
+              style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
             >
-              <Search className="h-5 w-5 md:text-white md:group-hover:text-[#008080]" />
+              <Search className={`h-5 w-5 md:text-white md:group-hover:text-[#008080] ${nonIndexIconColor}`} />
             </button>
           )}
           
-          {/* Notification Bell with Deeper RGBA Background */}
+          {/* Notification Bell with Conditional RGBA Background */}
           <div className="flex items-center gap-2">
-            {/* Wrapper: Apply Deeper RGBA background and White Icon Color */}
+            {/* Wrapper: Apply Conditional RGBA background and White Icon Color */}
             <div 
                 className="rounded-full h-10 w-10 flex items-center justify-center transition-colors md:bg-transparent hover:bg-white/20"
-                style={{ backgroundColor: MOBILE_ICON_BG }}
+                style={isIndexPage ? { backgroundColor: MOBILE_ICON_BG } : nonIndexIconStyle}
             >
-                <NotificationBell 
-                    // Set mobile icon class to white
-                    mobileIconClasses="text-white"
-                    desktopIconClasses="md:text-white md:hover:bg-[#006666]"
-                />
+              <NotificationBell 
+                  // Set mobile icon class to white
+                  mobileIconClasses="text-white"
+                  desktopIconClasses="md:text-white md:hover:bg-[#006666]"
+              />
             </div>
           </div>
 
-          {/* Theme Toggle and Account: Hidden on mobile, shown on desktop */}
+          {/* Theme Toggle and Account: Hidden on mobile, shown on desktop - Unchanged */}
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
               className="rounded-full h-10 w-10 flex items-center justify-center transition-colors 
-                        bg-white/10 hover:bg-white group" 
+                         bg-white/10 hover:bg-white group" 
               aria-label="Account"
             >
               <User className="h-5 w-5 text-white group-hover:text-[#008080]" />
