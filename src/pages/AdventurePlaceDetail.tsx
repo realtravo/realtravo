@@ -570,5 +570,4 @@ const AdventurePlaceDetail = () => {
     </div>
   );
 };
-
 export default AdventurePlaceDetail;

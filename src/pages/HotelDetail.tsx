@@ -626,5 +626,5 @@ const HotelDetail = () => {
 
       <MobileBottomBar />
     </div>;
-};
+}; 
 export default HotelDetail;
