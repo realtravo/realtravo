@@ -5,8 +5,7 @@ import { Header } from "@/components/Header";
 
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-// The following Badge is not used in the provided code, but kept for completeness
-// import { Badge } from "@/components/ui/badge"; 
+import { Badge } from "@/components/ui/badge";
 // Icons will be Teal: #008080
 import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star } from "lucide-react"; 
 import { SimilarItems } from "@/components/SimilarItems";
@@ -119,8 +118,8 @@ const HotelDetail = () => {
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [averageRating, setAverageRating] = useState<number | null>(null); // New State: Holds the overall average rating
-  const [reviewCount, setReviewCount] = useState<number | null>(null); // New State: Holds the total review count
+  const [averageRating, setAverageRating] = useState<number | null>(null); // New State
+  const [reviewCount, setReviewCount] = useState<number | null>(null); // New State
   const isSaved = savedItems.has(id || "");
 
   // Calculate distance if position and hotel coordinates available
@@ -381,7 +380,7 @@ const HotelDetail = () => {
             {/* --- DESKTOP ONLY: Description Section (Desktop Order: 2) --- */}
             {hotel.description && 
               <div className="bg-card border rounded-lg p-4 sm:p-3 mt-4 hidden lg:block">
-                <h2 className="text-xl sm:text-lg font-semibold mb-2">About This Hotel (Description)</h2>
+                <h2 className="text-lg sm:text-base font-semibold mb-2">About This Hotel (Description)</h2>
                 <p className="text-sm text-muted-foreground">{hotel.description}</p>
               </div>
             }
@@ -504,7 +503,6 @@ const HotelDetail = () => {
             </div>
             
             {/* --- NEW: Overall Star Rating Display (Mobile Order: 3, Above Book Now) --- */}
-            {/* Display the calculated average rating from the ReviewSection */}
             {averageRating !== null && (
                 <div className="p-2 sm:p-0">
                     <StarRatingDisplay rating={averageRating} count={reviewCount} iconSize={6} />
@@ -621,7 +619,7 @@ const HotelDetail = () => {
             itemId={hotel.id}
             bookingType="hotel"
             hostId={hotel.created_by || ""}
-            onPaymentSuccess={() => setBookingOpen(false)} // Close dialog on successful completion/payment
+            onPaymentSuccess={() => setIsCompleted(true)}
           />
         </DialogContent>
       </Dialog>
