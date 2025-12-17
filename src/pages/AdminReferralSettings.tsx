@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-// import { Footer } from "@/components/Footer"; // REMOVED
-// import { MobileBottomBar } from "@/components/MobileBottomBar"; // REMOVED
+import { MobileBottomBar } from "@/components/MobileBottomBar"; // RESTORED
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +14,8 @@ import { ArrowLeft, Settings } from "lucide-react";
 
 // Define the specified Teal color
 const TEAL_COLOR = "#008080";
-const TEAL_HOVER_COLOR = "#005555"; // A darker shade of teal for hover
+const TEAL_HOVER_COLOR = "#005555"; 
 
-// Helper function for primary button styles
 const getTealButtonStyle = () => {
   return {
     backgroundColor: TEAL_COLOR,
@@ -38,7 +36,6 @@ const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
     (e.currentTarget.style as any).backgroundColor = TEAL_COLOR;
   }
 };
-
 
 export default function AdminReferralSettings() {
   const navigate = useNavigate();
@@ -68,7 +65,6 @@ export default function AdminReferralSettings() {
 
     const checkAdminAndFetchSettings = async () => {
       try {
-        // Check if user is admin
         const { data: roles } = await supabase
           .from("user_roles")
           .select("role")
@@ -82,13 +78,12 @@ export default function AdminReferralSettings() {
           return;
         }
 
-        // Fetch current settings
         const { data: settingsData, error } = await supabase
           .from("referral_settings")
           .select("*")
           .single();
 
-        if (error && error.code !== 'PGRST116') throw error; // PGRST116 means no rows found (expected for new setup)
+        if (error && error.code !== 'PGRST116') throw error;
 
         if (settingsData) {
           setSettings({
@@ -116,9 +111,7 @@ export default function AdminReferralSettings() {
   }, [user, navigate]);
 
   const handleSave = async () => {
-    // 1. Validation: Commission rate cannot exceed service fee
     const validationErrors = [];
-    // Renaming Adventure Place to be consistent with the label for clarity in validation
     if (settings.tripCommissionRate > settings.tripServiceFee) validationErrors.push("Trip");
     if (settings.eventCommissionRate > settings.eventServiceFee) validationErrors.push("Event");
     if (settings.hotelCommissionRate > settings.hotelServiceFee) validationErrors.push("Hotel");
@@ -136,13 +129,12 @@ export default function AdminReferralSettings() {
 
     setSaving(true);
     try {
-      // Fetch the ID of the single referral_settings row
       const { data: existingSettings, error: fetchError } = await supabase
         .from("referral_settings")
         .select("id")
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError; // Ignore "no rows" error
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       const updateData = {
         trip_commission_rate: settings.tripCommissionRate,
@@ -159,14 +151,12 @@ export default function AdminReferralSettings() {
 
       let saveError;
       if (existingSettings) {
-        // Update existing row
         const { error } = await supabase
           .from("referral_settings")
           .update(updateData)
           .eq("id", existingSettings.id);
         saveError = error;
       } else {
-        // Insert new row if none exists (assuming the table is configured for a single-row design)
         const { error } = await supabase
           .from("referral_settings")
           .insert([updateData]);
@@ -195,25 +185,20 @@ export default function AdminReferralSettings() {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 container mx-auto px-4 py-8 pb-24">
           <Skeleton className="h-12 w-48 mb-8" />
           <Skeleton className="h-96 w-full max-w-2xl mx-auto" />
         </main>
-        {/* <Footer /> REMOVED */}
-        {/* <MobileBottomBar /> REMOVED */}
+        <MobileBottomBar />
       </div>
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
-
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      {/* The main content area uses flex-1, which allows it to grow and the content inside it to scroll if it overflows the viewport, satisfying the small screen scroll requirement. */}
       <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8 overflow-y-auto"> 
         <div className="max-w-2xl mx-auto">
           <Button
@@ -237,229 +222,60 @@ export default function AdminReferralSettings() {
                 <p className="text-sm text-muted-foreground">
                   Configure platform service fees and referral commission rates by category
                 </p>
-                {/* Visual aid for the calculation structure */}
                 <div className="p-3 mt-2 bg-slate-50 border-l-4 border-teal-500 rounded-r text-xs">
                     <p className="font-semibold text-teal-700">Formula Hint:</p>
                     <p>Referral Payout = Booking Value $\times$ (Service Fee %) $\times$ (Commission Rate % / 100)</p>
-                    <p className="mt-1 text-red-600">⚠️ **Commission Rate (%)** must be $\leq$ **Service Fee (%)** to avoid platform loss.</p>
+                    <p className="mt-1 text-red-600">⚠️ **Commission Rate (%)** must be $\leq$ **Service Fee (%)**</p>
                 </div>
-                
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Trip */}
-                  <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <h3 className="font-semibold text-foreground">Trip</h3>
-                    <div>
-                      <Label htmlFor="tripServiceFee">Service Fee (%)</Label>
-                      <Input
-                        id="tripServiceFee"
-                        type="number"
-                        value={settings.tripServiceFee}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            tripServiceFee: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="mt-2"
-                      />
+                  {/* Category Inputs (Trip, Event, Hotel, etc.) */}
+                  {[
+                    { id: 'trip', label: 'Trip' },
+                    { id: 'event', label: 'Event' },
+                    { id: 'hotel', label: 'Hotel' },
+                    { id: 'attraction', label: 'Attraction' },
+                    { id: 'adventurePlace', label: 'Campsite/Experience' }
+                  ].map((cat) => (
+                    <div key={cat.id} className="space-y-4 p-4 border border-border rounded-lg">
+                      <h3 className="font-semibold text-foreground">{cat.label}</h3>
+                      <div>
+                        <Label htmlFor={`${cat.id}ServiceFee`}>Service Fee (%)</Label>
+                        <Input
+                          id={`${cat.id}ServiceFee`}
+                          type="number"
+                          value={(settings as any)[`${cat.id}ServiceFee`]}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              [`${cat.id}ServiceFee`]: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          min="0" max="100" step="0.1" className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`${cat.id}Rate`}>Referral Commission (%)</Label>
+                        <Input
+                          id={`${cat.id}Rate`}
+                          type="number"
+                          value={(settings as any)[`${cat.id}CommissionRate`]}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              [`${cat.id}CommissionRate`]: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          min="0" step="0.1" className="mt-2"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="tripRate">Referral Commission (% of Service Fee)</Label>
-                      <Input
-                        id="tripRate"
-                        type="number"
-                        value={settings.tripCommissionRate}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            tripCommissionRate: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max={settings.tripServiceFee}
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Event */}
-                  <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <h3 className="font-semibold text-foreground">Event</h3>
-                    <div>
-                      <Label htmlFor="eventServiceFee">Service Fee (%)</Label>
-                      <Input
-                        id="eventServiceFee"
-                        type="number"
-                        value={settings.eventServiceFee}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            eventServiceFee: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="eventRate">Referral Commission (% of Service Fee)</Label>
-                      <Input
-                        id="eventRate"
-                        type="number"
-                        value={settings.eventCommissionRate}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            eventCommissionRate: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max={settings.eventServiceFee}
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Hotel */}
-                  <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <h3 className="font-semibold text-foreground">Hotel</h3>
-                    <div>
-                      <Label htmlFor="hotelServiceFee">Service Fee (%)</Label>
-                      <Input
-                        id="hotelServiceFee"
-                        type="number"
-                        value={settings.hotelServiceFee}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            hotelServiceFee: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hotelRate">Referral Commission (% of Service Fee)</Label>
-                      <Input
-                        id="hotelRate"
-                        type="number"
-                        value={settings.hotelCommissionRate}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            hotelCommissionRate: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max={settings.hotelServiceFee}
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Attraction */}
-                  <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <h3 className="font-semibold text-foreground">Attraction</h3>
-                    <div>
-                      <Label htmlFor="attractionServiceFee">Service Fee (%)</Label>
-                      <Input
-                        id="attractionServiceFee"
-                        type="number"
-                        value={settings.attractionServiceFee}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            attractionServiceFee: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="attractionRate">Referral Commission (% of Service Fee)</Label>
-                      <Input
-                        id="attractionRate"
-                        type="number"
-                        value={settings.attractionCommissionRate}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            attractionCommissionRate: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max={settings.attractionServiceFee}
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Campsite/Experience */}
-                  <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <h3 className="font-semibold text-foreground">Campsite/Experience</h3>
-                    <div>
-                      <Label htmlFor="adventurePlaceServiceFee">Service Fee (%)</Label>
-                      <Input
-                        id="adventurePlaceServiceFee"
-                        type="number"
-                        value={settings.adventurePlaceServiceFee}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            adventurePlaceServiceFee: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="adventurePlaceRate">Referral Commission (% of Service Fee)</Label>
-                      <Input
-                        id="adventurePlaceRate"
-                        type="number"
-                        value={settings.adventurePlaceCommissionRate}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            adventurePlaceCommissionRate: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        min="0"
-                        max={settings.adventurePlaceServiceFee}
-                        step="0.1"
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Referral commission is deducted from the platform service fee, not the gross booking amount
-                </p>
               </CardContent>
             </Card>
 
-
-            {/* Color change applied here */}
             <Button
               onClick={handleSave}
               disabled={saving}
@@ -473,8 +289,7 @@ export default function AdminReferralSettings() {
           </div>
         </div>
       </main>
-      {/* <Footer /> REMOVED */}
-      {/* <MobileBottomBar /> REMOVED */}
+      <MobileBottomBar />
     </div>
   );
 }
