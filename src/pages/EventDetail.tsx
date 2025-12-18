@@ -169,7 +169,7 @@ const EventDetail = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-[#FF7F50] uppercase tracking-widest">Location</span>
-                  <span className="text-sm font-black text-white uppercase tracking-wider group-hover:text-[#FF7F50] transition-colors">
+                  <span className="text-sm font-black text-white uppercase tracking-wider group-hover:text-[#008080] transition-colors">
                     {event.location}
                   </span>
                 </div>
@@ -229,7 +229,7 @@ const EventDetail = () => {
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing Starts at</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black" style={{ color: COLORS.TEAL }}>KSh {event.price}</span>
+                    <span className="text-3xl font-black" style={{ color: COLORS.RED }}>KSh {event.price}</span>
                     <span className="text-slate-400 text-[10px] font-bold uppercase tracking-tighter">/ adult</span>
                   </div>
                 </div>
@@ -274,7 +274,7 @@ const EventDetail = () => {
 
               {/* NEW: Organizer Contact Section added here */}
               <div className="space-y-4 pt-6 border-t border-slate-50">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organizer Contact</h3>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</h3>
                 {event.phone_number && (
                   <a href={`tel:${event.phone_number}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
                     <Phone className="h-4 w-4 text-[#008080]" />

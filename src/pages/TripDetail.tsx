@@ -140,7 +140,7 @@ const TripDetail = () => {
           />
           
           <div className="relative z-10 space-y-4 pointer-events-auto">
-            <Button className="bg-[#008080] hover:bg-[#008080] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg text-white">
+            <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg">
               Scheduled Trip
             </Button>
             
@@ -154,7 +154,7 @@ const TripDetail = () => {
                   <MapPin className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-[#008080] uppercase tracking-widest">Destination</span>
+                  <span className="text-[10px] font-bold text-[#FF7F50] uppercase tracking-widest">Destination</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-black text-white uppercase tracking-wider group-hover:text-[#008080] transition-colors">
                       {trip.location}, {trip.country}
@@ -214,7 +214,6 @@ const TripDetail = () => {
                   </div>
                   <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
                     <Star className="h-4 w-4 fill-[#FF7F50] text-[#FF7F50]" />
-                    <span className="text-lg font-black" style={{ color: COLORS.TEAL }}>4.9</span>
                   </div>
                 </div>
                 <ReviewSection itemId={trip.id} itemType="trip" />
