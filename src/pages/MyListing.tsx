@@ -10,10 +10,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { MapPin, Calendar, Edit3, EyeOff, LayoutDashboard, ReceiptText, Star } from "lucide-react";
 
-// Define the specified Teal color
-const TEAL_COLOR = "#008080";
-const TEAL_HOVER_COLOR = "#005555"; // A darker shade of teal for hover
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  KHAKI_DARK: "#857F3E",
+  SOFT_GRAY: "#F8F9FA",
+  RED: "#FF0000"
+};
 
 const MyListing = () => {
   const { user } = useAuth();
@@ -30,8 +35,7 @@ const MyListing = () => {
     }
 
     const fetchData = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const userEmail = currentUser?.email;
+      const userEmail = user?.email;
 
       const { data: trips } = await supabase.from("trips").select("*").eq("created_by", user.id);
       const { data: hotels } = await supabase.from("hotels").select("*").eq("created_by", user.id);
@@ -40,19 +44,10 @@ const MyListing = () => {
       const { data: hotelsAsAdmin } = await supabase.from("hotels").select("*").contains("allowed_admin_emails", userEmail ? [userEmail] : []);
       const { data: adventuresAsAdmin } = await supabase.from("adventure_places").select("*").contains("allowed_admin_emails", userEmail ? [userEmail] : []);
 
-      console.log("Fetched user content:", { 
-        trips: trips?.length, 
-        hotels: hotels?.length, 
-        adventures: adventures?.length,
-        hotelsAsAdmin: hotelsAsAdmin?.length,
-        adventuresAsAdmin: adventuresAsAdmin?.length
-      });
-
       const allContent = [
         ...(trips?.map(t => ({ ...t, type: "trip", isCreator: true })) || []),
         ...(hotels?.map(h => ({ ...h, type: "hotel", isCreator: true })) || []),
         ...(adventures?.map(a => ({ ...a, type: "adventure", isCreator: true })) || []),
-        // Filter out items already listed as creator to avoid duplicates
         ...(hotelsAsAdmin?.filter(h => h.created_by !== user.id).map(h => ({ ...h, type: "hotel", isCreator: false })) || []),
         ...(adventuresAsAdmin?.filter(a => a.created_by !== user.id).map(a => ({ ...a, type: "adventure", isCreator: false })) || [])
       ];
@@ -75,104 +70,81 @@ const MyListing = () => {
     fetchData();
   }, [user, navigate]);
 
-  const getCategoryCount = (category: string) => {
-    return myContent.filter(item => item.type === category).length;
-  };
-
-  const getBookingCount = (category: string) => {
-    return bookings.filter(b => b.booking_type === category).length;
-  };
+  const getCategoryCount = (category: string) => myContent.filter(item => item.type === category).length;
+  const getBookingCount = (category: string) => bookings.filter(b => b.booking_type === category).length;
 
   const renderListings = (category: string) => {
     const items = myContent.filter(item => item.type === category);
     
     if (items.length === 0) {
-      return <p className="text-muted-foreground">No {category}s yet</p>;
+      return <div className="p-8 text-center bg-white rounded-[28px] border border-dashed border-slate-200 text-slate-400 font-bold uppercase text-xs tracking-widest">No {category}s found</div>;
     }
-
-    // Function to apply teal color styles to the primary button
-    const getTealButtonStyle = () => ({
-      backgroundColor: TEAL_COLOR,
-      borderColor: TEAL_COLOR,
-      color: 'white',
-      transition: 'background-color 0.15s',
-    });
-
-    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-      (e.currentTarget.style as any).backgroundColor = TEAL_HOVER_COLOR;
-    };
-
-    const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-      (e.currentTarget.style as any).backgroundColor = TEAL_COLOR;
-    };
-
 
     return (
       <div className="grid gap-4">
         {items.map((item) => (
-          <Card key={item.id} className="p-4 hover:shadow-md transition-shadow border-0">
-            <div className="flex gap-4">
-              <img
-                src={item.image_url || item.photo_urls?.[0] || ''}
-                alt={item.name || item.local_name || item.location_name}
-                className="w-32 h-32 object-cover rounded-lg"
-              />
-              <div className="flex-1">
+          <Card key={item.id} className="p-4 bg-white rounded-[28px] shadow-sm border border-slate-100 hover:shadow-md transition-all overflow-hidden">
+            <div className="flex flex-col md:flex-row gap-5">
+              <div className="relative w-full md:w-40 h-32 shrink-0">
+                <img
+                  src={item.image_url || item.photo_urls?.[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80'}
+                  alt={item.name}
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+                {!item.isCreator && (
+                  <Badge className="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-[8px] font-black uppercase">Staff</Badge>
+                )}
+              </div>
+
+              <div className="flex-1 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-lg">{item.name || item.local_name || item.location_name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.location || item.location_name}, {item.country}</p>
-                    {item.date && <p className="text-sm text-muted-foreground">Date: {new Date(item.date).toLocaleDateString()}</p>}
-                    {item.price && <p className="text-sm font-semibold mt-1">KSh {item.price}</p>}
-                    {(item.price_adult || item.entry_fee) && <p className="text-sm font-semibold mt-1">KSh {item.price_adult || item.entry_fee}</p>}
+                    <h3 className="font-black text-lg uppercase tracking-tight text-slate-800 leading-tight">
+                        {item.name || item.local_name || item.location_name}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-1 text-slate-400">
+                      <MapPin className="h-3 w-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        {item.location || item.location_name}, {item.country}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
-                    {/* Applying teal style to the 'approved' badge, which usually uses primary/default color */}
                     <Badge 
-                      variant={item.approval_status === 'approved' ? 'default' : item.approval_status === 'pending' ? 'secondary' : 'destructive'}
-                      style={item.approval_status === 'approved' ? { 
-                        backgroundColor: TEAL_COLOR, 
-                        color: 'white', 
-                        borderColor: TEAL_COLOR 
-                      } : {}}
+                      className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest border-none"
+                      style={{ 
+                        backgroundColor: item.approval_status === 'approved' ? `${COLORS.TEAL}20` : item.approval_status === 'pending' ? '#F0E68C' : '#FFEBEB',
+                        color: item.approval_status === 'approved' ? COLORS.TEAL : item.approval_status === 'pending' ? COLORS.KHAKI_DARK : COLORS.RED
+                      }}
                     >
                       {item.approval_status}
                     </Badge>
-                    {item.is_hidden && (
-                      <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-                        Hidden from Public View
-                      </Badge>
-                    )}
                   </div>
                 </div>
                 
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    onClick={() => navigate(`/edit-listing/${item.type}/${item.id}`)}
-                    size="sm"
-                    style={getTealButtonStyle()}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    Edit
-                  </Button>
-                  {item.approval_status === 'rejected' && (
+                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                   <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Base Rate</span>
+                      <span className="text-sm font-black text-[#FF0000]">KSh {item.price || item.price_adult || item.entry_fee || 0}</span>
+                   </div>
+                   
+                   <div className="flex gap-2">
+                    {item.is_hidden && (
+                        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
+                            <EyeOff className="h-3 w-3 text-yellow-600" />
+                            <span className="text-[8px] font-black text-yellow-700 uppercase">Hidden</span>
+                        </div>
+                    )}
                     <Button
-                      onClick={() => navigate(`/edit-listing/${item.type}/${item.id}?resubmit=true`)}
-                      size="sm"
-                      variant="outline"
-                      // Changing the outline button's text/border color to teal
-                      style={{ 
-                        color: TEAL_COLOR, 
-                        borderColor: TEAL_COLOR,
-                        transition: 'color 0.15s, border-color 0.15s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = TEAL_HOVER_COLOR}
-                      onMouseLeave={(e) => e.currentTarget.style.color = TEAL_COLOR}
+                        onClick={() => navigate(`/edit-listing/${item.type}/${item.id}`)}
+                        size="sm"
+                        className="h-9 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest text-white transition-transform active:scale-95 shadow-lg shadow-teal-900/10 border-none"
+                        style={{ backgroundColor: COLORS.TEAL }}
                     >
-                      Re-submit for Approval
+                        <Edit3 className="h-3 w-3 mr-2" />
+                        Edit
                     </Button>
-                  )}
+                   </div>
                 </div>
               </div>
             </div>
@@ -186,21 +158,30 @@ const MyListing = () => {
     const items = bookings.filter(b => b.booking_type === category);
     
     if (items.length === 0) {
-      return <p className="text-muted-foreground">No {category} bookings yet</p>;
+      return <div className="p-8 text-center bg-white rounded-[28px] border border-dashed border-slate-200 text-slate-400 font-bold uppercase text-xs tracking-widest">No bookings yet</div>;
     }
 
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {items.map((booking) => (
-          <Card key={booking.id} className="p-4 border-0">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-semibold">Booking #{booking.id.slice(0, 8)}</p>
-                <p className="text-sm text-muted-foreground">Amount: KSh {booking.total_amount}</p>
-                <p className="text-sm text-muted-foreground">Status: {booking.status}</p>
-                <p className="text-sm text-muted-foreground">Date: {new Date(booking.created_at).toLocaleDateString()}</p>
+          <Card key={booking.id} className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group hover:border-[#FF7F50]/30 transition-colors">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="font-black text-xs uppercase tracking-tighter text-slate-800">Booking #{booking.id.slice(0, 8)}</p>
+                <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-slate-200">{booking.status}</Badge>
               </div>
-              <Badge>{booking.payment_status}</Badge>
+              <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-1 text-slate-400">
+                    <Calendar className="h-3 w-3" />
+                    <span className="text-[10px] font-bold">{new Date(booking.created_at).toLocaleDateString()}</span>
+                 </div>
+                 <span className="text-[10px] font-black text-[#FF0000] uppercase tracking-widest">KSh {booking.total_amount}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${booking.payment_status === 'paid' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
+                {booking.payment_status}
+              </span>
             </div>
           </Card>
         ))}
@@ -210,83 +191,107 @@ const MyListing = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        {/* Loading spinner color changed to Teal */}
-        <div 
-          className="animate-spin rounded-full h-12 w-12 border-b-2" 
-          style={{ borderColor: TEAL_COLOR }}
-        ></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA]">
+        <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2" style={{ borderColor: COLORS.TEAL }}></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-2 w-2 rounded-full bg-[#FF7F50] animate-pulse"></div>
+            </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Listing</h1>
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+        <header className="mb-10">
+            <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-white shadow-sm">
+                    <LayoutDashboard className="h-5 w-5" style={{ color: COLORS.TEAL }} />
+                </div>
+                <p className="text-[10px] font-black text-[#FF7F50] uppercase tracking-[0.3em]">Management</p>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-slate-900">
+                My <span style={{ color: COLORS.TEAL }}>Listings</span>
+            </h1>
+        </header>
 
         <Tabs defaultValue="listings" className="w-full">
-          {/* Note: TabsList and TabsTrigger styling (active color) is complex to change without theme/CSS, 
-              but applying custom styles to the whole component's accent color would fix it. 
-              I assume you handle the active state style in your global CSS/theme for TabsTrigger. */}
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="listings">My Listings</TabsTrigger>
-            <TabsTrigger value="bookings">Received Bookings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-14 p-1.5 bg-slate-200/50 rounded-2xl mb-8">
+            <TabsTrigger 
+                value="listings" 
+                className="rounded-xl font-black uppercase text-[11px] tracking-widest data-[state=active]:bg-white data-[state=active]:text-[#008080] data-[state=active]:shadow-sm transition-all"
+            >
+                <Star className="h-3.5 w-3.5 mr-2" />
+                Live Content
+            </TabsTrigger>
+            <TabsTrigger 
+                value="bookings" 
+                className="rounded-xl font-black uppercase text-[11px] tracking-widest data-[state=active]:bg-white data-[state=active]:text-[#FF7F50] data-[state=active]:shadow-sm transition-all"
+            >
+                <ReceiptText className="h-3.5 w-3.5 mr-2" />
+                Sales Feed
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="listings" className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Trips</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('trip')}</Badge>
+          <TabsContent value="listings" className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Experiences</h2>
+                <div className="bg-white px-4 py-1 rounded-full shadow-sm border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {getCategoryCount('trip')} Total
+                </div>
               </div>
               {renderListings('trip')}
-            </div>
+            </section>
 
-
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Hotels</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('hotel')}</Badge>
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Hotels & Stays</h2>
+                <div className="bg-white px-4 py-1 rounded-full shadow-sm border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {getCategoryCount('hotel')} Total
+                </div>
               </div>
               {renderListings('hotel')}
-            </div>
+            </section>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Campsites & Experiences</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getCategoryCount('adventure')}</Badge>
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Campsites</h2>
+                <div className="bg-white px-4 py-1 rounded-full shadow-sm border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {getCategoryCount('adventure')} Total
+                </div>
               </div>
               {renderListings('adventure')}
-            </div>
+            </section>
           </TabsContent>
 
-          <TabsContent value="bookings" className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Trip Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('trip')}</Badge>
-              </div>
-              {renderBookings('trip')}
-            </div>
+          <TabsContent value="bookings" className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <section>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.CORAL }}>Experience Bookings</h2>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{getBookingCount('trip')} Received</span>
+                </div>
+                {renderBookings('trip')}
+            </section>
 
+            <section>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.CORAL }}>Stay Bookings</h2>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{getBookingCount('hotel')} Received</span>
+                </div>
+                {renderBookings('hotel')}
+            </section>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Hotel Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('hotel')}</Badge>
-              </div>
-              {renderBookings('hotel')}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold">Campsite Bookings</h2>
-                <Badge variant="outline" className="text-lg px-4 py-1">{getBookingCount('adventure_place')}</Badge>
-              </div>
-              {renderBookings('adventure_place')}
-            </div>
+            <section>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.CORAL }}>Campground Bookings</h2>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{getBookingCount('adventure_place')} Received</span>
+                </div>
+                {renderBookings('adventure_place')}
+            </section>
           </TabsContent>
         </Tabs>
       </main>
