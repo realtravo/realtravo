@@ -59,7 +59,6 @@ const AdventurePlaceDetail = () => {
     const refSlug = urlParams.get("ref");
     if (refSlug && id) trackReferralClick(refSlug, id, "adventure_place", "booking");
     
-    // Request location on mount
     requestLocation();
   }, [id]);
 
@@ -182,7 +181,7 @@ const AdventurePlaceDetail = () => {
               <p className="text-slate-500 text-sm leading-relaxed">{place.description}</p>
             </div>
 
-            {/* FACILITIES SECTION (Teal Theme) */}
+            {/* FACILITIES SECTION */}
             {place.facilities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
@@ -215,7 +214,7 @@ const AdventurePlaceDetail = () => {
               </div>
             )}
 
-            {/* ACTIVITIES SECTION (Orange Theme) */}
+            {/* ACTIVITIES SECTION */}
             {place.activities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
@@ -242,15 +241,24 @@ const AdventurePlaceDetail = () => {
               </div>
             )}
 
-            {/* AMENITIES SECTION (Red Theme) */}
-            {place.amenities?.length > 0 && (
+            {/* AMENITIES SECTION (Updated & Improved) */}
+            {place.amenities && (Array.isArray(place.amenities) ? place.amenities.length > 0 : place.amenities.split(',').length > 0) && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.RED }}>Amenities</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-red-50">
+                    <CheckCircle2 className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.RED }}>Amenities</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Comforts & Essentials provided</p>
+                  </div>
+                </div>
+                
                 <div className="flex flex-wrap gap-2">
-                  {place.amenities.map((item: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 bg-red-50 px-4 py-2.5 rounded-2xl border border-red-100">
-                      <CheckCircle2 className="h-4 w-4 text-red-600" />
-                      <span className="text-[11px] font-black text-red-700 uppercase tracking-wide">{item}</span>
+                  {(Array.isArray(place.amenities) ? place.amenities : place.amenities.split(',')).map((item: string, i: number) => (
+                    <div key={i} className="group flex items-center gap-2 bg-red-50/50 px-4 py-2.5 rounded-2xl border border-red-100 hover:bg-red-50 transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 group-hover:scale-125 transition-transform" />
+                      <span className="text-[11px] font-black text-red-700 uppercase tracking-wide">{item.trim()}</span>
                     </div>
                   ))}
                 </div>
