@@ -727,7 +727,7 @@ const Index = () => {
                     {/* Hotels */}
                     <section className="mb-2 md:mb-6">
                         <div className="mb-1.5 md:mb-3 flex items-start justify-between">
-                            <h2 className="text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                            <h2 className="text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max">
                                 Hotels and accommodations.
                             </h2>
                             <Link to="/category/hotels" className="text-primary text-sm hover:underline">
