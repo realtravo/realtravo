@@ -3,18 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { 
-  MapPin, 
-  Share2, 
-  Heart, 
-  Calendar, 
-  Copy, 
-  CheckCircle2, 
-  ArrowLeft, 
-  Star,
-  Mail,
-  Phone 
-} from "lucide-react";
+import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, ArrowLeft, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,9 +54,7 @@ const EventDetail = () => {
   const fetchEvent = async () => {
     if (!id) return;
     try {
-      // Assuming email and phone are columns in the 'trips' table
       let { data, error } = await supabase.from("trips").select("*").eq("id", id).eq("type", "event").single();
-      
       if (error && id.length === 8) {
         const { data: prefixData, error: prefixError } = await supabase.from("trips").select("*").ilike("id", `${id}%`).eq("type", "event").single();
         if (!prefixError) { data = prefixData; error = null; }
@@ -192,26 +179,6 @@ const EventDetail = () => {
                 </div>
               </div>
             )}
-            
-            {/* STYLED REVIEW CARD */}
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Guest Ratings</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Community Feedback</p>
-                </div>
-                {event.average_rating > 0 && (
-                  <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                    <Star className="h-4 w-4 fill-[#FF7F50] text-[#FF7F50]" />
-                    <span className="text-lg font-black" style={{ color: COLORS.TEAL }}>{event.average_rating.toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="min-h-[100px]">
-                <ReviewSection itemId={event.id} itemType="event" />
-              </div>
-            </div>
           </div>
 
           {/* Booking Sidebar Column */}
@@ -264,37 +231,27 @@ const EventDetail = () => {
                 <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={handleCopyLink} />
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
-
-              {/* HOST CONTACT SECTION */}
-              <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Organizer</p>
-                
-                {event.email && (
-                  <div className="flex items-center gap-3">
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <Mail className="h-4 w-4 text-[#008080]" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Email</span>
-                      <span className="text-xs font-black text-slate-700 break-all">{event.email}</span>
-                    </div>
-                  </div>
-                )}
-
-                {event.phone && (
-                  <div className="flex items-center gap-3">
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <Phone className="h-4 w-4 text-[#008080]" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Phone</span>
-                      <span className="text-xs font-black text-slate-700">{event.phone}</span>
-                    </div>
+            </div>
+          </div>
+            {/* STYLED REVIEW CARD */}
+            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Guest Ratings</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Community Feedback</p>
+                </div>
+                {event.average_rating > 0 && (
+                  <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
+                    <Star className="h-4 w-4 fill-[#FF7F50] text-[#FF7F50]" />
+                    <span className="text-lg font-black" style={{ color: COLORS.TEAL }}>{event.average_rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
+              
+              <div className="min-h-[100px]">
+                <ReviewSection itemId={event.id} itemType="event" />
+              </div>
             </div>
-          </div>
         </div>
 
         <div className="mt-16">
