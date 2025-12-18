@@ -1,13 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { MobileBottomBar } from "@/components/MobileBottomBar"; // RESTORED
+import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ClipboardList, CheckCircle, XCircle, ShieldCheck, ArrowLeft, CalendarCheck } from "lucide-react";
+import { 
+  ChevronRight, 
+  ClipboardList, 
+  CheckCircle, 
+  XCircle, 
+  ShieldCheck, 
+  ArrowLeft, 
+  CalendarCheck,
+  LayoutDashboard
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  KHAKI_DARK: "#857F3E",
+  RED: "#FF0000",
+  SOFT_GRAY: "#F8F9FA",
+  SLATE_BG: "#F1F5F9"
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -65,8 +83,7 @@ const AdminDashboard = () => {
         supabase.from("adventure_places").select("id", { count: "exact", head: true }).eq("approval_status", "pending"),
       ]);
 
-      const totalPending = (pendingTrips.count || 0) + (pendingHotels.count || 0) + 
-                          (pendingAdventures.count || 0);
+      const totalPending = (pendingTrips.count || 0) + (pendingHotels.count || 0) + (pendingAdventures.count || 0);
       setPendingCount(totalPending);
 
       const [approvedTrips, approvedHotels, approvedAdventures] = await Promise.all([
@@ -75,8 +92,7 @@ const AdminDashboard = () => {
         supabase.from("adventure_places").select("id", { count: "exact", head: true }).eq("approval_status", "approved"),
       ]);
 
-      const totalApproved = (approvedTrips.count || 0) + (approvedHotels.count || 0) + 
-                            (approvedAdventures.count || 0);
+      const totalApproved = (approvedTrips.count || 0) + (approvedHotels.count || 0) + (approvedAdventures.count || 0);
       setApprovedCount(totalApproved);
 
       const [rejectedTrips, rejectedHotels, rejectedAdventures] = await Promise.all([
@@ -85,8 +101,7 @@ const AdminDashboard = () => {
         supabase.from("adventure_places").select("id", { count: "exact", head: true }).eq("approval_status", "rejected"),
       ]);
 
-      const totalRejected = (rejectedTrips.count || 0) + (rejectedHotels.count || 0) + 
-                            (rejectedAdventures.count || 0);
+      const totalRejected = (rejectedTrips.count || 0) + (rejectedHotels.count || 0) + (rejectedAdventures.count || 0);
       setRejectedCount(totalRejected);
 
       const { count: hostVerificationsPending } = await supabase
@@ -106,112 +121,124 @@ const AdminDashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA]">
+       <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: COLORS.TEAL }}></div>
+    </div>
+  );
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      {/* Added pb-24 to main to ensure content doesn't get hidden behind the mobile bar */}
-      <main className="flex-1 container px-4 py-8 max-w-4xl mx-auto pb-24 md:pb-8">
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+      <Header className="hidden md:block" />
+
+      <main className="flex-1 container px-4 py-8 max-w-2xl mx-auto pb-24 md:pb-8">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-4"
+          className="mb-8 rounded-full bg-white shadow-sm border border-slate-100 hover:bg-slate-50 p-2 h-10 w-10 md:w-auto md:px-4"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          <ArrowLeft className="h-4 w-4 md:mr-2" />
+          <span className="hidden md:inline font-black uppercase text-[10px] tracking-widest">Back</span>
         </Button>
-        <h1 className="text-3xl font-bold mb-8">Listing review</h1>
 
-        <Card>
-          <div className="divide-y divide-border">
-            <button
-              onClick={() => navigate("/admin/pending")}
-              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <ClipboardList className="h-5 w-5 text-primary" />
-                <span className="font-medium text-foreground">Pending Approval</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{pendingCount}</Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </button>
+        <div className="flex items-center gap-3 mb-2">
+           <div className="p-2 rounded-xl" style={{ backgroundColor: `${COLORS.TEAL}15` }}>
+              <LayoutDashboard className="h-5 w-5" style={{ color: COLORS.TEAL }} />
+           </div>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">System Console</p>
+        </div>
+        
+        <h1 className="text-4xl font-black uppercase tracking-tighter leading-none mb-10" style={{ color: COLORS.TEAL }}>
+          Listing Review
+        </h1>
 
-            <button
-              onClick={() => navigate("/admin/approved")}
-              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span className="font-medium text-foreground">Approved</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="default">{approvedCount}</Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </button>
+        <div className="space-y-4">
+          <AdminMenuButton 
+            onClick={() => navigate("/admin/pending")}
+            icon={<ClipboardList className="h-5 w-5" />}
+            label="Pending Approval"
+            count={pendingCount}
+            activeColor={COLORS.CORAL}
+          />
 
-            <button
-              onClick={() => navigate("/admin/rejected")}
-              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <XCircle className="h-5 w-5 text-primary" />
-                <span className="font-medium text-foreground">Rejected</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="destructive">{rejectedCount}</Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </button>
+          <AdminMenuButton 
+            onClick={() => navigate("/admin/approved")}
+            icon={<CheckCircle className="h-5 w-5" />}
+            label="Approved Listings"
+            count={approvedCount}
+            activeColor={COLORS.TEAL}
+          />
 
-            <button
-              onClick={() => navigate("/admin/verification")}
-              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                <span className="font-medium text-foreground">Host details review</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{hostVerificationCount}</Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </button>
+          <AdminMenuButton 
+            onClick={() => navigate("/admin/rejected")}
+            icon={<XCircle className="h-5 w-5" />}
+            label="Rejected Listings"
+            count={rejectedCount}
+            activeColor={COLORS.RED}
+          />
 
-            <button
-              onClick={() => navigate("/admin/all-bookings")}
-              className="w-full flex items-center justify-between p-6 hover:bg-accent transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <CalendarCheck className="h-5 w-5 text-primary" />
-                <span className="font-medium text-foreground">All Bookings</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="default">{bookingsCount}</Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </button>
+          <div className="pt-4 pb-2">
+            <hr className="border-slate-200" />
           </div>
-        </Card>
+
+          <AdminMenuButton 
+            onClick={() => navigate("/admin/verification")}
+            icon={<ShieldCheck className="h-5 w-5" />}
+            label="Host Details Review"
+            count={hostVerificationCount}
+            activeColor={COLORS.KHAKI_DARK}
+          />
+
+          <AdminMenuButton 
+            onClick={() => navigate("/admin/all-bookings")}
+            icon={<CalendarCheck className="h-5 w-5" />}
+            label="All Bookings"
+            count={bookingsCount}
+            activeColor="#2D3748"
+          />
+        </div>
       </main>
       
-      {/* Render MobileBottomBar for navigation on mobile devices */}
       <MobileBottomBar />
     </div>
   );
 };
+
+const AdminMenuButton = ({ onClick, icon, label, count, activeColor }: { 
+  onClick: () => void, 
+  icon: React.ReactNode, 
+  label: string, 
+  count: number,
+  activeColor: string 
+}) => (
+  <button
+    onClick={onClick}
+    className="w-full flex items-center justify-between p-5 bg-white rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md transition-all group active:scale-[0.98]"
+  >
+    <div className="flex items-center gap-4">
+      <div 
+        className="p-3 rounded-2xl transition-colors group-hover:bg-opacity-20"
+        style={{ backgroundColor: `${activeColor}15`, color: activeColor }}
+      >
+        {icon}
+      </div>
+      <div className="flex flex-col items-start">
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Manage</span>
+        <span className="font-black text-sm uppercase tracking-tight text-slate-800">{label}</span>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <div 
+        className="px-3 py-1 rounded-full text-[10px] font-black"
+        style={{ backgroundColor: `${activeColor}10`, color: activeColor, border: `1px solid ${activeColor}20` }}
+      >
+        {count}
+      </div>
+      <ChevronRight className="h-5 w-5 text-slate-300 group-hover:translate-x-1 transition-transform" />
+    </div>
+  </button>
+);
 
 export default AdminDashboard;

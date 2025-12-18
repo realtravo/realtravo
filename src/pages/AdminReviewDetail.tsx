@@ -7,27 +7,35 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Mail, Phone, Calendar, User, Eye, Clock, ArrowLeft, DollarSign, Copy, Share2 } from "lucide-react";
+import { 
+  MapPin, Mail, Phone, Calendar, User, Eye, Clock, 
+  ArrowLeft, Copy, Share2, CheckCircle2, XCircle, 
+  ShieldAlert, Info, Zap
+} from "lucide-react";
 import { approvalStatusSchema } from "@/lib/validation";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
-// Define the custom colors
-const TEAL_COLOR = "#008080";
-const ORANGE_COLOR = "#FF9800";
-const RED_COLOR = "#EF4444";
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  CORAL_LIGHT: "#FF9E7A",
+  KHAKI: "#F0E68C",
+  KHAKI_DARK: "#857F3E",
+  RED: "#FF0000",
+  SOFT_GRAY: "#F8F9FA"
+};
 
 const AdminReviewDetail = () => {
   const { itemType: type, id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
   const [item, setItem] = useState<any>(null);
   const [creator, setCreator] = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     checkAdminStatus();
@@ -38,23 +46,13 @@ const AdminReviewDetail = () => {
       navigate("/auth");
       return;
     }
-
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
     const hasAdminRole = roles?.some(r => r.role === "admin");
     if (!hasAdminRole) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access this page",
-        variant: "destructive",
-      });
+      toast({ title: "Access Denied", variant: "destructive" });
       navigate("/");
       return;
     }
-
     setIsAdmin(true);
     fetchItemDetails();
   };
@@ -66,68 +64,32 @@ const AdminReviewDetail = () => {
 
       if (type === "trip" || type === "event") {
         tableName = "trips";
-        const { data, error } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
-        if (error) throw error;
+        const { data } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
         itemData = data;
       } else if (type === "hotel") {
         tableName = "hotels";
-        const { data, error } = await supabase.from("hotels").select("*").eq("id", id).maybeSingle();
-        if (error) throw error;
+        const { data } = await supabase.from("hotels").select("*").eq("id", id).maybeSingle();
         itemData = data;
       } else if (type === "adventure" || type === "adventure_place") {
         tableName = "adventure_places";
-        const { data, error } = await supabase.from("adventure_places").select("*").eq("id", id).maybeSingle();
-        if (error) throw error;
+        const { data } = await supabase.from("adventure_places").select("*").eq("id", id).maybeSingle();
         itemData = data;
-      } else if (type === "attraction") {
-        // Attractions table doesn't exist - redirect
-        toast({
-          title: "Not Found",
-          description: "Attractions are not supported",
-          variant: "destructive",
-        });
-        navigate("/admin");
-        return;
       }
 
       if (!itemData) {
-        toast({
-          title: "Not Found",
-          description: "Item not found or you don't have permission to view it",
-          variant: "destructive",
-        });
+        toast({ title: "Item not found", variant: "destructive" });
         navigate("/admin");
         return;
       }
       
       setItem({ ...itemData, type, tableName });
 
-      // Fetch creator profile
       if (itemData.created_by) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", itemData.created_by)
-          .maybeSingle();
-
-        setCreator(profileData);
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", itemData.created_by).maybeSingle();
+        setCreator(profile);
       }
-
-      // Fetch bookings
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("item_id", id)
-        .order("created_at", { ascending: false });
-
-      setBookings(bookingsData || []);
     } catch (error) {
-      console.error("Error fetching item:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load item details",
-        variant: "destructive",
-      });
+      toast({ title: "Error loading item", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -136,455 +98,230 @@ const AdminReviewDetail = () => {
   const updateApprovalStatus = async (status: string) => {
     try {
       const validatedStatus = approvalStatusSchema.parse(status);
-      
-      const updateData: any = {
+      const updateData = {
         approval_status: validatedStatus,
         approved_by: validatedStatus === "approved" ? user?.id : null,
         approved_at: validatedStatus === "approved" ? new Date().toISOString() : null,
         is_hidden: validatedStatus === "approved" ? false : item.is_hidden
       };
 
-      const tableName = item.tableName;
-      const { error } = await supabase.from(tableName).update(updateData).eq("id", id);
+      const { error } = await supabase.from(item.tableName).update(updateData).eq("id", id);
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: `Item ${status} successfully`,
-      });
-
+      toast({ title: `Item ${status} successfully` });
       navigate("/admin");
     } catch (error) {
-      console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive",
-      });
+      toast({ title: "Update failed", variant: "destructive" });
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      pending: { label: "Pending", variant: "secondary" },
-      approved: { label: "Approved", variant: "default" },
-      rejected: { label: "Rejected", variant: "destructive" }
-    };
-    const config = statusMap[status] || { label: status, variant: "outline" };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const getItemTypeBadge = () => {
-    const typeLabels: Record<string, string> = {
-      trip: "TRIP",
-      event: "EVENT",
-      hotel: "HOTEL",
-      adventure: "CAMPSITE",
-      adventure_place: "CAMPSITE",
-      attraction: "ATTRACTION"
-    };
-    return typeLabels[type || ""] || type?.toUpperCase() || "ITEM";
   };
 
   const openInMaps = () => {
-    if (item?.map_link || item?.location_link) {
-      window.open(item.map_link || item.location_link, '_blank');
-    } else {
-      const query = encodeURIComponent(`${item?.name || item?.location_name}, ${item?.location || item?.location_name}, ${item?.country}`);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
-    }
+    const query = encodeURIComponent(`${item?.name || item?.location_name}, ${item?.location || item?.location_name}`);
+    window.open(item?.map_link || item?.location_link || `https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
   };
 
-  if (loading || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
-        <div className="container px-4 py-6 max-w-6xl mx-auto">
-          <div className="h-64 md:h-96 bg-muted animate-pulse rounded-lg" />
-        </div>
-        <MobileBottomBar />
-      </div>
-    );
-  }
+  if (loading || !isAdmin) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
 
-  if (!item) return null;
-
-  // Collect all available images
   const displayImages = [
+    item.image_url,
     ...(item.gallery_images || []),
     ...(item.images || []),
-    ...(item.photo_urls || []),
-    ...(item.image_url ? [item.image_url] : [])
+    ...(item.photo_urls || [])
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
-      
-      <main className="container px-4 py-6 max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+    <div className="min-h-screen bg-[#F8F9FA] pb-32">
+      <Header className="hidden md:block" />
 
-        <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
-          {/* --- Image Carousel Section --- */}
-          <div className="w-full relative">
-            <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground z-20 text-xs font-bold px-3 py-1">
-              {getItemTypeBadge()}
+      {/* --- HERO IMAGE SECTION --- */}
+      <div className="relative w-full h-[40vh] md:h-[50vh] overflow-hidden">
+        <div className="absolute top-4 left-4 right-4 z-50 flex justify-between">
+          <Button onClick={() => navigate(-1)} className="rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0 hover:bg-black/50">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex gap-2">
+            <Badge className="bg-[#FF7F50] text-white border-none px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg">
+              {type?.toUpperCase()}
             </Badge>
-            <div className="absolute top-4 right-4 z-20">
-              {getStatusBadge(item.approval_status)}
-            </div>
-            
-            {displayImages.length > 0 ? (
-              <Carousel
-                opts={{ loop: true }}
-                plugins={[Autoplay({ delay: 3000 })]}
-                className="w-full rounded-2xl overflow-hidden"
-                setApi={(api) => {
-                  if (api) {
-                    api.on("select", () => setCurrent(api.selectedScrollSnap()));
-                  }
-                }}
-              >
-                <CarouselContent>
-                  {displayImages.map((img: string, idx: number) => (
-                    <CarouselItem key={idx}>
-                      <img 
-                        src={img} 
-                        alt={`${item.name || item.location_name} ${idx + 1}`} 
-                        loading="lazy" 
-                        decoding="async" 
-                        className="w-full h-64 md:h-96 object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/placeholder.svg';
-                        }}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-
-                {displayImages.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
-                    <CarouselNext className="right-4 z-10 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border-none" />
-                  </>
-                )}
-              </Carousel>
-            ) : (
-              <div className="w-full h-64 md:h-96 bg-muted rounded-2xl flex items-center justify-center">
-                <p className="text-muted-foreground">No images available</p>
-              </div>
-            )}
-            
-            {/* Description overlay */}
-            {item.description && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white p-4 z-10 rounded-b-2xl shadow-lg transform translate-y-2">
-                <h2 className="text-lg font-semibold mb-2">About This {getItemTypeBadge().toLowerCase()}</h2>
-                <p className="text-sm line-clamp-3">{item.description}</p>
-              </div>
-            )}
-          </div>
-
-          {/* --- Detail Section (Right Column) --- */}
-          <div className="space-y-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{item.name || item.location_name}</h1>
-              {item.local_name && (
-                <p className="text-lg text-muted-foreground mb-2">"{item.local_name}"</p>
-              )}
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <MapPin className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                <span>{item.location || item.location_name}, {item.country}</span>
-              </div>
-              {item.place && (
-                <p className="text-sm text-muted-foreground mb-4">Place: {item.place}</p>
-              )}
-            </div>
-
-            {/* Price/Fee Card */}
-            <div className="space-y-3 p-4 border bg-card rounded-lg">
-              {(item.price || item.entry_fee || item.price_adult) && (
-                <div className="border-b pb-3">
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {item.price ? "Price (Per Adult)" : item.entry_fee ? "Entry Fee" : "Adult Price"}
-                  </p>
-                  <p className="text-2xl font-bold" style={{ color: RED_COLOR }}>
-                    KSh {item.price || item.entry_fee || item.price_adult || 0}
-                  </p>
-                  {(item.price_child > 0 || item.price_child) && (
-                    <p className="text-sm text-muted-foreground">Child: KSh {item.price_child}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Date for trips/events */}
-              {item.date && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" style={{ color: TEAL_COLOR }} />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date</p>
-                    <p className="font-semibold">{item.is_flexible_date ? "Flexible" : new Date(item.date).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              )}
-
-              {item.available_tickets && (
-                <p className="text-sm text-muted-foreground">Available Tickets: {item.available_tickets}</p>
-              )}
-
-              {item.registration_number && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Registration Number</p>
-                  <p className="font-medium">{item.registration_number}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Operating Hours */}
-            {(item.opening_hours || item.closing_hours || (item.days_opened && item.days_opened.length > 0)) && (
-              <div className="p-4 border bg-card rounded-lg" style={{ borderColor: TEAL_COLOR }}>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" style={{ color: TEAL_COLOR }} />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Working Hours & Days</p>
-                    <p className="font-semibold">
-                      {(item.opening_hours || item.closing_hours) 
-                        ? `${item.opening_hours || 'N/A'} - ${item.closing_hours || 'N/A'}`
-                        : 'Not specified'}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      <span className="font-medium">Working Days:</span>{' '}
-                      {item.days_opened && item.days_opened.length > 0 
-                        ? item.days_opened.join(', ')
-                        : 'Not specified'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Admin Action Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => updateApprovalStatus("approved")}
-                disabled={item.approval_status === "approved"}
-                className="flex-1"
-                style={{ backgroundColor: TEAL_COLOR }}
-              >
-                {item.approval_status === "approved" ? "Approved" : "Approve"}
-              </Button>
-              {item.approval_status !== "approved" && (
-                <Button 
-                  variant="destructive"
-                  onClick={() => updateApprovalStatus("rejected")}
-                  disabled={item.approval_status === "rejected"}
-                  className="flex-1"
-                >
-                  {item.approval_status === "rejected" ? "Rejected" : "Reject"}
-                </Button>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={openInMaps} 
-                className="flex-1 h-9"
-                style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
-              >
-                <MapPin className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
-                <span className="hidden md:inline">Map</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  const publicUrl = `/${type}/${id}`;
-                  window.open(publicUrl, '_blank');
-                }}
-                className="flex-1 h-9"
-                style={{ borderColor: TEAL_COLOR, color: TEAL_COLOR }}
-              >
-                <Eye className="h-4 w-4 md:mr-2" style={{ color: TEAL_COLOR }} />
-                <span className="hidden md:inline">View Public</span>
-              </Button>
-            </div>
-
-            {/* Visibility Toggle for Approved Items */}
-            {item.approval_status === "approved" && (
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Public Visibility</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.is_hidden ? "Hidden from public" : "Visible to public"}
-                    </p>
-                  </div>
-                  <Button 
-                    size="sm"
-                    variant={item.is_hidden ? "default" : "outline"}
-                    onClick={async () => {
-                      const { error } = await supabase
-                        .from(item.tableName)
-                        .update({ is_hidden: !item.is_hidden })
-                        .eq("id", id);
-                      
-                      if (!error) {
-                        toast({
-                          title: "Success",
-                          description: item.is_hidden ? "Item is now visible" : "Item is now hidden",
-                        });
-                        fetchItemDetails();
-                      }
-                    }}
-                  >
-                    {item.is_hidden ? "Publish" : "Hide"}
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Badge className={`border-none px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg ${
+              item.approval_status === 'approved' ? 'bg-green-500' : 'bg-yellow-500'
+            }`}>
+              {item.approval_status}
+            </Badge>
           </div>
         </div>
 
-        {/* --- Amenities Section --- */}
-        {item.amenities && item.amenities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Amenities</h2>
-            <div className="flex flex-wrap gap-2">
-              {item.amenities.map((amenity: string, idx: number) => (
-                <div 
-                  key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm"
-                  style={{ backgroundColor: RED_COLOR }}
-                >
-                  {amenity}
+        <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
+          <CarouselContent className="h-full">
+            {displayImages.map((img, idx) => (
+              <CarouselItem key={idx} className="h-full">
+                <div className="relative h-full w-full">
+                  <img src={img} alt="preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
                 </div>
-              ))}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+
+        <div className="absolute bottom-6 left-6 z-40">
+           <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
+            {item.name || item.location_name}
+          </h1>
+        </div>
+      </div>
+
+      <main className="container px-4 max-w-6xl mx-auto -mt-8 relative z-50">
+        <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
+          
+          <div className="space-y-6">
+            {/* About Card */}
+            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description Review</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">{item.description || "No description provided."}</p>
+            </div>
+
+            {/* Amenities/Highlights */}
+            {(item.amenities?.length > 0 || item.activities?.length > 0) && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Features & Activities</h2>
+                <div className="flex flex-wrap gap-2">
+                  {[...(item.amenities || []), ...(item.activities || [])].map((act: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 bg-[#F0E68C]/20 px-4 py-2.5 rounded-2xl border border-[#F0E68C]/50">
+                      <CheckCircle2 className="h-4 w-4 text-[#857F3E]" />
+                      <span className="text-[11px] font-black text-[#857F3E] uppercase tracking-wide">
+                        {typeof act === 'string' ? act : act.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Creator Info */}
+            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-slate-100">
+                        <User className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Submitted By</p>
+                        <h3 className="text-sm font-black uppercase text-slate-800">{creator?.name || "Unknown Creator"}</h3>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 text-slate-600">
+                        <Mail className="h-4 w-4 text-[#008080]" />
+                        <span className="text-xs font-bold">{creator?.email || "No Email"}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-600">
+                        <Phone className="h-4 w-4 text-[#008080]" />
+                        <span className="text-xs font-bold">{creator?.phone_number || "No Phone"}</span>
+                    </div>
+                </div>
             </div>
           </div>
-        )}
 
-        {/* --- Facilities Section --- */}
-        {item.facilities && item.facilities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Facilities</h2>
-            <div className="flex flex-wrap gap-2">
-              {item.facilities.map((facility: any, idx: number) => (
-                <div 
-                  key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
-                  style={{ backgroundColor: TEAL_COLOR }}
-                >
-                  <span className="font-medium">{facility.name}</span>
-                  <span className="text-xs opacity-90">
-                    {facility.price === 0 ? 'Free' : `KSh ${facility.price || facility.price_per_day}`}
+          <div className="space-y-4">
+            <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
+              
+              <div className="mb-8">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing / Fee</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black" style={{ color: COLORS.RED }}>
+                    KSh {item.price || item.entry_fee || item.price_adult || 0}
                   </span>
-                  {facility.capacity && <span className="text-xs opacity-80">• Cap: {facility.capacity}</span>}
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-tighter">/ unit</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
 
-        {/* --- Activities Section --- */}
-        {item.activities && item.activities.length > 0 && (
-          <div className="mt-6 p-6 border bg-card rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Activities</h2>
-            <div className="flex flex-wrap gap-2">
-              {item.activities.map((activity: any, idx: number) => (
-                <div 
-                  key={idx} 
-                  className="px-4 py-2 text-white rounded-full text-sm flex items-center gap-2"
-                  style={{ backgroundColor: ORANGE_COLOR }}
+              <div className="space-y-4 mb-8">
+                <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" style={{ color: COLORS.TEAL }} />
+                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-500">Location</span>
+                  </div>
+                  <span className="text-xs font-black uppercase text-slate-700">{item.location || item.location_name}</span>
+                </div>
+
+                {item.date && (
+                  <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" style={{ color: COLORS.CORAL }} />
+                      <span className="text-[10px] font-black uppercase tracking-tight text-slate-500">Scheduled</span>
+                    </div>
+                    <span className="text-xs font-black uppercase text-slate-700">
+                      {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Utility Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                <Button variant="ghost" onClick={openInMaps} className="flex-col h-auto py-3 bg-[#F0E68C]/10 text-[#857F3E] rounded-2xl border border-[#F0E68C]/20">
+                  <MapPin className="h-4 w-4 mb-1" />
+                  <span className="text-[9px] font-black uppercase">View Map</span>
+                </Button>
+                <Button 
+                    variant="ghost" 
+                    onClick={() => window.open(`/${type}/${id}`, '_blank')}
+                    className="flex-col h-auto py-3 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200"
                 >
-                  <span className="font-medium">{activity.name}</span>
-                  <span className="text-xs opacity-90">
-                    {activity.price === 0 ? 'Free' : `KSh ${activity.price}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                  <Eye className="h-4 w-4 mb-1" />
+                  <span className="text-[9px] font-black uppercase">Live View</span>
+                </Button>
+              </div>
 
-        {/* --- Contact Information Section --- */}
-        {(item.email || item.phone_number || item.phone_numbers?.length > 0) && (
-          <div className="mt-6 p-6 border bg-card rounded-lg">
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <div className="space-y-2">
-              {(item.phone_number || item.phone_numbers?.[0]) && (
-                <p className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                  <a 
-                    href={`tel:${item.phone_number || item.phone_numbers?.[0]}`} 
-                    className="hover:underline" 
-                    style={{ color: TEAL_COLOR }}
+              {/* Approval Controls */}
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => updateApprovalStatus("approved")}
+                  disabled={item.approval_status === "approved"}
+                  className="w-full py-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
+                  style={{ 
+                    background: item.approval_status === 'approved' ? '#94a3b8' : `linear-gradient(135deg, #2dd4bf 0%, ${COLORS.TEAL} 100%)`,
+                  }}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Approve Entry
+                </Button>
+
+                {item.approval_status !== "approved" && (
+                   <Button 
+                    variant="ghost"
+                    onClick={() => updateApprovalStatus("rejected")}
+                    className="w-full py-4 text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50"
                   >
-                    {item.phone_number || item.phone_numbers?.[0]}
-                  </a>
-                </p>
-              )}
-              {item.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" style={{ color: TEAL_COLOR }} />
-                  <a href={`mailto:${item.email}`} className="hover:underline" style={{ color: TEAL_COLOR }}>
-                    {item.email}
-                  </a>
-                </p>
-              )}
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Reject Submission
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        )}
-
-        {/* --- Creator Details Section --- */}
-        <div className="mt-6 p-6 border bg-card rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <User className="h-5 w-5" style={{ color: TEAL_COLOR }} />
-            Creator Details
-          </h2>
-          {creator ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {creator?.name && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium">{creator.name}</p>
-                </div>
-              )}
-              {creator?.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${creator.email}`} className="text-sm hover:underline" style={{ color: TEAL_COLOR }}>
-                    {creator.email}
-                  </a>
-                </div>
-              )}
-              {creator?.phone_number && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${creator.phone_number}`} className="text-sm hover:underline" style={{ color: TEAL_COLOR }}>
-                    {creator.phone_number}
-                  </a>
-                </div>
-              )}
-              {creator?.country && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Country</p>
-                  <p className="font-medium">{creator.country}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {item.created_by ? `Creator profile not found (ID: ${item.created_by.substring(0, 8)}...)` : "No creator information available"}
-            </p>
-          )}
         </div>
       </main>
+
+      {/* Floating Admin Badge for Mobile */}
+      <div className="fixed bottom-24 left-4 right-4 md:hidden z-[100]">
+        <div className="bg-black/90 backdrop-blur-xl p-4 rounded-3xl flex items-center justify-between border border-white/10 shadow-2xl">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-500 rounded-xl">
+                    <ShieldAlert className="h-4 w-4 text-black" />
+                </div>
+                <div>
+                    <p className="text-[8px] font-black text-white/50 uppercase">Admin Mode</p>
+                    <p className="text-[10px] font-black text-white uppercase">{item.approval_status}</p>
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <Button size="sm" onClick={() => updateApprovalStatus("approved")} className="bg-teal-500 h-8 rounded-xl text-[10px] font-black">APPROVE</Button>
+                <Button size="sm" variant="destructive" onClick={() => updateApprovalStatus("rejected")} className="h-8 rounded-xl text-[10px] font-black">REJECT</Button>
+            </div>
+        </div>
+      </div>
+
       <MobileBottomBar />
     </div>
   );

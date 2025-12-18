@@ -1,40 +1,24 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { MobileBottomBar } from "@/components/MobileBottomBar"; // RESTORED
+import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, Settings, Info, Percent, ShieldCheck } from "lucide-react";
 
-// Define the specified Teal color
-const TEAL_COLOR = "#008080";
-const TEAL_HOVER_COLOR = "#005555"; 
-
-const getTealButtonStyle = () => {
-  return {
-    backgroundColor: TEAL_COLOR,
-    borderColor: TEAL_COLOR,
-    color: 'white',
-    transition: 'background-color 0.15s',
-  };
-};
-
-const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-  if (!e.currentTarget.disabled) {
-    (e.currentTarget.style as any).backgroundColor = TEAL_HOVER_COLOR;
-  }
-};
-
-const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-  if (!e.currentTarget.disabled) {
-    (e.currentTarget.style as any).backgroundColor = TEAL_COLOR;
-  }
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  CORAL_LIGHT: "#FF9E7A",
+  KHAKI: "#F0E68C",
+  KHAKI_DARK: "#857F3E",
+  RED: "#FF0000",
+  SOFT_GRAY: "#F8F9FA"
 };
 
 export default function AdminReferralSettings() {
@@ -144,8 +128,8 @@ export default function AdminReferralSettings() {
         adventure_place_commission_rate: settings.adventurePlaceCommissionRate,
         trip_service_fee: settings.tripServiceFee,
         event_service_fee: settings.eventServiceFee,
-        hotel_service_fee: settings.hotelServiceFee,
-        attraction_service_fee: settings.attractionServiceFee,
+        hotel_service_fee: settings.hotel_service_fee,
+        attraction_service_fee: settings.attraction_service_fee,
         adventure_place_service_fee: settings.adventurePlaceServiceFee,
       };
 
@@ -183,13 +167,12 @@ export default function AdminReferralSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-[#F8F9FA]">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 pb-24">
-          <Skeleton className="h-12 w-48 mb-8" />
-          <Skeleton className="h-96 w-full max-w-2xl mx-auto" />
+        <main className="container mx-auto px-4 py-8">
+          <Skeleton className="h-12 w-64 rounded-2xl mb-8" />
+          <Skeleton className="h-[600px] w-full max-w-4xl mx-auto rounded-[28px]" />
         </main>
-        <MobileBottomBar />
       </div>
     );
   }
@@ -197,54 +180,84 @@ export default function AdminReferralSettings() {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8 overflow-y-auto"> 
-        <div className="max-w-2xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/account")}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Account
-          </Button>
+      
+      <main className="container px-4 max-w-4xl mx-auto py-8">
+        {/* Navigation & Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/account")}
+              className="p-0 hover:bg-transparent text-slate-500 hover:text-[#008080] transition-colors mb-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Back to Account</span>
+            </Button>
+            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-none flex items-center gap-3">
+              <Settings className="h-8 w-8 text-[#008080]" />
+              Referral Control
+            </h1>
+          </div>
+          
+          <div className="bg-white px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2 self-start md:self-center shadow-sm">
+            <ShieldCheck className="h-4 w-4 text-[#008080]" />
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Admin Authorization Active</span>
+          </div>
+        </div>
 
-          <h1 className="text-3xl font-bold mb-8 text-foreground flex items-center gap-2">
-            <Settings className="h-8 w-8" />
-            Set Referral Commission
-          </h1>
+        {/* Info formula card */}
+        <div className="bg-[#F0E68C]/20 border border-[#F0E68C] rounded-[24px] p-6 mb-8 flex gap-4">
+          <div className="bg-white p-2 rounded-xl h-fit shadow-sm">
+            <Info className="h-5 w-5 text-[#857F3E]" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#857F3E]">Formula Logic</h3>
+            <p className="text-sm font-medium text-slate-700">
+              Referral Payout = Booking Value $\times$ (Service Fee %) $\times$ (Commission Rate % / 100)
+            </p>
+            <p className="text-[10px] font-bold text-red-500 uppercase tracking-tighter mt-1">
+              ⚠️ Commission Rate must never exceed Service Fee
+            </p>
+          </div>
+        </div>
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Category Service Fees & Commission Rates</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Configure platform service fees and referral commission rates by category
-                </p>
-                <div className="p-3 mt-2 bg-slate-50 border-l-4 border-teal-500 rounded-r text-xs">
-                    <p className="font-semibold text-teal-700">Formula Hint:</p>
-                    <p>Referral Payout = Booking Value $\times$ (Service Fee %) $\times$ (Commission Rate % / 100)</p>
-                    <p className="mt-1 text-red-600">⚠️ **Commission Rate (%)** must be $\leq$ **Service Fee (%)**</p>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Category Inputs (Trip, Event, Hotel, etc.) */}
-                  {[
-                    { id: 'trip', label: 'Trip' },
-                    { id: 'event', label: 'Event' },
-                    { id: 'hotel', label: 'Hotel' },
-                    { id: 'attraction', label: 'Attraction' },
-                    { id: 'adventurePlace', label: 'Campsite/Experience' }
-                  ].map((cat) => (
-                    <div key={cat.id} className="space-y-4 p-4 border border-border rounded-lg">
-                      <h3 className="font-semibold text-foreground">{cat.label}</h3>
-                      <div>
-                        <Label htmlFor={`${cat.id}ServiceFee`}>Service Fee (%)</Label>
+        <div className="space-y-6">
+          <div className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center gap-2 mb-8">
+                <Percent className="h-5 w-5 text-[#FF7F50]" />
+                <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>
+                    Platform Rates
+                </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                { id: 'trip', label: 'Trips & Tours' },
+                { id: 'event', label: 'Events & Experiences' },
+                { id: 'hotel', label: 'Hotels & Stays' },
+                { id: 'attraction', label: 'Attractions' },
+                { id: 'adventurePlace', label: 'Campsites' }
+              ].map((cat) => (
+                <div key={cat.id} className="space-y-5 p-6 bg-slate-50/50 rounded-[22px] border border-slate-100 transition-all hover:shadow-md">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#008080] border-b border-slate-100 pb-2">
+                    {cat.label}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor={`${cat.id}ServiceFee`}
+                        className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1"
+                      >
+                        Service Fee (%)
+                      </Label>
+                      <div className="relative">
                         <Input
                           id={`${cat.id}ServiceFee`}
                           type="number"
+                          className="bg-white rounded-xl border-slate-200 h-11 focus:ring-[#008080] font-bold"
                           value={(settings as any)[`${cat.id}ServiceFee`]}
                           onChange={(e) =>
                             setSettings({
@@ -252,14 +265,23 @@ export default function AdminReferralSettings() {
                               [`${cat.id}ServiceFee`]: parseFloat(e.target.value) || 0,
                             })
                           }
-                          min="0" max="100" step="0.1" className="mt-2"
                         />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">%</span>
                       </div>
-                      <div>
-                        <Label htmlFor={`${cat.id}Rate`}>Referral Commission (%)</Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label 
+                        htmlFor={`${cat.id}Rate`}
+                        className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1"
+                      >
+                        Commission (%)
+                      </Label>
+                      <div className="relative">
                         <Input
                           id={`${cat.id}Rate`}
                           type="number"
+                          className="bg-white rounded-xl border-slate-200 h-11 focus:ring-[#008080] font-bold"
                           value={(settings as any)[`${cat.id}CommissionRate`]}
                           onChange={(e) =>
                             setSettings({
@@ -267,28 +289,32 @@ export default function AdminReferralSettings() {
                               [`${cat.id}CommissionRate`]: parseFloat(e.target.value) || 0,
                             })
                           }
-                          min="0" step="0.1" className="mt-2"
                         />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold">%</span>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
 
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full"
-              style={getTealButtonStyle()}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              {saving ? "Saving..." : "Save All Settings"}
-            </Button>
+            <div className="mt-12">
+                <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
+                    style={{ 
+                        background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
+                        boxShadow: `0 12px 24px -8px ${COLORS.CORAL}88`
+                    }}
+                >
+                    {saving ? "Processing..." : "Deploy New Rates"}
+                </Button>
+            </div>
           </div>
         </div>
       </main>
+
       <MobileBottomBar />
     </div>
   );
