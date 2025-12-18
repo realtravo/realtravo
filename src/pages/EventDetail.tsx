@@ -65,9 +65,7 @@ const EventDetail = () => {
   const fetchEvent = async () => {
     if (!id) return;
     try {
-      // Assuming email and phone are columns in the 'trips' table
       let { data, error } = await supabase.from("trips").select("*").eq("id", id).eq("type", "event").single();
-      
       if (error && id.length === 8) {
         const { data: prefixData, error: prefixError } = await supabase.from("trips").select("*").ilike("id", `${id}%`).eq("type", "event").single();
         if (!prefixError) { data = prefixData; error = null; }
@@ -170,15 +168,12 @@ const EventDetail = () => {
       <main className="container px-4 max-w-6xl mx-auto -mt-6 relative z-40">
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
-          {/* Main Content Column */}
           <div className="space-y-6">
-            {/* About Card */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About</h2>
               <p className="text-slate-500 text-sm leading-relaxed">{event.description}</p>
             </div>
 
-            {/* Highlights Card */}
             {event.activities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Highlights</h2>
@@ -193,7 +188,6 @@ const EventDetail = () => {
               </div>
             )}
             
-            {/* STYLED REVIEW CARD */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex justify-between items-center mb-8">
                 <div>
@@ -207,14 +201,12 @@ const EventDetail = () => {
                   </div>
                 )}
               </div>
-              
               <div className="min-h-[100px]">
                 <ReviewSection itemId={event.id} itemType="event" />
               </div>
             </div>
           </div>
 
-          {/* Booking Sidebar Column */}
           <div className="space-y-4">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               
@@ -265,30 +257,34 @@ const EventDetail = () => {
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
-              {/* HOST CONTACT SECTION */}
+              {/* HOST CONTACT DETAILS */}
               <div className="mt-8 pt-6 border-t border-slate-100 space-y-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Organizer</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organizer Contacts</p>
                 
-                {event.email && (
-                  <div className="flex items-center gap-3">
-                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      <Mail className="h-4 w-4 text-[#008080]" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Email</span>
-                      <span className="text-xs font-black text-slate-700 break-all">{event.email}</span>
-                    </div>
-                  </div>
-                )}
-
                 {event.phone && (
                   <div className="flex items-center gap-3">
                     <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                       <Phone className="h-4 w-4 text-[#008080]" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Phone</span>
-                      <span className="text-xs font-black text-slate-700">{event.phone}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Phone Number</span>
+                      <a href={`tel:${event.phone}`} className="text-xs font-black text-slate-700 hover:text-[#008080] transition-colors">
+                        {event.phone}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {event.email && (
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <Mail className="h-4 w-4 text-[#008080]" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Email Address</span>
+                      <a href={`mailto:${event.email}`} className="text-xs font-black text-slate-700 hover:text-[#008080] transition-colors break-all">
+                        {event.email}
+                      </a>
                     </div>
                   </div>
                 )}
