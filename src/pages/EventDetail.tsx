@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, Star } from "lucide-react";
+import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, Star, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,17 +110,25 @@ const EventDetail = () => {
   };
 
   if (loading) return <div className="min-h-screen bg-slate-50 animate-pulse" />;
+  if (!event) return null;
 
   const allImages = [event?.image_url, ...(event?.images || [])].filter(Boolean);
 
-  // Helper for Star Rating Summary
+  // Updated Star Rating Summary Helper
   const RatingSummary = () => (
-    <div className="flex items-center gap-1.5">
-      <div className="flex items-center">
-        <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />
+    <div className="flex items-center gap-3">
+      <div className="flex items-center bg-yellow-400/10 px-3 py-1.5 rounded-xl border border-yellow-200/50">
+        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500 mr-1.5" />
+        <span className="text-lg font-black text-slate-800">
+          {event.average_rating ? event.average_rating.toFixed(1) : "New"}
+        </span>
       </div>
-      <span className="text-xs font-black text-slate-700">{event.average_rating ? event.average_rating.toFixed(1) : "New"}</span>
-      <span className="text-[10px] text-slate-400 font-bold uppercase">({event.total_reviews || 0} reviews)</span>
+      <div className="flex flex-col justify-center">
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Average Rating</span>
+        <span className="text-[11px] text-slate-700 font-black uppercase">
+          ({event.total_reviews || 0} Ratings)
+        </span>
+      </div>
     </div>
   );
 
@@ -132,7 +140,7 @@ const EventDetail = () => {
       <div className="relative w-full overflow-hidden h-[45vh] md:h-[55vh]">
         <div className="absolute top-4 left-4 right-4 z-30 flex justify-between">
           <Button onClick={() => navigate(-1)} className="rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0">
-            <ArrowLeftIcon className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <Button onClick={handleSave} className={`rounded-full backdrop-blur-md border-none w-10 h-10 p-0 shadow-lg ${isSaved ? "bg-red-500" : "bg-black/30"}`}>
             <Heart className={`h-5 w-5 text-white ${isSaved ? "fill-white" : ""}`} />
@@ -194,7 +202,7 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Desktop Reviews - Hidden on Mobile */}
+            {/* Desktop Ratings - Hidden on Mobile */}
             <div className="hidden lg:block">
               <ReviewSection itemId={event.id} itemType="event" />
             </div>
@@ -204,17 +212,15 @@ const EventDetail = () => {
           <div className="space-y-4">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               
-              {/* Mobile Rating Summary inside Sidebar */}
-              <div className="lg:hidden mb-6 flex justify-between items-center border-b border-dashed border-slate-100 pb-6">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Guest Experience</p>
+              {/* Guest Experience Rating Box */}
+              <div className="mb-8 p-5 bg-slate-50 rounded-[24px] border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase mb-3 tracking-widest">Guest Experience</p>
+                <div className="flex justify-between items-center">
                   <RatingSummary />
+                  <Badge variant="secondary" className="bg-white text-[9px] font-black uppercase border-slate-200 text-slate-500">
+                    Verified
+                  </Badge>
                 </div>
-                {user && (
-                  <Button variant="link" className="text-xs font-black uppercase text-[#008080] p-0 h-auto">
-                    Write Review
-                  </Button>
-                )}
               </div>
 
               <div className="flex justify-between items-end mb-8">
@@ -239,7 +245,7 @@ const EventDetail = () => {
                   <span className="text-slate-700">KSh {event.price_child || 0}</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-                  <span className="text-slate-400">Status</span>
+                  <span className="text-slate-400">Availability</span>
                   <span className={event.available_tickets > 0 ? "text-green-600" : "text-red-500"}>
                     {event.available_tickets > 0 ? `${event.available_tickets} slots left` : "Sold Out"}
                   </span>
@@ -264,7 +270,7 @@ const EventDetail = () => {
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
-              {/* Mobile Reviews - Positioned below the main actions on small screens */}
+              {/* Mobile Ratings Section */}
               <div className="lg:hidden mt-10 pt-10 border-t border-slate-100">
                 <ReviewSection itemId={event.id} itemType="event" />
               </div>
@@ -294,13 +300,6 @@ const EventDetail = () => {
     </div>
   );
 };
-
-// Internal sub-components for cleaner code
-const ArrowLeftIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-  </svg>
-);
 
 const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
   <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F0E68C]/10 text-[#857F3E] rounded-2xl hover:bg-[#F0E68C]/30 transition-colors border border-[#F0E68C]/20">
