@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star, Zap } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star, Zap, Calendar } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -21,6 +21,10 @@ import { extractIdFromSlug } from "@/lib/slugUtils";
 // ADVENTURE-STYLE DESIGN TOKENS
 const COLORS = {
   TEAL: "#008080",
+  CORAL: "#FF7F50",
+  CORAL_LIGHT: "#FF9E7A",
+  KHAKI: "#F0E68C",
+  KHAKI_DARK: "#857F3E",
   RED: "#FF0000",
   ORANGE: "#FF9800",
   SOFT_GRAY: "#F8F9FA"
@@ -99,6 +103,14 @@ const TripDetail = () => {
   if (loading) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
   if (!trip) return null;
 
+  // LOGIC FOR BOOKING STATUS
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tripDate = trip.date ? new Date(trip.date) : null;
+  const isExpired = !trip.is_custom_date && tripDate && tripDate < today;
+  const isSoldOut = trip.available_tickets <= 0;
+  const canBook = !isExpired && !isSoldOut;
+
   const allImages = [trip.image_url, ...(trip.gallery_images || []), ...(trip.images || [])].filter(Boolean);
 
   return (
@@ -172,13 +184,11 @@ const TripDetail = () => {
           
           {/* CONTENT COLUMN (LEFT) */}
           <div className="space-y-6">
-            {/* Description Card */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Overview</h2>
               <p className="text-slate-500 text-sm leading-relaxed">{trip.description}</p>
             </div>
 
-            {/* ACTIVITIES SECTION */}
             {trip.activities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
@@ -205,7 +215,6 @@ const TripDetail = () => {
               </div>
             )}
 
-            {/* REVIEWS SECTION - Relocated here to fill space on big screens */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex justify-between items-center mb-8">
                   <div>
@@ -235,7 +244,7 @@ const TripDetail = () => {
                 </div>
                 <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
                   <Clock className="h-4 w-4" style={{ color: COLORS.TEAL }} />
-                  <span className="text-xs font-black text-slate-600 uppercase">
+                  <span className={`text-xs font-black uppercase ${isSoldOut ? "text-red-500" : "text-slate-600"}`}>
                     {trip.available_tickets} Left
                   </span>
                 </div>
@@ -243,8 +252,11 @@ const TripDetail = () => {
 
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-                  <span className="text-slate-400">Departure Date</span>
-                  <span className="text-slate-700">{trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}</span>
+                  <span className="text-slate-400 flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</span>
+                  <span className={isExpired ? "text-red-500" : "text-slate-700"}>
+                    {trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {isExpired && " (Past)"}
+                  </span>
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
                    <span className="text-slate-400">Child Rate</span>
@@ -254,14 +266,16 @@ const TripDetail = () => {
 
               <Button 
                 onClick={() => setBookingOpen(true)}
-                disabled={trip.available_tickets <= 0}
+                disabled={!canBook}
                 className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none mb-6"
                 style={{ 
-                    background: `linear-gradient(135deg, #00A3A3 0%, ${COLORS.TEAL} 100%)`,
-                    boxShadow: `0 12px 24px -8px ${COLORS.TEAL}88`
+                    background: !canBook 
+                        ? "#cbd5e1" 
+                        : `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
+                    boxShadow: !canBook ? "none" : `0 12px 24px -8px ${COLORS.TEAL}88`
                 }}
               >
-                {trip.available_tickets <= 0 ? "Sold Out" : "Secure My Spot"}
+                {isSoldOut ? "Fully Booked" : isExpired ? "Trip Expired" : "Secure My Spot"}
               </Button>
 
               <div className="grid grid-cols-3 gap-3 mb-8">
@@ -289,7 +303,6 @@ const TripDetail = () => {
           </div>
         </div>
 
-        {/* Footer Area / Similar Items */}
         <div className="mt-16">
             <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />
         </div>

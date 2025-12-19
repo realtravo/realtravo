@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-// Added Phone and Mail icons here
-import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail } from "lucide-react";
+import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +17,6 @@ import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiSte
 import { generateReferralLink, trackReferralClick } from "@/lib/referralUtils";
 import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
-import { Badge } from "@/components/ui/badge";
 
 const COLORS = {
   TEAL: "#008080",
@@ -112,6 +110,14 @@ const EventDetail = () => {
 
   if (loading) return <div className="min-h-screen bg-slate-50 animate-pulse" />;
   if (!event) return null;
+
+  // --- STATUS LOGIC ---
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = event.date ? new Date(event.date) : null;
+  const isExpired = !event.is_custom_date && eventDate && eventDate < today;
+  const isSoldOut = event.available_tickets <= 0;
+  const canBook = !isExpired && !isSoldOut;
 
   const allImages = [event?.image_url, ...(event?.images || [])].filter(Boolean);
 
@@ -234,36 +240,51 @@ const EventDetail = () => {
                   </div>
                 </div>
                 <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" style={{ color: COLORS.CORAL }} />
-                  <span className="text-xs font-black text-slate-600 uppercase">
-                    {new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                  <Clock className="h-4 w-4" style={{ color: COLORS.TEAL }} />
+                  <span className={`text-xs font-black uppercase ${isSoldOut ? "text-red-500" : "text-slate-600"}`}>
+                    {event.available_tickets} Left
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
+                  <span className="text-slate-400">Scheduled Date</span>
+                  <span className={isExpired ? "text-red-500" : "text-slate-700"}>
+                    {event.is_custom_date ? (
+                      <span className="text-emerald-600 font-black">AVAILABLE</span>
+                    ) : (
+                      <>
+                        {new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {isExpired && <span className="ml-1">(Past)</span>}
+                      </>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
                   <span className="text-slate-400">Child (Under 12)</span>
                   <span className="text-slate-700">KSh {event.price_child || 0}</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-                  <span className="text-slate-400">Availability</span>
-                  <span className={event.available_tickets > 0 ? "text-green-600" : "text-red-500"}>
-                    {event.available_tickets > 0 ? `${event.available_tickets} slots left` : "Sold Out"}
+                  <span className="text-slate-400">Current Status</span>
+                  <span className={`font-black uppercase ${isSoldOut ? "text-red-500" : "text-emerald-600"}`}>
+                    {isSoldOut ? "Fully Booked" : isExpired ? "Event Passed" : "Open for Booking"}
                   </span>
                 </div>
               </div>
 
               <Button 
                 onClick={() => setShowBooking(true)}
-                disabled={event.available_tickets <= 0}
+                disabled={!canBook}
                 className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
                 style={{ 
-                    background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
-                    boxShadow: `0 12px 24px -8px ${COLORS.CORAL}88`
+                    background: !canBook 
+                        ? "#cbd5e1" 
+                        : `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
+                    boxShadow: !canBook ? "none" : `0 12px 24px -8px ${COLORS.CORAL}88`
                 }}
               >
-                {event.available_tickets <= 0 ? "Fully Booked" : "Reserve Spot"}
+                {isSoldOut ? "Fully Booked" : isExpired ? "Event Expired" : "Reserve Spot"}
               </Button>
 
               <div className="grid grid-cols-3 gap-3 mt-8 mb-8">
@@ -272,7 +293,6 @@ const EventDetail = () => {
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
-              {/* NEW: Organizer Contact Section added here */}
               <div className="space-y-4 pt-6 border-t border-slate-50">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</h3>
                 {event.phone_number && (
