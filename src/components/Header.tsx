@@ -42,6 +42,11 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
     ? "fixed top-0 left-0 right-0 bg-transparent flex" 
     : "hidden md:flex sticky top-0 left-0 right-0 border-b border-white/10 shadow-lg";
 
+  /**
+   * UNIFIED ICON STYLING
+   * - On mobile: Dark semi-transparent circles (bg-black/50)
+   * - On desktop (md:): Matches the Menu icon exactly (bg-white/15 with glass hover)
+   */
   const headerIconStyles = `
     h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-200 
     active:scale-90 shadow-md md:shadow-none text-white
@@ -121,21 +126,25 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             </button>
           )}
           
-          {/* Notification Bell Integration */}
-          <div className={headerIconStyles}>
+          {/* Notification Bell - Wrapped in button for identical behavior */}
+          <button 
+            className={headerIconStyles}
+            onClick={() => navigate('/notifications')}
+            aria-label="Notifications"
+          >
             <NotificationBell />
-          </div>
+          </button>
 
           <div className="hidden md:flex items-center gap-3">
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="h-10 px-4 rounded-xl flex items-center gap-2 font-bold text-sm shadow-lg transition-all hover:opacity-90 active:scale-95 text-white"
+              className="h-11 px-6 rounded-2xl flex items-center gap-3 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg border-none text-white hover:brightness-110 active:scale-95"
               style={{ 
                 background: `linear-gradient(135deg, ${COLORS.CORAL} 0%, #FF6B35 100%)`
               }}
             >
               <User className="h-4 w-4" />
-              <span>{user ? "Profile" : "Login"}</span>
+              {user ? "Profile" : "Login"}
             </button>
           </div>
         </div>
