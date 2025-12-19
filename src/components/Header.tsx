@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationDrawer } from "./NavigationDrawer";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { NotificationBell } from "./NotificationBell"; 
+import { NotificationBell } from "./NotificationBell";
 
 const COLORS = {
   TEAL: "#008080",
@@ -43,10 +43,9 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
     : "hidden md:flex sticky top-0 left-0 right-0 border-b border-white/10 shadow-lg";
 
   /**
-   * FIXED ICON STYLING
-   * - text-white: Forces the bell icon (and others) to be white
-   * - bg-black/50: Matches the dark circular background in your image
-   * - md:bg-white/15: Transitions to a lighter glass effect on desktop
+   * UNIFIED ICON STYLING
+   * - On mobile: Dark semi-transparent circles (bg-black/50)
+   * - On desktop (md:): Matches the Menu icon exactly (bg-white/15 with glass hover)
    */
   const headerIconStyles = `
     h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-200 
@@ -70,7 +69,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
         <div className={`flex items-center gap-4 ${isIndexPage && 'mt-4 md:mt-0'}`}>
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              <button className={headerIconStyles}>
+              <button className={headerIconStyles} aria-label="Open Menu">
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -121,15 +120,20 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             <button 
               onClick={() => onSearchClick ? onSearchClick() : navigate('/')}
               className={headerIconStyles}
+              aria-label="Search"
             >
               <Search className="h-5 w-5" />
             </button>
           )}
           
-          {/* Notification Bell Wrapper - Now matches Search exactly */}
-          <div className={headerIconStyles}>
+          {/* Notification Bell - Wrapped in button for identical behavior */}
+          <button 
+            className={headerIconStyles}
+            onClick={() => navigate('/notifications')}
+            aria-label="Notifications"
+          >
             <NotificationBell />
-          </div>
+          </button>
 
           <div className="hidden md:flex items-center gap-3">
             <button 
