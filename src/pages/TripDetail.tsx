@@ -112,14 +112,14 @@ const TripDetail = () => {
 
   // SECTION COMPONENTS
   const OverviewSection = () => (
-    <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-1">
+    <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
       <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Overview</h2>
       <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{trip.description}</p>
     </div>
   );
 
   const ActivitiesSection = () => trip.activities?.length > 0 && (
-    <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-3">
+    <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-xl bg-orange-50"><Zap className="h-5 w-5 text-[#FF9800]" /></div>
         <div>
@@ -266,41 +266,32 @@ const TripDetail = () => {
       <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
+          {/* LEFT COLUMN: Main Content Stack */}
           <div className="flex flex-col gap-6">
             <OverviewSection />
 
-            {/* Mobile Only Booking Card (Order 2) */}
-            <div className="block lg:hidden order-2">
+            {/* Mobile Only Booking Card */}
+            <div className="block lg:hidden">
               <BookingCard />
             </div>
 
             <ActivitiesSection />
 
-            {/* Mobile Only: Reviews and Similar (Order 6+) */}
-            <div className="block lg:hidden space-y-6 order-6">
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <ReviewSection itemId={trip.id} itemType="trip" />
-              </div>
-              <div className="mt-8">
-                <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />
-              </div>
+            {/* REVIEWS: Now inside the left column to fill the gap on desktop */}
+            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+              <ReviewSection itemId={trip.id} itemType="trip" />
             </div>
           </div>
 
-          {/* Desktop Only Sidebar */}
+          {/* RIGHT COLUMN: Desktop Sticky Sidebar */}
           <div className="hidden lg:block">
             <BookingCard />
           </div>
         </div>
 
-        {/* Desktop Only Bottom Sections (Maintains full container width logic) */}
-        <div className="hidden lg:block space-y-12">
-            <div className="mt-12 bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <ReviewSection itemId={trip.id} itemType="trip" />
-            </div>
-            <div className="mt-16">
-                <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />
-            </div>
+        {/* Similar Items: Stays full-width at the bottom */}
+        <div className="mt-12 lg:mt-16">
+          <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />
         </div>
       </main>
 
