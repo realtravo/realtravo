@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { MapPin, Heart, Star, Calendar, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn, optimizeSupabaseImage } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { createDetailPath } from "@/lib/slugUtils";
@@ -46,7 +45,7 @@ interface ListingCardProps {
   reviewCount?: number;
 }
 
-export const ListingCard = ({
+const ListingCardComponent = ({
   id, type, name, imageUrl, location, country, price, date,
   isFlexibleDate = false, isOutdated = false,
   onSave, isSaved = false, activities, hidePrice = false,
@@ -197,15 +196,20 @@ export const ListingCard = ({
                       </span>
                   </div>
                 )}
+                
+                {/* Past Event Indicator */}
+                {isOutdated && tracksAvailability && (
+                  <div className="flex items-center gap-1 mt-1 bg-slate-100 px-2 py-0.5 rounded-md">
+                    <span className="text-[9px] font-black text-slate-500 uppercase">
+                      Event Passed
+                    </span>
+                  </div>
+                )}
 
-                {/* TICKET AVAILABILITY LOGIC FOR EVENT/SPORT/TRIP */}
-                {tracksAvailability && (
+                {/* TICKET AVAILABILITY LOGIC FOR EVENT/SPORT/TRIP - only show if not past */}
+                {tracksAvailability && !isOutdated && (
                     <div className="mt-1">
-                        {isOutdated ? (
-                            <span className="text-[9px] font-black text-slate-400 uppercase">
-                                Event Passed
-                            </span>
-                        ) : isSoldOut ? (
+                        {isSoldOut ? (
                             <span className="text-[9px] font-black text-slate-400 uppercase">
                                 No Slots Available
                             </span>
@@ -229,3 +233,6 @@ export const ListingCard = ({
     </Card>
   );
 };
+
+// Memoize component to prevent unnecessary re-renders
+export const ListingCard = memo(ListingCardComponent);

@@ -26,6 +26,9 @@ export default function MyReferrals() {
     totalReferred: 0,
     totalBookings: 0,
     totalCommission: 0,
+    hostEarnings: 0,
+    bookingEarnings: 0,
+    availableBalance: 0,
   });
 
   useEffect(() => {
@@ -54,15 +57,23 @@ export default function MyReferrals() {
 
         if (commissionsError) throw commissionsError;
 
-        const totalCommission = commissions?.reduce(
-          (sum, c) => sum + Number(c.commission_amount),
-          0
-        ) || 0;
+        const hostEarnings = commissions?.filter(c => c.commission_type === 'host')
+          .reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0;
+        
+        const bookingEarnings = commissions?.filter(c => c.commission_type === 'booking')
+          .reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0;
+
+        const totalCommission = hostEarnings + bookingEarnings;
+        const availableBalance = commissions?.filter(c => c.status === 'paid')
+          .reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0;
 
         setStats({
           totalReferred: uniqueReferred.size,
           totalBookings: commissions?.length || 0,
           totalCommission,
+          hostEarnings,
+          bookingEarnings,
+          availableBalance,
         });
 
         setLoading(false);
@@ -120,34 +131,45 @@ export default function MyReferrals() {
         </div>
 
         {/* Stats Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           
-          {/* Total Referred */}
+          {/* Available Balance */}
+          <StatCard 
+            icon={<Wallet className="h-6 w-6" />}
+            label="Available Balance"
+            value={`KSh ${stats.availableBalance.toLocaleString()}`}
+            subLabel="Ready for Payout"
+            color={COLORS.RED}
+            isCash
+          />
+
+          {/* Host Earnings */}
           <StatCard 
             icon={<Users className="h-6 w-6" />}
+            label="Host Referrals"
+            value={`KSh ${stats.hostEarnings.toLocaleString()}`}
+            subLabel="From Referred Hosts"
+            color={COLORS.TEAL}
+            isCash
+          />
+
+          {/* Booking Commissions */}
+          <StatCard 
+            icon={<TrendingUp className="h-6 w-6" />}
+            label="Booking Commissions"
+            value={`KSh ${stats.bookingEarnings.toLocaleString()}`}
+            subLabel="From User Bookings"
+            color={COLORS.CORAL}
+            isCash
+          />
+
+          {/* Total Referred */}
+          <StatCard 
+            icon={<Award className="h-6 w-6" />}
             label="Community Size"
             value={stats.totalReferred}
             subLabel="Unique Referrals"
-            color={COLORS.TEAL}
-          />
-
-          {/* Total Bookings */}
-          <StatCard 
-            icon={<TrendingUp className="h-6 w-6" />}
-            label="Successful Bookings"
-            value={stats.totalBookings}
-            subLabel="Converted Trips"
-            color={COLORS.CORAL}
-          />
-
-          {/* Total Commission */}
-          <StatCard 
-            icon={<Wallet className="h-6 w-6" />}
-            label="Total Earnings"
-            value={`KSh ${stats.totalCommission.toLocaleString()}`}
-            subLabel="Ready for Payout"
             color={COLORS.KHAKI_DARK}
-            isCash
           />
         </div>
 

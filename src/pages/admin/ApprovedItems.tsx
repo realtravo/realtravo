@@ -15,8 +15,13 @@ import {
   Search, 
   ArrowLeft,
   CheckCircle2,
-  EyeOff
+  EyeOff,
+  Eye,
+  Mail,
+  Phone,
+  Globe
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -36,8 +41,12 @@ interface ListingItem {
   name: string;
   type: string;
   location: string;
+  country: string;
   created_at: string;
   is_hidden?: boolean;
+  created_by?: string;
+  creator_email?: string;
+  creator_phone?: string;
 }
 
 const ApprovedItems = () => {
@@ -47,6 +56,32 @@ const ApprovedItems = () => {
   const [filteredItems, setFilteredItems] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const getTableName = (type: string) => {
+    if (type === "trip") return "trips";
+    if (type === "hotel") return "hotels";
+    return "adventure_places";
+  };
+
+  const handleToggleVisibility = async (item: ListingItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTogglingId(item.id);
+    try {
+      const { error } = await supabase
+        .from(getTableName(item.type))
+        .update({ is_hidden: !item.is_hidden })
+        .eq("id", item.id);
+      if (error) throw error;
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_hidden: !i.is_hidden } : i));
+      setFilteredItems(prev => prev.map(i => i.id === item.id ? { ...i, is_hidden: !i.is_hidden } : i));
+      toast({ title: item.is_hidden ? "Listing published" : "Listing hidden" });
+    } catch (error) {
+      toast({ title: "Failed to update visibility", variant: "destructive" });
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -59,16 +94,30 @@ const ApprovedItems = () => {
   const fetchApprovedItems = async () => {
     try {
       const [tripsRes, hotelsRes, adventuresRes] = await Promise.all([
-        supabase.from("trips").select("id, name, location, created_at, is_hidden").eq("approval_status", "approved"),
-        supabase.from("hotels").select("id, name, location, created_at, is_hidden").eq("approval_status", "approved"),
-        supabase.from("adventure_places").select("id, name, location, created_at, is_hidden").eq("approval_status", "approved"),
+        supabase.from("trips").select("id, name, location, country, created_at, is_hidden, created_by").eq("approval_status", "approved"),
+        supabase.from("hotels").select("id, name, location, country, created_at, is_hidden, created_by").eq("approval_status", "approved"),
+        supabase.from("adventure_places").select("id, name, location, country, created_at, is_hidden, created_by").eq("approval_status", "approved"),
       ]);
 
-      const allItems: ListingItem[] = [
+      const allRawItems = [
         ...(tripsRes.data?.map(t => ({ ...t, type: "trip" })) || []),
         ...(hotelsRes.data?.map(h => ({ ...h, type: "hotel" })) || []),
         ...(adventuresRes.data?.map(a => ({ ...a, type: "adventure" })) || []),
       ];
+
+      // Fetch creator profiles
+      const creatorIds = [...new Set(allRawItems.map(i => i.created_by).filter(Boolean))];
+      let creatorMap: Record<string, { email?: string; phone_number?: string }> = {};
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, email, phone_number").in("id", creatorIds);
+        profiles?.forEach(p => { creatorMap[p.id] = { email: p.email || undefined, phone_number: p.phone_number || undefined }; });
+      }
+
+      const allItems: ListingItem[] = allRawItems.map(item => ({
+        ...item,
+        creator_email: item.created_by ? creatorMap[item.created_by]?.email : undefined,
+        creator_phone: item.created_by ? creatorMap[item.created_by]?.phone_number : undefined,
+      }));
 
       const sortedItems = allItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setItems(sortedItems);
@@ -155,49 +204,88 @@ const ApprovedItems = () => {
         ) : (
           <div className="space-y-3">
             {filteredItems.map((item) => (
-              <button
+              <div
                 key={item.id}
-                onClick={() => navigate(`/admin/review/${item.type}/${item.id}`)}
-                className="w-full group relative flex items-center justify-between p-5 bg-white hover:bg-slate-50 border border-slate-100 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-0.5"
+                className="w-full group relative bg-white hover:bg-slate-50 border border-slate-100 rounded-3xl transition-all duration-300 shadow-sm hover:shadow-xl"
               >
-                <div className="flex items-center gap-5">
-                  <div 
-                    className="h-14 w-14 rounded-2xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300"
-                    style={{ backgroundColor: `${COLORS.TEAL}10`, color: COLORS.TEAL }}
-                  >
-                    {getIcon(item.type)}
-                  </div>
-                  
-                  <div className="text-left space-y-1">
-                    <p className="font-black uppercase tracking-tight text-slate-800 leading-none">
-                      {item.name}
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="h-3 w-3 text-[#FF7F50]" />
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        {item.location}
-                      </span>
+                <button
+                  onClick={() => navigate(`/admin/review/${item.type}/${item.id}`)}
+                  className="w-full flex items-center justify-between p-5"
+                >
+                  <div className="flex items-center gap-5">
+                    <div 
+                      className="h-14 w-14 rounded-2xl flex items-center justify-center transition-colors group-hover:scale-110 duration-300"
+                      style={{ backgroundColor: `${COLORS.TEAL}10`, color: COLORS.TEAL }}
+                    >
+                      {getIcon(item.type)}
+                    </div>
+                    
+                    <div className="text-left space-y-1">
+                      <p className="font-black uppercase tracking-tight text-slate-800 leading-none">
+                        {item.name}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3 text-[#FF7F50]" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          {item.location}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Globe className="h-3 w-3 text-[#008080]" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          {item.country}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex flex-col items-end gap-1">
-                    {item.is_hidden && (
-                      <Badge variant="outline" className="text-[9px] border-slate-200 text-slate-400 font-black uppercase tracking-tighter">
-                        <EyeOff className="h-3 w-3 mr-1" /> Hidden
-                      </Badge>
-                    )}
-                    <div className="flex items-center gap-1.5 bg-[#F0E68C]/20 px-3 py-1 rounded-full border border-[#F0E68C]/50">
-                      <CheckCircle2 className="h-3 w-3 text-[#857F3E]" />
-                      <span className="text-[9px] font-black text-[#857F3E] uppercase tracking-widest">Verified</span>
+                  <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex flex-col items-end gap-1">
+                      {item.is_hidden && (
+                        <Badge variant="outline" className="text-[9px] border-slate-200 text-slate-400 font-black uppercase tracking-tighter">
+                          <EyeOff className="h-3 w-3 mr-1" /> Hidden
+                        </Badge>
+                      )}
+                      <div className="flex items-center gap-1.5 bg-[#F0E68C]/20 px-3 py-1 rounded-full border border-[#F0E68C]/50">
+                        <CheckCircle2 className="h-3 w-3 text-[#857F3E]" />
+                        <span className="text-[9px] font-black text-[#857F3E] uppercase tracking-widest">Verified</span>
+                      </div>
+                    </div>
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-[#008080] group-hover:text-white transition-colors">
+                      <ChevronRight className="h-5 w-5" />
                     </div>
                   </div>
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-[#008080] group-hover:text-white transition-colors">
-                    <ChevronRight className="h-5 w-5" />
+                </button>
+                
+                {/* Creator Info & Hide Toggle */}
+                <div className="px-5 pb-4 pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-50">
+                  <div className="flex flex-wrap gap-4 text-[10px] text-slate-500">
+                    {item.creator_email && (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-[#008080]" />
+                        <span className="font-bold">{item.creator_email}</span>
+                      </div>
+                    )}
+                    {item.creator_phone && (
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-[#008080]" />
+                        <span className="font-bold">{item.creator_phone}</span>
+                      </div>
+                    )}
                   </div>
+                  <Button
+                    size="sm"
+                    variant={item.is_hidden ? "default" : "outline"}
+                    onClick={(e) => handleToggleVisibility(item, e)}
+                    disabled={togglingId === item.id}
+                    className="text-[9px] font-black uppercase tracking-widest h-8 rounded-xl"
+                    style={item.is_hidden ? { background: COLORS.TEAL } : {}}
+                  >
+                    {item.is_hidden ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
+                    {item.is_hidden ? "Publish" : "Hide"}
+                  </Button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

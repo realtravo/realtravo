@@ -209,7 +209,7 @@ const AdminReviewDetail = () => {
                         <h3 className="text-sm font-black uppercase text-slate-800">{creator?.name || "Unknown Creator"}</h3>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3 text-slate-600">
                         <Mail className="h-4 w-4 text-[#008080]" />
                         <span className="text-xs font-bold">{creator?.email || "No Email"}</span>
@@ -217,6 +217,10 @@ const AdminReviewDetail = () => {
                     <div className="flex items-center gap-3 text-slate-600">
                         <Phone className="h-4 w-4 text-[#008080]" />
                         <span className="text-xs font-bold">{creator?.phone_number || "No Phone"}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-600">
+                        <MapPin className="h-4 w-4 text-[#FF7F50]" />
+                        <span className="text-xs font-bold">{creator?.country || item?.country || "No Country"}</span>
                     </div>
                 </div>
             </div>

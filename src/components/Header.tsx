@@ -126,14 +126,8 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             </button>
           )}
           
-          {/* Notification Bell Linked Correctly */}
-          <button 
-            className={headerIconStyles}
-            onClick={() => navigate('/notifications')}
-            aria-label="Notifications"
-          >
-            <NotificationBell />
-          </button>
+          {/* Notification Bell - Opens Sheet directly */}
+          <NotificationBell />
 
           <div className="hidden md:flex items-center gap-3">
             <button 
