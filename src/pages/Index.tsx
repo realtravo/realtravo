@@ -505,23 +505,24 @@ const Index = () => {
   return <div className="min-h-screen bg-background pb-20 md:pb-0">
             <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} hideIcons={isSearchFocused} />
             
-     {/* Hero Section with Search Bar and Background Image - Hidden when search focused */}
+     {/* Hero Section with Search Bar, Background Image, and Category Icons - Hidden when search focused */}
      {!isSearchFocused && (
     <div 
       ref={searchRef}
-      // 👇 MODIFIED CLASSES HERE 👇
-      className="relative w-full h-[30vh] lg:h-[39vh]" 
-
+      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh]" 
       style={{
-        backgroundImage: `url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&h=600&fit=crop&auto=format&q=80)`, 
+        backgroundImage: `url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&h=800&fit=crop&auto=format&q=80)`, 
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      {/* Dark overlay for visibility */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70" />
+      
+      {/* Search section centered */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pb-32 md:pb-24">
         <div className="container md:px-4 px-4">
-          <h1 className="text-white text-2xl md:text-4xl lg:text-5xl font-bold text-center mb-4 md:mb-6">
+          <h1 className="text-white text-2xl md:text-4xl lg:text-5xl font-bold text-center mb-4 md:mb-6 drop-shadow-lg">
             Discover Your Next Adventure
           </h1>
           <SearchBarWithSuggestions 
@@ -549,6 +550,36 @@ const Index = () => {
           />
         </div>
       </div>
+      
+      {/* Mobile Category Icons overlaid at bottom - only visible on mobile */}
+      <div className="absolute bottom-0 left-0 right-0 md:hidden">
+        <div 
+          className="px-4 py-4 pb-5"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0) 100%)'
+          }}
+        >
+          <div className="flex flex-row justify-around items-start">
+            {categories.map(cat => (
+              <div 
+                key={cat.title} 
+                onClick={() => navigate(cat.path)} 
+                className="flex flex-col items-center cursor-pointer group"
+              >
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 transition-all group-hover:bg-white/30 group-hover:scale-110">
+                  <cat.icon className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-white text-[9px] font-bold uppercase tracking-tight mt-2 text-center leading-tight max-w-[70px]">
+                  {cat.title}
+                </span>
+                <p className="text-white/70 text-[7px] text-center leading-tight mt-0.5 max-w-[80px] line-clamp-2">
+                  {cat.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
 )}
             
@@ -573,50 +604,44 @@ const Index = () => {
                 </div>}
 
             <main className="w-full">
+{/* Desktop Category Cards - hidden on mobile since they're in hero */}
 {!isSearchFocused && (
-  <div className="w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 overflow-hidden">
-    {/* MOBILE: flex row with no-scrollbar
-      DESKTOP: grid with 4 columns
-    */}
-    <div className="flex flex-row overflow-x-auto scrollbar-hide md:grid md:grid-cols-4 gap-0 md:gap-8 w-full">
+  <div className="hidden md:block w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 overflow-hidden">
+    <div className="grid grid-cols-4 gap-8 w-full">
       {categories.map(cat => (
         <div 
           key={cat.title} 
           onClick={() => navigate(cat.path)} 
-          className="flex-shrink-0 flex flex-col items-center cursor-pointer group w-1/4 min-w-[80px] md:w-full"
+          className="flex flex-col items-center cursor-pointer group"
         >
           {/* ICON CONTAINER */}
           <div 
-            className="flex items-center justify-center transition-all
-                       w-14 h-14 rounded-full bg-[#008080] 
-                       md:w-full md:h-40 lg:h-48 md:rounded-lg md:relative"
+            className="flex items-center justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative"
             style={{
               backgroundImage: `url(${cat.bgImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
           >
-            {/* Desktop Overlay: Only visible on md+ */}
-            <div className="hidden md:block absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all rounded-lg" />
-
+            {/* Desktop Overlay */}
+            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all rounded-lg" />
             {/* Icon: Center aligned */}
-            <cat.icon className="relative z-10 h-7 w-7 text-white md:h-12 md:w-12 lg:h-16 lg:w-16" />
+            <cat.icon className="relative z-10 h-12 w-12 lg:h-16 lg:w-16 text-white" />
           </div>
 
-          {/* TEXT: Always below the icon container */}
+          {/* TEXT: Below the icon container */}
           <div className="mt-2 text-center">
-            <span className="font-bold text-gray-800 text-[10px] md:text-base lg:text-lg leading-tight block" role="heading" aria-level={3}>
+            <span className="font-bold text-gray-800 text-base lg:text-lg leading-tight block" role="heading" aria-level={3}>
               {cat.title}
             </span>
-            {/* Description: Hidden on mobile to save space */}
-            <p className="hidden md:block text-gray-500 text-sm mt-1">{cat.description}</p>
+            <p className="text-gray-500 text-sm mt-1">{cat.description}</p>
           </div>
         </div>
       ))}
     </div>
   </div>
 )}
-                
+
                 {/* Search Results - Show when search is focused */}
                 {isSearchFocused && <div className="w-full px-4 md:px-6 lg:px-8 mt-4">
                         <h2 className="text-xl md:text-2xl font-bold mb-4">

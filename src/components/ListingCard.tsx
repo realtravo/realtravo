@@ -27,6 +27,8 @@ interface ListingCardProps {
   price?: number;
   date?: string;
   isCustomDate?: boolean;
+  isFlexibleDate?: boolean;
+  isOutdated?: boolean;
   onSave?: (id: string, type: string) => void;
   isSaved?: boolean;
   amenities?: string[];
@@ -46,6 +48,7 @@ interface ListingCardProps {
 
 export const ListingCard = ({
   id, type, name, imageUrl, location, country, price, date,
+  isFlexibleDate = false, isOutdated = false,
   onSave, isSaved = false, activities, hidePrice = false,
   availableTickets = 0, bookedTickets = 0, priority = false,
   minimalDisplay = false, hideEmptySpace = false,
@@ -79,6 +82,7 @@ export const ListingCard = ({
   const remainingTickets = availableTickets - bookedTickets;
   const isSoldOut = tracksAvailability && availableTickets > 0 && remainingTickets <= 0;
   const fewSlotsRemaining = tracksAvailability && remainingTickets > 0 && remainingTickets <= 10;
+  const isNotAvailable = isOutdated || isSoldOut;
 
   const optimizedImageUrl = optimizeSupabaseImage(imageUrl, { width: 400, height: 300, quality: 80 });
 
@@ -92,7 +96,7 @@ export const ListingCard = ({
         "group overflow-hidden transition-all duration-300 hover:shadow-2xl cursor-pointer border-slate-100 bg-white flex flex-col",
         "rounded-[24px]",
         compact ? "h-auto" : "h-full",
-        isSoldOut && "opacity-80"
+        isNotAvailable && "opacity-80"
       )}
     >
       {/* Image Container */}
@@ -105,16 +109,16 @@ export const ListingCard = ({
             className={cn(
                 "absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110", 
                 imageLoaded ? "opacity-100" : "opacity-0",
-                isSoldOut && "grayscale-[0.5]"
+                isNotAvailable && "grayscale-[0.5]"
             )} 
           />
         )}
 
-        {/* Sold Out Overlay */}
-        {isSoldOut && (
+        {/* Not Available / Sold Out Overlay */}
+        {isNotAvailable && (
           <div className="absolute inset-0 z-20 bg-black/40 flex items-center justify-center">
             <Badge className="bg-white text-black font-black border-none px-3 py-1 text-[10px] uppercase">
-                Sold Out
+                {isOutdated ? 'Not Available' : 'Sold Out'}
             </Badge>
           </div>
         )}
@@ -122,7 +126,7 @@ export const ListingCard = ({
         {/* Floating Category Badge */}
         <Badge 
           className="absolute top-3 left-3 z-10 px-1.5 py-0.5 border-none shadow-md text-[7.5px] font-black uppercase tracking-tight leading-none"
-          style={{ background: isSoldOut ? '#64748b' : COLORS.TEAL, color: 'white' }}
+          style={{ background: isNotAvailable ? '#64748b' : COLORS.TEAL, color: 'white' }}
         >
           {displayType}
         </Badge>
@@ -177,7 +181,7 @@ export const ListingCard = ({
                 {!hidePrice && price !== undefined && (
                   <>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Starts at</span>
-                    <span className={cn("text-base font-black", isSoldOut ? "text-slate-400 line-through" : "text-[#FF0000]")}>
+                    <span className={cn("text-base font-black", isNotAvailable ? "text-slate-400 line-through" : "text-[#FF0000]")}>
                         KSh {price.toLocaleString()}
                     </span>
                   </>
@@ -197,7 +201,11 @@ export const ListingCard = ({
                 {/* TICKET AVAILABILITY LOGIC FOR EVENT/SPORT/TRIP */}
                 {tracksAvailability && (
                     <div className="mt-1">
-                        {isSoldOut ? (
+                        {isOutdated ? (
+                            <span className="text-[9px] font-black text-slate-400 uppercase">
+                                Event Passed
+                            </span>
+                        ) : isSoldOut ? (
                             <span className="text-[9px] font-black text-slate-400 uppercase">
                                 No Slots Available
                             </span>

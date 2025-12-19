@@ -148,6 +148,15 @@ export const MultiStepBooking = ({
         });
     };
 
+    // Check if booking has any items (prevent zero booking)
+    const hasBookingItems = () => {
+        const totalGuests = formData.num_adults + formData.num_children;
+        if (totalGuests > 0) return true;
+        if (formData.selectedFacilities.length > 0) return true;
+        if (formData.selectedActivities.length > 0) return true;
+        return false;
+    };
+
     const handleNext = () => {
         if (currentStep === 1 && !formData.visit_date && !skipDateSelection) return;
         if (currentStep === 2 && formData.num_adults === 0 && formData.num_children === 0) return;
@@ -438,11 +447,12 @@ export const MultiStepBooking = ({
                             </div>
                         </div>
                         
-                        {facilities.length > 0 && (
+                        {/* Filter facilities with price > 0 */}
+                        {facilities.filter(f => f.price > 0).length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Facilities</h4>
                                 <div className="space-y-3">
-                                    {facilities.map((facility) => {
+                                    {facilities.filter(f => f.price > 0).map((facility) => {
                                         const selected = formData.selectedFacilities.find(f => f.name === facility.name);
                                         const isDateInvalid = selected && (
                                             !selected.startDate || 
@@ -505,11 +515,12 @@ export const MultiStepBooking = ({
                             </div>
                         )}
 
-                        {activities.length > 0 && (
+                        {/* Filter activities with price > 0 */}
+                        {activities.filter(a => a.price > 0).length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Activities</h4>
                                 <div className="space-y-3">
-                                    {activities.map((activity) => {
+                                    {activities.filter(a => a.price > 0).map((activity) => {
                                         const selected = formData.selectedActivities.find(a => a.name === activity.name);
                                         return (
                                             <div key={activity.name} className="p-4 rounded-2xl border border-slate-100 bg-white">
@@ -548,7 +559,7 @@ export const MultiStepBooking = ({
                             </div>
                         )}
                         
-                        {(facilities.length === 0 && activities.length === 0) && (
+                        {(facilities.filter(f => f.price > 0).length === 0 && activities.filter(a => a.price > 0).length === 0) && (
                             <div className="p-6 rounded-2xl bg-slate-50 text-center">
                                 <p className="text-slate-500 font-medium">No additional services available.</p>
                             </div>
