@@ -70,14 +70,31 @@ const HotelDetail = () => {
     } finally { setLoading(false); }
   };
 
-  const getCheapestPrice = () => {
-    if (!hotel) return 0;
-    const allPrices = [
-      ...(hotel.facilities || []).map((f: any) => f.price),
-      ...(hotel.activities || []).map((a: any) => a.price)
-    ].filter(p => p !== undefined && p !== null);
+  /**
+   * Logic: 
+   * 1. Check for "Entrance Fee" specifically first.
+   * 2. If not found, find the lowest price from all facilities/activities.
+   */
+  const getDisplayPrice = () => {
+    if (!hotel) return { price: 0, label: "Starting Price" };
     
-    return allPrices.length > 0 ? Math.min(...allPrices) : 0;
+    const allItems = [...(hotel.facilities || []), ...(hotel.activities || [])];
+    
+    // Check for Entrance Fee specifically
+    const entranceFee = allItems.find(item => 
+      item.name?.toLowerCase().includes("entrance fee") || 
+      item.name?.toLowerCase().includes("entry fee")
+    );
+
+    if (entranceFee) {
+      return { price: entranceFee.price, label: "Entrance Fee" };
+    }
+
+    // Otherwise, get lowest price
+    const prices = allItems.map(i => i.price).filter(p => p !== undefined && p !== null);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    
+    return { price: minPrice, label: "Starting Price" };
   };
 
   const handleSave = () => id && handleSaveItem(id, "hotel");
@@ -125,7 +142,7 @@ const HotelDetail = () => {
   if (!hotel) return null;
 
   const allImages = [hotel.image_url, ...(hotel.gallery_images || []), ...(hotel.images || [])].filter(Boolean);
-  const minPrice = getCheapestPrice();
+  const { price: displayPrice, label: priceLabel } = getDisplayPrice();
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
@@ -159,7 +176,7 @@ const HotelDetail = () => {
           <div className="absolute inset-0 z-0 opacity-80" style={{ background: `radial-gradient(circle at 20% 50%, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 85%)`, filter: 'blur(15px)', marginLeft: '-20px' }} />
           <div className="relative z-10 space-y-4 pointer-events-auto">
             <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg text-white">
-              Premium Hotel
+              Premium Destination
             </Button>
             <div>
               <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl mb-3">
@@ -191,23 +208,23 @@ const HotelDetail = () => {
       <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
-          {/* 1. DESCRIPTION (Top on Mobile) */}
+          {/* 1. DESCRIPTION (Top Priority on Mobile) */}
           <div className="order-1 lg:order-none bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
             <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description</h2>
             <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
           </div>
 
-          {/* 2. PRICE & CONTACT CARD (Middle on Mobile) */}
+          {/* 2. PRICE & BOOKING CARD (Middle Priority on Mobile) */}
           <div className="order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               <div className="flex justify-between items-end mb-8">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Starting Price</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{priceLabel}</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black" style={{ color: COLORS.RED }}>
-                      KSh {minPrice}
+                      KSh {displayPrice}
                     </span>
-                    <span className="text-slate-400 text-[10px] font-bold uppercase">/ night</span>
+                    <span className="text-slate-400 text-[10px] font-bold uppercase">/ entry</span>
                   </div>
                 </div>
                 <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
@@ -229,14 +246,14 @@ const HotelDetail = () => {
                     <Clock className="h-3 w-3" />
                     <span>Opens</span>
                   </div>
-                  <span className="text-slate-700">{hotel.opening_hours || '12:00 PM'}</span>
+                  <span className="text-slate-700">{hotel.opening_hours || '08:00 AM'}</span>
                 </div>
                 <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Clock className="h-3 w-3" />
                     <span>Closes</span>
                   </div>
-                  <span className="text-slate-700">{hotel.closing_hours || '10:00 AM'}</span>
+                  <span className="text-slate-700">{hotel.closing_hours || '06:00 PM'}</span>
                 </div>
               </div>
 
@@ -255,19 +272,15 @@ const HotelDetail = () => {
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
-              {/* UPDATED CONTACT SECTION */}
+              {/* CONTACT SECTION */}
               <div className="space-y-4 pt-6 border-t border-slate-50">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Inquiries</h3>
-                
-                {/* Phone Numbers */}
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inquiries</h3>
                 {hotel.phone_numbers?.map((phone: string, idx: number) => (
                   <a key={idx} href={`tel:${phone}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
                     <Phone className="h-4 w-4 text-[#008080]" />
                     <span className="text-xs font-bold uppercase tracking-tight">{phone}</span>
                   </a>
                 ))}
-
-                {/* Email Address */}
                 {hotel.email && (
                   <a href={`mailto:${hotel.email}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
                     <Mail className="h-4 w-4 text-[#008080]" />
@@ -278,7 +291,7 @@ const HotelDetail = () => {
             </div>
           </div>
 
-          {/* 3. AMENITIES/ACTIVITIES SECTION (Bottom on Mobile) */}
+          {/* 3. DETAILS (Amenities, Facilities, Activities - Bottom Priority on Mobile) */}
           <div className="order-3 lg:col-start-1 space-y-6">
             {hotel.facilities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -287,8 +300,8 @@ const HotelDetail = () => {
                     <BedDouble className="h-5 w-5 text-[#008080]" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Accommodations</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Room Types</p>
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Facilities</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">On-site Offerings</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -356,9 +369,10 @@ const HotelDetail = () => {
               </div>
             )}
           </div>
+
         </div>
 
-        {/* REVIEWS & SIMILAR ITEMS */}
+        {/* REVIEWS & SIMILAR */}
         <div className="mt-12 bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-8">
               <div>
