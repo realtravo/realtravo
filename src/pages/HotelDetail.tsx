@@ -70,6 +70,17 @@ const HotelDetail = () => {
     } finally { setLoading(false); }
   };
 
+  // Logic to find the cheapest price across all options
+  const getCheapestPrice = () => {
+    if (!hotel) return 0;
+    const allPrices = [
+      ...(hotel.facilities || []).map((f: any) => f.price),
+      ...(hotel.activities || []).map((a: any) => a.price)
+    ].filter(p => p !== undefined && p !== null);
+    
+    return allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  };
+
   const handleSave = () => id && handleSaveItem(id, "hotel");
 
   const handleCopyLink = async () => {
@@ -115,6 +126,7 @@ const HotelDetail = () => {
   if (!hotel) return null;
 
   const allImages = [hotel.image_url, ...(hotel.gallery_images || []), ...(hotel.images || [])].filter(Boolean);
+  const minPrice = getCheapestPrice();
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
@@ -181,19 +193,23 @@ const HotelDetail = () => {
       </div>
 
       <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
-        {/* MODIFIED: Used flex-col on mobile and lg:grid on large screens to control order */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
-          {/* SIDEBAR SECTION (Price, Booking, Contact) */}
-          {/* order-first ensures this is on top on mobile, lg:order-2 moves it to the right on desktop */}
-          <div className="space-y-4 order-first lg:order-2">
+          {/* 1. DESCRIPTION (Top on Mobile) */}
+          <div className="order-1 lg:order-none bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+            <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description</h2>
+            <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
+          </div>
+
+          {/* 2. PRICE CARD (Middle on Mobile, Right on Desktop) */}
+          <div className="order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               <div className="flex justify-between items-end mb-8">
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Starting Price</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black" style={{ color: COLORS.RED }}>
-                      KSh {hotel.facilities?.[0]?.price || 0}
+                      KSh {minPrice}
                     </span>
                     <span className="text-slate-400 text-[10px] font-bold uppercase">/ night</span>
                   </div>
@@ -256,14 +272,8 @@ const HotelDetail = () => {
             </div>
           </div>
 
-          {/* MAIN CONTENT (Description, Amenities, Facilities, Activities) */}
-          {/* order-last ensures this is at the bottom on mobile, lg:order-1 moves it to the left on desktop */}
-          <div className="space-y-6 order-last lg:order-1">
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
-            </div>
-
+          {/* 3. DETAILS SECTION (Bottom on Mobile, Left on Desktop) */}
+          <div className="order-3 lg:col-start-1 space-y-6">
             {hotel.facilities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
@@ -341,9 +351,9 @@ const HotelDetail = () => {
               </div>
             )}
           </div>
-
         </div>
 
+        {/* REVIEWS & SIMILAR ITEMS */}
         <div className="mt-12 bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-8">
               <div>
