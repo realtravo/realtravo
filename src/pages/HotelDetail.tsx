@@ -70,7 +70,6 @@ const HotelDetail = () => {
     } finally { setLoading(false); }
   };
 
-  // Logic to find the cheapest price across all options
   const getCheapestPrice = () => {
     if (!hotel) return 0;
     const allPrices = [
@@ -158,17 +157,14 @@ const HotelDetail = () => {
 
         <div className="absolute bottom-10 left-0 z-40 w-full md:w-3/4 lg:w-1/2 p-8 pointer-events-none">
           <div className="absolute inset-0 z-0 opacity-80" style={{ background: `radial-gradient(circle at 20% 50%, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 85%)`, filter: 'blur(15px)', marginLeft: '-20px' }} />
-          
           <div className="relative z-10 space-y-4 pointer-events-auto">
             <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg text-white">
               Premium Hotel
             </Button>
-            
             <div>
               <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl mb-3">
                 {hotel.name}
               </h1>
-              
               <div className="flex flex-wrap items-center gap-3 cursor-pointer group w-fit" onClick={openInMaps}>
                 <div className="bg-white/20 backdrop-blur-md p-2 rounded-xl group-hover:bg-[#008080] transition-all duration-300">
                   <MapPin className="h-5 w-5 text-white" />
@@ -201,7 +197,7 @@ const HotelDetail = () => {
             <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
           </div>
 
-          {/* 2. PRICE CARD (Middle on Mobile, Right on Desktop) */}
+          {/* 2. PRICE & CONTACT CARD (Middle on Mobile) */}
           <div className="order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               <div className="flex justify-between items-end mb-8">
@@ -220,7 +216,6 @@ const HotelDetail = () => {
                 </div>
               </div>
 
-              {/* SCHEDULE SECTION */}
               <div className="space-y-4 mb-8 bg-slate-50/50 p-4 rounded-2xl border border-dashed border-slate-200">
                 <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
                   <div className="flex items-center gap-2 text-slate-400">
@@ -260,19 +255,30 @@ const HotelDetail = () => {
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
+              {/* UPDATED CONTACT SECTION */}
               <div className="space-y-4 pt-6 border-t border-slate-50">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inquiries</h3>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Inquiries</h3>
+                
+                {/* Phone Numbers */}
                 {hotel.phone_numbers?.map((phone: string, idx: number) => (
                   <a key={idx} href={`tel:${phone}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
                     <Phone className="h-4 w-4 text-[#008080]" />
                     <span className="text-xs font-bold uppercase tracking-tight">{phone}</span>
                   </a>
                 ))}
+
+                {/* Email Address */}
+                {hotel.email && (
+                  <a href={`mailto:${hotel.email}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
+                    <Mail className="h-4 w-4 text-[#008080]" />
+                    <span className="text-xs font-bold lowercase tracking-tight break-all">{hotel.email}</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
 
-          {/* 3. DETAILS SECTION (Bottom on Mobile, Left on Desktop) */}
+          {/* 3. AMENITIES/ACTIVITIES SECTION (Bottom on Mobile) */}
           <div className="order-3 lg:col-start-1 space-y-6">
             {hotel.facilities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -285,7 +291,6 @@ const HotelDetail = () => {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Room Types</p>
                   </div>
                 </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {hotel.facilities.map((f: any, i: number) => (
                     <div key={i} className="group p-5 rounded-[22px] bg-slate-50 border border-slate-100 hover:border-[#008080]/30 transition-all">
