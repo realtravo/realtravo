@@ -299,7 +299,7 @@ const AdventurePlaceDetail = () => {
 
       {/* Booking Dialog */}
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[40px] border-none shadow-2xl bg-white">
+        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl bg-white">
           <MultiStepBooking 
             onSubmit={handleBookingSubmit} 
             facilities={place.facilities || []} 
@@ -313,6 +313,9 @@ const AdventurePlaceDetail = () => {
             bookingType="adventure_place"
             hostId={place.created_by || ""}
             onPaymentSuccess={() => setIsCompleted(true)}
+            onCancel={() => setBookingOpen(false)}
+            primaryColor={COLORS.TEAL}
+            accentColor={COLORS.CORAL}
           />
         </DialogContent>
       </Dialog>

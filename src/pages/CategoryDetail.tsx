@@ -21,6 +21,7 @@ const CategoryDetail = () => {
   const { savedItems, handleSave } = useSavedItems();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [bookingStats, setBookingStats] = useState<Record<string, number>>({});
   
   const { position } = useGeolocation();
   const [showSearchIcon, setShowSearchIcon] = useState(false);
@@ -28,8 +29,8 @@ const CategoryDetail = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const categoryConfig: { [key: string]: any } = {
-    trips: { title: "Trips", tables: ["trips"], type: "TRIP" },
-    events: { title: "Events", tables: ["trips"], type: "EVENT", eventType: "event" },
+    trips: { title: "Trips", tables: ["trips"], type: "TRIP", tripType: "trip" },
+    events: { title: "Events", tables: ["trips"], type: "EVENT", tripType: "event" },
     hotels: { title: "Hotels", tables: ["hotels"], type: "HOTEL" },
     adventure: { title: "Attractions", tables: ["attractions"], type: "ATTRACTION" },
     campsite: { title: "Campsite & Experience", tables: ["adventure_places"], type: "ADVENTURE PLACE" }
@@ -62,20 +63,72 @@ const CategoryDetail = () => {
 
   const loadInitialData = async () => {
     setLoading(true);
-    const data = await fetchData(0, 20);
+    const data = await fetchData(0, 50);
     setItems(data);
+    
+    // Fetch booking stats for trips/events
+    if (category === 'trips' || category === 'events') {
+      const tripIds = data.map((item: any) => item.id);
+      if (tripIds.length > 0) {
+        const { data: bookingsData } = await supabase
+          .from('bookings')
+          .select('item_id, slots_booked')
+          .in('item_id', tripIds)
+          .in('status', ['confirmed', 'pending']);
+          
+        if (bookingsData) {
+          const stats: Record<string, number> = {};
+          bookingsData.forEach(booking => {
+            const current = stats[booking.item_id] || 0;
+            stats[booking.item_id] = current + (booking.slots_booked || 0);
+          });
+          setBookingStats(stats);
+        }
+      }
+    }
     setLoading(false);
   };
 
   const fetchData = async (offset: number, limit: number) => {
     if (!config) return [];
     const allData: any[] = [];
+    const today = new Date().toISOString().split('T')[0];
+    
     for (const table of config.tables) {
-      const { data } = await supabase
+      let query = supabase
         .from(table as any)
         .select("*")
-        .range(offset, offset + limit - 1);
-      if (data) allData.push(...data.map((item: any) => ({ ...item, table })));
+        .eq("approval_status", "approved")
+        .eq("is_hidden", false);
+      
+      // Filter by trip type (trip or event)
+      if (config.tripType) {
+        query = query.eq("type", config.tripType);
+      }
+      
+      const { data } = await query.range(offset, offset + limit - 1);
+      
+      if (data) {
+        allData.push(...data.map((item: any) => {
+          // Determine correct type based on table
+          let itemType = config.type;
+          if (table === 'trips') {
+            itemType = item.type === 'event' ? 'EVENT' : 'TRIP';
+          } else if (table === 'hotels') {
+            itemType = 'HOTEL';
+          } else if (table === 'adventure_places') {
+            itemType = 'ADVENTURE PLACE';
+          }
+          
+          return { 
+            ...item, 
+            table,
+            itemType,
+            // Mark as outdated if it's a trip/event with a past date
+            isOutdated: (table === 'trips' && item.date && !item.is_custom_date && new Date(item.date) < new Date(today))
+          };
+        }));
+      }
     }
     return allData;
   };
@@ -83,12 +136,34 @@ const CategoryDetail = () => {
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
   const { ratings } = useRatings(itemIds);
 
+  // Sort items: show outdated items last, then by rating
+  const sortedItems = useMemo(() => {
+    const sorted = sortByRating(items, ratings, position, calculateDistance);
+    
+    // For trips/events, move outdated items to the end
+    if (category === 'trips' || category === 'events') {
+      const activeItems = sorted.filter(item => !item.isOutdated);
+      const outdatedItems = sorted.filter(item => item.isOutdated);
+      return [...activeItems, ...outdatedItems];
+    }
+    
+    return sorted;
+  }, [items, position, ratings, category]);
+
   useEffect(() => {
-    setFilteredItems(sortByRating(items, ratings, position, calculateDistance));
-  }, [items, position, ratings]);
+    if (searchQuery) {
+      const filtered = sortedItems.filter(item => 
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        item.location?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredItems(filtered);
+    } else {
+      setFilteredItems(sortedItems);
+    }
+  }, [sortedItems, searchQuery]);
 
   const handleSearch = () => {
-    const filtered = items.filter(item => 
+    const filtered = sortedItems.filter(item => 
       item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
       item.location?.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -154,20 +229,32 @@ const CategoryDetail = () => {
           {loading ? (
             <ListingGridSkeleton count={10} />
           ) : (
-            filteredItems.map(item => (
-              <ListingCard 
-                key={item.id} 
-                id={item.id} 
-                type={item.table.toUpperCase()} 
-                name={item.name} 
-                imageUrl={item.image_url} 
-                location={item.location} 
-                country={item.country || ""}
-                price={item.price} 
-                onSave={handleSave} 
-                isSaved={savedItems.has(item.id)} 
-              />
-            ))
+            filteredItems.map(item => {
+              const ratingData = ratings.get(item.id);
+              const isTripsOrEvents = category === 'trips' || category === 'events';
+              
+              return (
+                <ListingCard 
+                  key={item.id} 
+                  id={item.id} 
+                  type={item.itemType || config.type} 
+                  name={item.name} 
+                  imageUrl={item.image_url} 
+                  location={item.location} 
+                  country={item.country || ""}
+                  price={item.price || item.entry_fee} 
+                  date={item.date}
+                  isCustomDate={item.is_custom_date}
+                  onSave={handleSave} 
+                  isSaved={savedItems.has(item.id)}
+                  availableTickets={isTripsOrEvents ? item.available_tickets : undefined}
+                  bookedTickets={isTripsOrEvents ? bookingStats[item.id] || 0 : undefined}
+                  activities={item.activities}
+                  avgRating={ratingData?.avgRating}
+                  reviewCount={ratingData?.reviewCount}
+                />
+              );
+            })
           )}
         </div>
 

@@ -309,14 +309,17 @@ const EventDetail = () => {
       </main>
 
       <Dialog open={showBooking} onOpenChange={setShowBooking}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[40px] border-none shadow-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
           <MultiStepBooking 
             onSubmit={handleBookingSubmit} activities={event.activities || []} 
             priceAdult={event.price} priceChild={event.price_child} 
             isProcessing={isProcessing} isCompleted={isCompleted} 
             itemName={event.name} skipDateSelection={true} fixedDate={event.date} 
             skipFacilitiesAndActivities={true} itemId={event.id} bookingType="event" 
-            hostId={event.created_by || ""} onPaymentSuccess={() => setIsCompleted(true)} 
+            hostId={event.created_by || ""} onPaymentSuccess={() => setIsCompleted(true)}
+            onCancel={() => setShowBooking(false)}
+            primaryColor={COLORS.TEAL}
+            accentColor={COLORS.CORAL}
           />
         </DialogContent>
       </Dialog>

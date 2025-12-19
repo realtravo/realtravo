@@ -309,7 +309,7 @@ const TripDetail = () => {
       </main>
 
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[40px] border-none shadow-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
           <MultiStepBooking 
             onSubmit={handleBookingSubmit} 
             activities={trip.activities || []} 
@@ -322,6 +322,9 @@ const TripDetail = () => {
             bookingType="trip"
             hostId={trip.created_by || ""}
             onPaymentSuccess={() => setIsCompleted(true)}
+            onCancel={() => setBookingOpen(false)}
+            primaryColor={COLORS.TEAL}
+            accentColor={COLORS.CORAL}
           />
         </DialogContent>
       </Dialog>

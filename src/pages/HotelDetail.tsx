@@ -138,6 +138,7 @@ const HotelDetail = () => {
         itemName: hotel.name, 
         bookingType: 'hotel', 
         totalAmount: startingPrice, 
+        slotsBooked: data.num_adults + data.num_children,
         visitDate: data.visit_date,
         guestName: data.guest_name, 
         guestEmail: data.guest_email, 
@@ -358,7 +359,7 @@ const HotelDetail = () => {
 
       {/* Booking Modal */}
       <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[40px] border-none shadow-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
           <MultiStepBooking 
             onSubmit={handleBookingSubmit} 
             itemName={hotel.name}
@@ -368,6 +369,12 @@ const HotelDetail = () => {
             isProcessing={isProcessing} 
             isCompleted={isCompleted} 
             hostId={hotel.created_by}
+            facilities={hotel.facilities || []}
+            activities={hotel.activities || []}
+            onPaymentSuccess={() => setIsCompleted(true)}
+            onCancel={() => setBookingOpen(false)}
+            primaryColor="#008080"
+            accentColor="#FF7F50"
           />
         </DialogContent>
       </Dialog>
