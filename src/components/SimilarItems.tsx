@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  CORAL_LIGHT: "#FF9E7A",
+  SOFT_GRAY: "#F8F9FA"
+};
 
 interface SimilarItemsProps {
   currentItemId: string;
@@ -23,7 +30,6 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
   const fetchSimilarItems = async () => {
     try {
       let route = "";
-      
       if (itemType === "trip") {
         route = "/trip";
         const { data, error } = await supabase
@@ -71,59 +77,84 @@ export const SimilarItems = ({ currentItemId, itemType, location, country }: Sim
   if (loading || items.length === 0) return null;
 
   const getTitleByType = () => {
-    const type = itemType as "adventure" | "hotel" | "attraction" | "trip" | "event";
-    switch(type) {
-      case "adventure":
-        return "Similar Campsites & Experiences";
-      case "hotel":
-        return "Similar Hotels";
-      case "attraction":
-        return "Similar Attractions";
-      case "event":
-        return "Similar Events";
-      case "trip":
-        return "Similar Trips";
-      default:
-        return "Similar Items";
+    switch(itemType) {
+      case "adventure": return "Similar Experiences";
+      case "hotel": return "Stay Somewhere Similar";
+      case "trip": return "Other Recommended Trips";
+      default: return "You Might Also Like";
     }
   };
 
   return (
-    <div className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">
-        {getTitleByType()}
-      </h2>
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4" style={{ width: `${items.length * 280}px` }}>
+    <div className="mt-16 mb-12">
+      <div className="flex flex-col mb-8 px-2">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">More to explore</p>
+        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>
+          {getTitleByType()}
+        </h2>
+      </div>
+
+      <div className="overflow-x-auto scrollbar-hide pb-6 -mx-4 px-4">
+        <div className="flex gap-5">
           {items.map((item) => (
-            <Card
+            <div
               key={item.id}
-              className="flex-shrink-0 w-64 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              className="group flex-shrink-0 w-72 bg-white rounded-[28px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
               onClick={() => {
                 navigate(`${item.route}/${item.id}`);
                 window.scrollTo(0, 0);
               }}
             >
-              <div className="aspect-video relative">
+              {/* Image Container */}
+              <div className="aspect-[4/3] relative overflow-hidden">
                 <img
                   src={item.image_url}
                   alt={item.name}
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 line-clamp-1">{item.name}</h3>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                  <MapPin className="h-3 w-3" />
-                  <span className="line-clamp-1">{item.location}, {item.country}</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                
+                {/* Floating Location Badge */}
+                <div className="absolute bottom-3 left-3 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/30">
+                  <MapPin className="h-3 w-3 text-white" />
+                  <span className="text-[9px] font-black text-white uppercase tracking-wider">
+                    {item.location}
+                  </span>
                 </div>
-                {item.price && (
-                  <p className="text-sm font-semibold">KSh {item.price}</p>
-                )}
               </div>
-            </Card>
+
+              {/* Content Container */}
+              <div className="p-5">
+                <h3 className="font-black text-lg uppercase tracking-tight text-slate-800 line-clamp-1 mb-3">
+                  {item.name}
+                </h3>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    {item.price ? (
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Starting from</span>
+                        <span className="text-md font-black" style={{ color: COLORS.CORAL }}>
+                          KSh {item.price}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-black text-[#008080] uppercase tracking-widest bg-[#008080]/10 px-3 py-1 rounded-full">
+                        View Details
+                      </span>
+                    )}
+                  </div>
+
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:translate-x-1"
+                    style={{ backgroundColor: `${COLORS.TEAL}10` }}
+                  >
+                    <ArrowRight className="h-5 w-5" style={{ color: COLORS.TEAL }} />
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
