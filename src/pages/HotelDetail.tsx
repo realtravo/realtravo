@@ -57,16 +57,13 @@ const HotelDetail = () => {
     requestLocation();
   }, [id]);
 
-  // Real-time Opening Status Check
   useEffect(() => {
     if (!hotel) return;
-
     const checkOpenStatus = () => {
       const now = new Date();
       const currentDay = now.toLocaleString('en-us', { weekday: 'long' });
       const currentTime = now.getHours() * 60 + now.getMinutes();
 
-      // Parse hours (e.g., "08:00 AM" to minutes)
       const parseTime = (timeStr: string) => {
         if (!timeStr) return 0;
         const [time, modifier] = timeStr.split(' ');
@@ -82,12 +79,11 @@ const HotelDetail = () => {
 
       const isDayOpen = days.includes(currentDay);
       const isTimeOpen = currentTime >= openTime && currentTime <= closeTime;
-
       setIsOpenNow(isDayOpen && isTimeOpen);
     };
 
     checkOpenStatus();
-    const interval = setInterval(checkOpenStatus, 60000); // Check every minute
+    const interval = setInterval(checkOpenStatus, 60000);
     return () => clearInterval(interval);
   }, [hotel]);
 
@@ -170,12 +166,12 @@ const HotelDetail = () => {
         <div className="absolute bottom-10 left-0 z-40 w-full p-8 pointer-events-none">
           <div className="relative z-10 space-y-3 pointer-events-auto">
             <div className="flex items-center gap-2">
-               <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-3 py-1 text-[9px] font-black uppercase rounded-full flex items-center gap-1.5`}>
+               <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-3 py-1 text-[9px] font-black uppercase rounded-full flex items-center gap-1.5 shadow-lg`}>
                  <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
                  {isOpenNow ? "Open Now" : "Closed"}
                </Badge>
                {distance && (
-                 <Badge className="bg-[#008080] text-white border-none px-3 py-1 text-[9px] font-black uppercase rounded-full">
+                 <Badge className="bg-[#008080] text-white border-none px-3 py-1 text-[9px] font-black uppercase rounded-full shadow-lg">
                    {distance.toFixed(1)} KM AWAY
                  </Badge>
                )}
@@ -208,25 +204,30 @@ const HotelDetail = () => {
                 </div>
               </div>
 
-              {/* REAL-TIME WORKING HOURS */}
-              <div className="space-y-3 mb-6 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-200">
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-tight">
+              {/* UPDATED WORKING HOURS SECTION WITH SMALLER FONTS */}
+              <div className="space-y-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-200">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-slate-400">
-                    <Clock className="h-4 w-4 text-[#008080]" />
-                    <span>Hours</span>
+                    <Clock className="h-3.5 w-3.5 text-[#008080]" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Hours</span>
                   </div>
-                  <span className={isOpenNow ? "text-emerald-600" : "text-red-500"}>
+                  <span className={`text-[11px] font-black uppercase ${isOpenNow ? "text-emerald-600" : "text-red-500"}`}>
                     {hotel.opening_hours || "08:00 AM"} - {hotel.closing_hours || "06:00 PM"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs font-black uppercase tracking-tight">
+                
+                <div className="space-y-2">
                   <div className="flex items-center gap-2 text-slate-400">
-                    <Calendar className="h-4 w-4 text-[#008080]" />
-                    <span>Days</span>
+                    <Calendar className="h-3.5 w-3.5 text-[#008080]" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Working Days</span>
                   </div>
-                  <span className="text-slate-700 text-right max-w-[120px]">
-                    {Array.isArray(hotel.days_opened) ? hotel.days_opened.slice(0, 3).join(", ") + "..." : "Mon - Sun"}
-                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(Array.isArray(hotel.days_opened) ? hotel.days_opened : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map((day, idx) => (
+                      <span key={idx} className="text-[10px] font-bold px-2 py-0.5 bg-white rounded-md text-slate-600 border border-slate-100 uppercase tracking-tighter">
+                        {day.substring(0, 3)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -267,7 +268,6 @@ const HotelDetail = () => {
             </div>
           </div>
 
-          {/* FACILITIES */}
           <div className="order-3 lg:col-start-1">
             {hotel.facilities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
