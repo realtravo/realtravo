@@ -41,6 +41,7 @@ const HotelDetail = () => {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isOpenNow, setIsOpenNow] = useState(false);
   const [liveRating, setLiveRating] = useState({ avg: 0, count: 0 });
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
@@ -57,6 +58,34 @@ const HotelDetail = () => {
     requestLocation();
     window.scrollTo(0, 0);
   }, [id]);
+
+  // Real-time Status Calculation
+  useEffect(() => {
+    if (!hotel) return;
+    const checkOpenStatus = () => {
+      const now = new Date();
+      const currentDay = now.toLocaleString('en-us', { weekday: 'long' });
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      
+      const parseTime = (timeStr: string) => {
+        if (!timeStr) return 0;
+        const [time, modifier] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':').map(Number);
+        if (modifier === 'PM' && hours < 12) hours += 12;
+        if (modifier === 'AM' && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+      };
+
+      const openTime = parseTime(hotel.opening_hours || "08:00 AM");
+      const closeTime = parseTime(hotel.closing_hours || "11:00 PM");
+      const days = Array.isArray(hotel.days_opened) ? hotel.days_opened : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      
+      setIsOpenNow(days.includes(currentDay) && currentTime >= openTime && currentTime <= closeTime);
+    };
+    checkOpenStatus();
+    const interval = setInterval(checkOpenStatus, 60000);
+    return () => clearInterval(interval);
+  }, [hotel]);
 
   const fetchHotel = async () => {
     if (!id) return;
@@ -126,7 +155,10 @@ const HotelDetail = () => {
         <div className="absolute bottom-10 left-0 w-full p-5 z-20">
           <div className="flex flex-wrap gap-2 mb-3">
             <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[10px] font-black uppercase rounded-full"><Star className="h-3 w-3 fill-current mr-1" />{liveRating.avg || hotel.star_rating || "New"}</Badge>
-            <Badge className="bg-teal-500 text-white border-none px-2 py-0.5 text-[10px] font-black uppercase rounded-full">Hotel</Badge>
+            <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[10px] font-black uppercase rounded-full flex items-center gap-1`}>
+                <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
+                {isOpenNow ? "Open Now" : "Closed"}
+            </Badge>
           </div>
           <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none mb-2">{hotel.name}</h1>
           <div className="flex items-center gap-1 text-white/90">
@@ -152,10 +184,33 @@ const HotelDetail = () => {
               <Button onClick={() => setBookingOpen(true)} className="w-full py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none">Reserve Room</Button>
             </div>
 
-            {/* Description */}
+            {/* DESCRIPTION SECTION */}
             <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-              <h2 className="text-sm font-black uppercase tracking-widest mb-3 text-[#008080]">About this hotel</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
+              <h2 className="text-sm font-black uppercase tracking-widest mb-3 text-[#008080]">Description</h2>
+              <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{hotel.description}</p>
+            </section>
+
+            {/* OPERATING HOURS SECTION */}
+            <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+              <h2 className="text-sm font-black uppercase tracking-widest mb-4 text-[#008080]">Schedule & Access</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Clock className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Hours</p>
+                    <p className="text-xs font-bold text-slate-700">{hotel.opening_hours || "24 Hours"} - {hotel.closing_hours || "Check-out 11:00 AM"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Calendar className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Working Days</p>
+                    <p className="text-xs font-bold text-slate-700">
+                        {Array.isArray(hotel.days_opened) ? hotel.days_opened.join(", ") : "All Week"}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </section>
 
             {/* Amenities - SHOW ALL */}
@@ -238,12 +293,5 @@ const HotelDetail = () => {
     </div>
   );
 };
-
-const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
-  <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl border border-slate-100 flex-1 hover:bg-slate-100">
-    <div className="mb-1">{icon}</div>
-    <span className="text-[10px] font-black uppercase">{label}</span>
-  </Button>
-);
 
 export default HotelDetail;
