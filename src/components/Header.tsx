@@ -42,11 +42,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
     ? "fixed top-0 left-0 right-0 bg-transparent flex" 
     : "hidden md:flex sticky top-0 left-0 right-0 border-b border-white/10 shadow-lg";
 
-  /**
-   * UNIFIED ICON STYLING
-   * - On mobile: Dark semi-transparent circles (bg-black/50)
-   * - On desktop (md:): Matches the Menu icon exactly (bg-white/15 with glass hover)
-   */
   const headerIconStyles = `
     h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-200 
     active:scale-90 shadow-md md:shadow-none text-white
@@ -138,7 +133,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
           <div className="hidden md:flex items-center gap-3">
             <button 
               onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="h-11 px-6 rounded-2xl flex items-center gap-3 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg border-none text-white hover:brightness-110 active:scale-95"
+              className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-12"
               style={{ 
                 background: `linear-gradient(135deg, ${COLORS.CORAL} 0%, #FF6B35 100%)`
               }}
