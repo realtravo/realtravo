@@ -797,36 +797,38 @@ const Index = () => {
                 
                 <div className={`w-full px-4 md:px-6 lg:px-8 ${isSearchFocused ? 'hidden' : ''}`}>
                     {/* Top Destinations / My Location Toggle Bar */}
-                    <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-center justify-between flex flex-row my-[5px] gap-2">
-                            <button 
-                              onClick={() => setListingViewMode('top_destinations')}
-                              className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
-                                listingViewMode === 'top_destinations' 
-                                  ? 'bg-[#DC2626] text-white shadow-lg' 
-                                  : 'bg-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/30'
-                              }`}
-                            >
-                              Top Destinations
-                            </button>
-                            <button 
-                              onClick={handleMyLocationTap}
-                              disabled={locationLoading}
-                              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
-                                listingViewMode === 'my_location' 
-                                  ? 'bg-[#DC2626] text-white shadow-lg' 
-                                  : 'bg-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/30'
-                              } ${locationLoading ? 'opacity-70 cursor-wait' : ''}`}
-                            >
-                              {locationLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <MapPin className="h-4 w-4" />
-                              )}
-                              {locationLoading ? 'Finding...' : 'My Location'}
-                            </button>
-                        </div>
-                    </section>
+<section className="mb-2 md:mb-6">
+  <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-center justify-between flex flex-row my-[5px] gap-6">
+    {/* Top Destinations Text */}
+    <span
+      onClick={() => setListingViewMode('top_destinations')}
+      className={`cursor-pointer text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+        listingViewMode === 'top_destinations'
+          ? 'text-[#DC2626] underline underline-offset-4'
+          : 'text-muted-foreground hover:text-[#DC2626]'
+      }`}
+    >
+      Top Destinations
+    </span>
+
+    {/* My Location Text */}
+    <div
+      onClick={!locationLoading ? handleMyLocationTap : undefined}
+      className={`flex items-center gap-1.5 cursor-pointer text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
+        listingViewMode === 'my_location'
+          ? 'text-[#DC2626] underline underline-offset-4'
+          : 'text-muted-foreground hover:text-[#DC2626]'
+      } ${locationLoading ? 'opacity-70 cursor-wait' : ''}`}
+    >
+      {locationLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <MapPin className="h-3.5 w-3.5" />
+      )}
+      <span>{locationLoading ? 'Finding...' : 'My Location'}</span>
+    </div>
+  </div>
+</section>
 
                     {/* Campsite & Experience (Adventure Places) - First */}
                     <section className="mb-2 md:mb-6">
