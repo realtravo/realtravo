@@ -133,15 +133,26 @@ const CategoryDetail = () => {
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
   const { ratings } = useRatings(itemIds);
 
-  // Sort items: show outdated items last, then by rating
+  // Sort items: show sold out and outdated items last, then by rating
   const sortedItems = useMemo(() => {
     const sorted = sortByRating(items, ratings, position, calculateDistance);
     
-    // For trips/events, move outdated items to the end
+    // For trips/events, move sold out and outdated items to the end
     if (category === 'trips' || category === 'events') {
-      const activeItems = sorted.filter(item => !item.isOutdated);
-      const outdatedItems = sorted.filter(item => item.isOutdated);
-      return [...activeItems, ...outdatedItems];
+      const available: any[] = [];
+      const soldOutOrOutdated: any[] = [];
+      
+      sorted.forEach(item => {
+        const isSoldOut = item.available_tickets !== null && item.available_tickets !== undefined && item.available_tickets <= 0;
+        
+        if (item.isOutdated || isSoldOut) {
+          soldOutOrOutdated.push(item);
+        } else {
+          available.push(item);
+        }
+      });
+      
+      return [...available, ...soldOutOrOutdated];
     }
     
     return sorted;

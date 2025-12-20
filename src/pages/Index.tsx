@@ -550,10 +550,12 @@ const Index = () => {
   }, [position, requestLocation]);
 
   // Get filtered/sorted items based on view mode
-  const getDisplayItems = useCallback((items: any[], sortedByRating: any[]) => {
+  const getDisplayItems = useCallback((items: any[], sortedByRating: any[], isTripsOrEvents: boolean = false) => {
+    let result = [...items];
+    
     if (listingViewMode === 'my_location' && position) {
       // Sort by distance when My Location is active
-      return [...items].sort((a, b) => {
+      result = result.sort((a, b) => {
         const distA = a.latitude && a.longitude 
           ? calculateDistance(position.latitude, position.longitude, a.latitude, a.longitude) 
           : Infinity;
@@ -562,15 +564,38 @@ const Index = () => {
           : Infinity;
         return distA - distB;
       });
+    } else {
+      // Default: top destinations (sorted by rating)
+      result = sortedByRating;
     }
-    // Default: top destinations (sorted by rating)
-    return sortedByRating;
+    
+    // For trips/events, prioritize available items (sold out last)
+    if (isTripsOrEvents) {
+      const today = new Date().toISOString().split('T')[0];
+      const available: any[] = [];
+      const soldOutOrOutdated: any[] = [];
+      
+      result.forEach(item => {
+        const isOutdated = item.date && !item.is_flexible_date && item.date < today;
+        const isSoldOut = item.available_tickets !== null && item.available_tickets !== undefined && item.available_tickets <= 0;
+        
+        if (isOutdated || isSoldOut) {
+          soldOutOrOutdated.push(item);
+        } else {
+          available.push(item);
+        }
+      });
+      
+      return [...available, ...soldOutOrOutdated];
+    }
+    
+    return result;
   }, [listingViewMode, position]);
 
-  const displayCampsites = useMemo(() => getDisplayItems(scrollableRows.campsites, sortedCampsites), [scrollableRows.campsites, sortedCampsites, getDisplayItems]);
-  const displayHotels = useMemo(() => getDisplayItems(scrollableRows.hotels, sortedHotels), [scrollableRows.hotels, sortedHotels, getDisplayItems]);
-  const displayTrips = useMemo(() => getDisplayItems(scrollableRows.trips, sortedTrips), [scrollableRows.trips, sortedTrips, getDisplayItems]);
-  const displayEvents = useMemo(() => getDisplayItems(scrollableRows.events, sortedEvents), [scrollableRows.events, sortedEvents, getDisplayItems]);
+  const displayCampsites = useMemo(() => getDisplayItems(scrollableRows.campsites, sortedCampsites, false), [scrollableRows.campsites, sortedCampsites, getDisplayItems]);
+  const displayHotels = useMemo(() => getDisplayItems(scrollableRows.hotels, sortedHotels, false), [scrollableRows.hotels, sortedHotels, getDisplayItems]);
+  const displayTrips = useMemo(() => getDisplayItems(scrollableRows.trips, sortedTrips, true), [scrollableRows.trips, sortedTrips, getDisplayItems]);
+  const displayEvents = useMemo(() => getDisplayItems(scrollableRows.events, sortedEvents, true), [scrollableRows.events, sortedEvents, getDisplayItems]);
   return <div className="min-h-screen bg-background pb-0 md:pb-0">
             <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} hideIcons={isSearchFocused} />
             
@@ -578,7 +603,7 @@ const Index = () => {
      {!isSearchFocused && (
     <div 
       ref={searchRef}
-      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh]" 
+      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] md:mt-16" 
       style={{
         backgroundImage: `url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&h=800&fit=crop&auto=format&q=80)`, 
         backgroundSize: 'cover',
@@ -629,20 +654,31 @@ const Index = () => {
           }}
         >
           <div className="flex flex-row justify-around items-start">
-            {categories.map(cat => (
-              <div 
-                key={cat.title} 
-                onClick={() => navigate(cat.path)} 
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded-full bg-[#008080]/70 backdrop-blur-sm flex items-center justify-center border border-white/30 transition-all group-hover:bg-[#008080] group-hover:scale-110">
-                  <cat.icon className="h-5 w-5 text-white" />
+            {categories.map((cat, index) => {
+              // Eye-catching category colors
+              const categoryColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF7F50'];
+              const bgColor = categoryColors[index % categoryColors.length];
+              return (
+                <div 
+                  key={cat.title} 
+                  onClick={() => navigate(cat.path)} 
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div 
+                    className="w-12 h-12 rounded-full backdrop-blur-sm flex items-center justify-center border border-white/30 transition-all group-hover:scale-110"
+                    style={{ backgroundColor: `${bgColor}CC` }}
+                  >
+                    <cat.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <span 
+                    className="text-[9px] font-bold uppercase tracking-tight mt-2 text-center leading-tight max-w-[70px]"
+                    style={{ color: bgColor }}
+                  >
+                    {cat.title}
+                  </span>
                 </div>
-                <span className="text-[#FF7F50] text-[9px] font-bold uppercase tracking-tight mt-2 text-center leading-tight max-w-[70px]">
-                  {cat.title}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -674,39 +710,44 @@ const Index = () => {
 {!isSearchFocused && (
   <div className="hidden md:block w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 overflow-hidden">
     <div className="grid grid-cols-4 gap-4 w-full">
-      {categories.map(cat => (
-        <div 
-          key={cat.title} 
-          onClick={() => navigate(cat.path)} 
-          className="flex flex-col items-center cursor-pointer group"
-        >
-          {/* ICON CONTAINER with background image */}
+      {categories.map((cat, index) => {
+        // Eye-catching category colors matching mobile
+        const categoryColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF7F50'];
+        const iconColor = categoryColors[index % categoryColors.length];
+        return (
           <div 
-            className="flex items-end justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative overflow-hidden"
-            style={{
-              backgroundImage: `url(${cat.bgImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
+            key={cat.title} 
+            onClick={() => navigate(cat.path)} 
+            className="flex flex-col items-center cursor-pointer group"
           >
-            {/* Dark overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/70 group-hover:via-black/30 transition-all" />
-            
-            {/* Icon: Center aligned */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <cat.icon className="h-12 w-12 lg:h-16 lg:w-16 text-white drop-shadow-lg" />
-            </div>
+            {/* ICON CONTAINER with background image */}
+            <div 
+              className="flex items-end justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative overflow-hidden"
+              style={{
+                backgroundImage: `url(${cat.bgImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/70 group-hover:via-black/30 transition-all" />
+              
+              {/* Icon: Center aligned with category color */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <cat.icon className="h-12 w-12 lg:h-16 lg:w-16 drop-shadow-lg" style={{ color: iconColor }} />
+              </div>
 
-            {/* TEXT: Inside image at bottom */}
-            <div className="relative z-10 p-3 text-center w-full">
-              <span className="font-bold text-white text-base lg:text-lg leading-tight block drop-shadow-lg" role="heading" aria-level={3}>
-                {cat.title}
-              </span>
-              <p className="text-white/90 text-sm mt-1 drop-shadow">{cat.description}</p>
+              {/* TEXT: Inside image at bottom */}
+              <div className="relative z-10 p-3 text-center w-full">
+                <span className="font-bold text-white text-base lg:text-lg leading-tight block drop-shadow-lg" role="heading" aria-level={3}>
+                  {cat.title}
+                </span>
+                <p className="text-white/90 text-sm mt-1 drop-shadow">{cat.description}</p>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 )}
@@ -732,23 +773,23 @@ const Index = () => {
                 <div className={`w-full px-4 md:px-6 lg:px-8 ${isSearchFocused ? 'hidden' : ''}`}>
                     {/* Top Destinations / My Location Toggle Bar */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-center justify-between flex flex-row my-[5px] bg-gradient-to-r from-primary/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-primary">
+                        <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-center justify-between flex flex-row my-[5px] gap-2">
                             <button 
                               onClick={() => setListingViewMode('top_destinations')}
-                              className={`text-xs md:text-lg font-bold whitespace-nowrap transition-all ${
+                              className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
                                 listingViewMode === 'top_destinations' 
-                                  ? 'text-primary' 
-                                  : 'text-muted-foreground hover:text-primary/70'
+                                  ? 'bg-[#DC2626] text-white shadow-lg' 
+                                  : 'bg-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/30'
                               }`}
                             >
                               Top Destinations
                             </button>
                             <button 
                               onClick={handleMyLocationTap}
-                              className={`flex items-center gap-1.5 text-xs md:text-lg font-bold whitespace-nowrap transition-all ${
+                              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
                                 listingViewMode === 'my_location' 
-                                  ? 'text-primary' 
-                                  : 'text-muted-foreground hover:text-primary/70'
+                                  ? 'bg-[#DC2626] text-white shadow-lg' 
+                                  : 'bg-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/30'
                               }`}
                             >
                               <MapPin className="h-4 w-4" />
