@@ -772,11 +772,15 @@ const Index = () => {
                                     </Button>
                                 </>}
                             <div ref={featuredEventsRef} onScroll={handleScroll('featuredEvents')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredEventsRef)} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:gap-4 pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
-                            {loadingScrollable || scrollableRows.events.length === 0 ? <div className="flex gap-1.5 md:gap-2">
+                            {loadingScrollable ? <div className="flex gap-1.5 md:gap-2">
                                     {[...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-[45vw] md:w-56">
                                             <ListingSkeleton />
                                         </div>)}
-                                </div> : sortedEvents.map((event, index) => {
+                                </div> : sortedEvents.length === 0 ? (
+                                  <div className="flex-1 text-center py-8 text-muted-foreground">
+                                    No events available
+                                  </div>
+                                ) : sortedEvents.map((event, index) => {
                                   const ratingData = ratings.get(event.id);
                                   const today = new Date().toISOString().split('T')[0];
                                   const isOutdated = event.date && !event.is_flexible_date && event.date < today;
@@ -810,11 +814,15 @@ const Index = () => {
                                     </Button>
                                 </>}
                             <div ref={featuredCampsitesRef} onScroll={handleScroll('featuredCampsites')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredCampsitesRef)} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:gap-4 pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
-                            {loadingScrollable || scrollableRows.campsites.length === 0 ? <div className="flex gap-1.5 md:gap-2">
+                            {loadingScrollable ? <div className="flex gap-1.5 md:gap-2">
                                     {[...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-[45vw] md:w-56">
                                             <ListingSkeleton />
                                         </div>)}
-                                </div> : sortedCampsites.map((place, index) => {
+                                </div> : sortedCampsites.length === 0 ? (
+                                  <div className="flex-1 text-center py-8 text-muted-foreground">
+                                    No adventure places available
+                                  </div>
+                                ) : sortedCampsites.map((place, index) => {
                 const itemDistance = position && place.latitude && place.longitude ? calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude) : undefined;
                 const ratingData = ratings.get(place.id);
                 return <div key={place.id} className="flex-shrink-0 w-[45vw] md:w-56">
@@ -845,11 +853,15 @@ const Index = () => {
                                     </Button>
                                 </>}
                             <div ref={featuredHotelsRef} onScroll={handleScroll('featuredHotels')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredHotelsRef)} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:gap-4 pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
-                            {loadingScrollable || scrollableRows.hotels.length === 0 ? <div className="flex gap-1.5 md:gap-2">
+                            {loadingScrollable ? <div className="flex gap-1.5 md:gap-2">
                                     {[...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-[45vw] md:w-56">
                                             <ListingSkeleton />
                                         </div>)}
-                                </div> : sortedHotels.map((hotel, index) => {
+                                </div> : sortedHotels.length === 0 ? (
+                                  <div className="flex-1 text-center py-8 text-muted-foreground">
+                                    No hotels available
+                                  </div>
+                                ) : sortedHotels.map((hotel, index) => {
                 const itemDistance = position && hotel.latitude && hotel.longitude ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude) : undefined;
                 const ratingData = ratings.get(hotel.id);
                 return <div key={hotel.id} className="flex-shrink-0 w-[45vw] md:w-56">
@@ -888,11 +900,15 @@ const Index = () => {
                                     </Button>
                                 </>}
                             <div ref={featuredTripsRef} onScroll={handleScroll('featuredTrips')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredTripsRef)} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide md:gap-4 pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
-                            {loadingScrollable || scrollableRows.trips.length === 0 ? <div className="flex gap-1.5 md:gap-2">
+                            {loadingScrollable ? <div className="flex gap-1.5 md:gap-2">
                                     {[...Array(5)].map((_, i) => <div key={i} className="flex-shrink-0 w-[45vw] md:w-56">
                                             <ListingSkeleton />
                                         </div>)}
-                                </div> : sortedTrips.map((trip, index) => {
+                                </div> : sortedTrips.length === 0 ? (
+                                  <div className="flex-1 text-center py-8 text-muted-foreground">
+                                    No trips available
+                                  </div>
+                                ) : sortedTrips.map((trip, index) => {
                 const isEvent = trip.type === "event";
                 const today = new Date().toISOString().split('T')[0];
                 const isOutdated = trip.date && !trip.is_flexible_date && trip.date < today;
