@@ -43,6 +43,7 @@ interface ListingCardProps {
   distance?: number;
   avgRating?: number;
   reviewCount?: number;
+  place?: string;
 }
 
 const ListingCardComponent = ({
@@ -51,7 +52,7 @@ const ListingCardComponent = ({
   onSave, isSaved = false, activities, hidePrice = false,
   availableTickets = 0, bookedTickets = 0, priority = false,
   minimalDisplay = false, hideEmptySpace = false,
-  compact = false, avgRating, reviewCount
+  compact = false, avgRating, reviewCount, distance, place
 }: ListingCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const navigate = useNavigate();
@@ -157,11 +158,18 @@ const ListingCardComponent = ({
           )}
         </div>
         
-        <div className="flex items-center gap-1.5 mb-3">
-            <MapPin className="h-3.5 w-3.5" style={{ color: COLORS.CORAL }} />
-            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-1">
-                {location}{country ? `, ${country}` : ''}
-            </p>
+        <div className="flex items-center justify-between gap-1.5 mb-3">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0" style={{ color: COLORS.CORAL }} />
+                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-1">
+                    {[place, location, country].filter(Boolean).join(', ')}
+                </p>
+            </div>
+            {(type === 'HOTEL' || type === 'ADVENTURE PLACE') && distance !== undefined && (
+                <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: COLORS.CORAL }}>
+                    {distance.toFixed(2)} km
+                </span>
+            )}
         </div>
 
         {/* Activities / Tags */}

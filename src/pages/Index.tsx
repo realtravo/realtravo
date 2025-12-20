@@ -658,8 +658,8 @@ const Index = () => {
                 <div className={`w-full px-4 md:px-6 lg:px-8 ${isSearchFocused ? 'hidden' : ''}`}>
                     {/* Near You / Latest - Show nearby items if location is on, otherwise show latest */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-end justify-between flex flex-row my-[5px]">
-                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                        <div className="mb-1.5 md:mb-3 mt-1 md:mt-0 px-0 mx-[10px] items-end justify-between flex flex-row my-[5px] bg-gradient-to-r from-primary/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-primary">
+                            <h2 className="text-xs md:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis text-primary">
                                 {searchQuery ? 'Search Results' : position ? 'Near You' : 'Latest'}
                             </h2>
                             {searchQuery && listings.length > 0 && <div className="flex gap-2">
@@ -717,11 +717,11 @@ const Index = () => {
 
                     {/* Events */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 flex items-start justify-between">
-                         <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max">
-                          Sports and events.
+                        <div className="mb-1.5 md:mb-3 flex items-center justify-between bg-gradient-to-r from-[#FF7F50]/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-[#FF7F50]">
+                         <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#FF7F50]">
+                          Sports and events
                         </h2>
-                     <Link to="/category/events" className="text-primary text-sm hover:underline">
+                     <Link to="/category/events" className="text-[#FF7F50] text-xs md:text-sm font-bold hover:underline bg-[#FF7F50]/10 px-2 py-1 rounded-full">
                           View All
                      </Link>
                         </div>
@@ -753,11 +753,11 @@ const Index = () => {
 
                     {/* Campsite & Experience */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 flex items-start justify-between">
-                         <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max">
+                        <div className="mb-1.5 md:mb-3 flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-primary">
+                         <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-primary">
                              Places to adventure
                         </h2>
-                       <Link to="/category/campsite" className="text-primary text-sm hover:underline">
+                       <Link to="/category/campsite" className="text-primary text-xs md:text-sm font-bold hover:underline bg-primary/10 px-2 py-1 rounded-full">
                             View All
                        </Link>
                         </div>
@@ -779,7 +779,7 @@ const Index = () => {
                 const itemDistance = position && place.latitude && place.longitude ? calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude) : undefined;
                 const ratingData = ratings.get(place.id);
                 return <div key={place.id} className="flex-shrink-0 w-[45vw] md:w-56">
-                                        <ListingCard id={place.id} type="ADVENTURE PLACE" name={place.name} imageUrl={place.image_url} location={place.location} country={place.country} price={place.entry_fee || 0} date="" onSave={handleSave} isSaved={savedItems.has(place.id)} hidePrice={true} showBadge={true} priority={index === 0} activities={place.activities} distance={itemDistance} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} />
+                                        <ListingCard id={place.id} type="ADVENTURE PLACE" name={place.name} imageUrl={place.image_url} location={place.location} country={place.country} price={place.entry_fee || 0} date="" onSave={handleSave} isSaved={savedItems.has(place.id)} hidePrice={true} showBadge={true} priority={index === 0} activities={place.activities} distance={itemDistance} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} place={place.place} />
                                     </div>;
               })}
                             </div>
@@ -788,11 +788,11 @@ const Index = () => {
 
                     {/* Hotels */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 flex items-start justify-between">
-                            <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max">
-                                Hotels and accommodations.
+                        <div className="mb-1.5 md:mb-3 flex items-center justify-between bg-gradient-to-r from-[#008080]/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-[#008080]">
+                            <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#008080]">
+                                Hotels and accommodations
                             </h2>
-                            <Link to="/category/hotels" className="text-primary text-sm hover:underline">
+                            <Link to="/category/hotels" className="text-[#008080] text-xs md:text-sm font-bold hover:underline bg-[#008080]/10 px-2 py-1 rounded-full">
                                 View All
                             </Link>
                         </div>
@@ -814,7 +814,7 @@ const Index = () => {
                 const itemDistance = position && hotel.latitude && hotel.longitude ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude) : undefined;
                 const ratingData = ratings.get(hotel.id);
                 return <div key={hotel.id} className="flex-shrink-0 w-[45vw] md:w-56">
-                                        <ListingCard id={hotel.id} type="HOTEL" name={hotel.name} imageUrl={hotel.image_url} location={hotel.location} country={hotel.country} price={0} date="" onSave={handleSave} isSaved={savedItems.has(hotel.id)} hidePrice={true} showBadge={true} priority={index === 0} activities={hotel.activities} distance={itemDistance} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} />
+                                        <ListingCard id={hotel.id} type="HOTEL" name={hotel.name} imageUrl={hotel.image_url} location={hotel.location} country={hotel.country} price={0} date="" onSave={handleSave} isSaved={savedItems.has(hotel.id)} hidePrice={true} showBadge={true} priority={index === 0} activities={hotel.activities} distance={itemDistance} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} place={hotel.place} />
                                     </div>;
               })}
                             </div>
@@ -831,11 +831,11 @@ const Index = () => {
 
                     {/* Trips Section */}
                     <section className="mb-2 md:mb-6">
-                        <div className="mb-1.5 md:mb-3 flex items-start justify-between">
-                            <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max">
-                                Trips and tours.
+                        <div className="mb-1.5 md:mb-3 flex items-center justify-between bg-gradient-to-r from-[#FF0000]/10 to-transparent py-2 px-3 rounded-lg border-l-4 border-[#FF0000]">
+                            <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#FF0000]">
+                                Trips and tours
                             </h2>
-                            <Link to="/category/trips" className="text-primary text-3xs md:text-sm hover:underline">
+                            <Link to="/category/trips" className="text-[#FF0000] text-xs md:text-sm font-bold hover:underline bg-[#FF0000]/10 px-2 py-1 rounded-full">
                                 View All
                             </Link>
                         </div>

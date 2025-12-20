@@ -268,6 +268,11 @@ const AdventurePlaceDetail = () => {
               <span className="text-sm font-bold text-white uppercase tracking-wider px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors">
                 {[place.place, place.location, place.country].filter(Boolean).join(', ')}
               </span>
+              {position && place.latitude && place.longitude && (
+                <span className="text-xs font-bold text-white px-2 py-1 rounded-full bg-[#FF7F50]/80 backdrop-blur-sm">
+                  {calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude).toFixed(2)} km away
+                </span>
+              )}
             </div>
           </div>
         </div>
