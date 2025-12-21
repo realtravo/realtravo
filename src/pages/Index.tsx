@@ -710,75 +710,38 @@ const Index = () => {
             <main className="w-full">
 {/* Desktop Category Cards - hidden on mobile since they're in hero */}
 {!isSearchFocused && (
-  <div className="w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 overflow-hidden">
-    
-    {/* MOBILE VIEW: Visible on small screens, hidden on md+ */}
-    <div className="grid grid-cols-2 gap-3 md:hidden">
+  <div className="md:hidden w-full px-4 py-4">
+    <div className="grid grid-cols-2 gap-3">
       {categories.map((cat, index) => {
         const categoryColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF7F50'];
         const iconColor = categoryColors[index % categoryColors.length];
-        
+
         return (
-          <div 
-            key={`mobile-${cat.title}`} 
-            onClick={() => navigate(cat.path)} 
-            className="relative flex flex-col items-center justify-center h-32 rounded-xl overflow-hidden active:scale-95 transition-transform"
+          <div
+            key={cat.title}
+            onClick={() => navigate(cat.path)}
+            className="relative h-32 rounded-xl overflow-hidden flex flex-col items-center justify-center p-4"
             style={{
               backgroundImage: `url(${cat.bgImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
           >
-            {/* Dark Overlay for text legibility */}
+            {/* Dark overlay for text readability */}
             <div className="absolute inset-0 bg-black/50" />
-            
-            <div className="relative z-10 flex flex-col items-center">
-              <cat.icon className="h-8 w-8 mb-2" style={{ color: iconColor }} />
-              <span className="font-bold text-white text-sm text-center px-2">
-                {cat.title}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
 
-    {/* DESKTOP VIEW: Hidden on small screens, visible on md+ */}
-    <div className="hidden md:grid grid-cols-4 gap-4 w-full">
-      {categories.map((cat, index) => {
-        const categoryColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF7F50'];
-        const iconColor = categoryColors[index % categoryColors.length];
-        
-        return (
-          <div 
-            key={cat.title} 
-            onClick={() => navigate(cat.path)} 
-            className="flex flex-col items-center cursor-pointer group"
-          >
-            <div 
-              className="flex items-end justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative overflow-hidden"
-              style={{
-                backgroundImage: `url(${cat.bgImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            >
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/70 group-hover:via-black/30 transition-all" />
-              
-              {/* Icon */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <cat.icon className="h-12 w-12 lg:h-16 lg:w-16 drop-shadow-lg" style={{ color: iconColor }} />
-              </div>
-
-              {/* TEXT: White on all screens */}
-              <div className="relative z-10 p-3 text-center w-full">
-                <span className="font-bold text-white text-base lg:text-lg leading-tight block drop-shadow-lg" role="heading" aria-level={3}>
-                  {cat.title}
-                </span>
-                <p className="text-white/90 text-sm mt-1 drop-shadow">{cat.description}</p>
-              </div>
+            {/* Icon */}
+            <div className="relative z-10 mb-2">
+              <cat.icon 
+                className="h-8 w-8" 
+                style={{ color: iconColor }} 
+              />
             </div>
+
+            {/* Category Name - Forced White */}
+            <span className="relative z-10 text-white font-bold text-sm text-center drop-shadow-md">
+              {cat.title}
+            </span>
           </div>
         );
       })}
