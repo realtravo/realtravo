@@ -30,6 +30,7 @@ import { useSavedItems } from "@/hooks/useSavedItems";
 import { getCachedHomePageData, setCachedHomePageData } from "@/hooks/useHomePageCache";
 import { useRatings, sortByRating, RatingData } from "@/hooks/useRatings";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
+import { useResponsiveLimit } from "@/hooks/useResponsiveLimit";
 
 // Memoized listing card wrapper for performance
 const MemoizedListingCard = memo(ListingCard);
@@ -56,6 +57,9 @@ const Index = () => {
     forceRequestLocation
   } = useGeolocation();
   const [showLocationDialog, setShowLocationDialog] = useState(false);
+  
+  // Responsive fetch limits: 4 for mobile, 16 for desktop
+  const { cardLimit, isLargeScreen } = useResponsiveLimit();
 
   // Request location on first user interaction
   useEffect(() => {
@@ -208,13 +212,13 @@ const Index = () => {
       scrollSection(ref, 'left');
     }
   }, [touchStart, touchEnd, minSwipeDistance, scrollSection]);
-  const fetchScrollableRows = async () => {
+  const fetchScrollableRows = useCallback(async (limit: number) => {
     setLoadingScrollable(true);
     const today = new Date().toISOString().split('T')[0];
     
     try {
       const [tripsData, hotelsData, campsitesData, eventsData] = await Promise.all([
-        // Fetch ALL trips (including expired ones)
+        // Fetch trips with responsive limit
         supabase
           .from("trips")
           .select(
@@ -224,22 +228,22 @@ const Index = () => {
           .eq("is_hidden", false)
           .eq("type", "trip")
           .order("date", { ascending: true })
-          .limit(12),
+          .limit(limit),
         supabase
           .from("hotels")
           .select("id,name,location,place,country,image_url,activities,latitude,longitude,created_at")
           .eq("approval_status", "approved")
           .eq("is_hidden", false)
           .order("created_at", { ascending: false })
-          .limit(8),
+          .limit(limit),
         supabase
           .from("adventure_places")
           .select("id,name,location,place,country,image_url,entry_fee,activities,latitude,longitude,created_at")
           .eq("approval_status", "approved")
           .eq("is_hidden", false)
           .order("created_at", { ascending: false })
-          .limit(8),
-        // Fetch ALL events (including expired ones)
+          .limit(limit),
+        // Fetch events with responsive limit
         supabase
           .from("trips")
           .select(
@@ -249,7 +253,7 @@ const Index = () => {
           .eq("is_hidden", false)
           .eq("type", "event")
           .order("date", { ascending: true })
-          .limit(12),
+          .limit(limit),
       ]);
       
       setScrollableRows({
@@ -266,7 +270,7 @@ const Index = () => {
     } finally {
       setLoadingScrollable(false);
     }
-  };
+  }, []);
   const fetchNearbyPlacesAndHotels = async () => {
     setLoadingNearby(true);
     if (!position) {
@@ -456,13 +460,13 @@ const Index = () => {
 
     // Then fetch fresh data in background
     fetchAllData();
-    fetchScrollableRows();
+    fetchScrollableRows(cardLimit);
     const initUserId = async () => {
       const id = await getUserId();
       setUserId(id);
     };
     initUserId();
-  }, []);
+  }, [cardLimit, fetchScrollableRows]);
 
   // Update cache when data changes
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
@@ -18,6 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { ManualBookingSection } from "@/components/host/ManualBookingSection";
 
 const COLORS = {
   TEAL: "#008080",
@@ -53,85 +54,98 @@ const HostBookingDetails = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [itemName, setItemName] = useState("");
+  const [itemCapacity, setItemCapacity] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
+
+  const fetchBookings = useCallback(async () => {
+    if (!user || !itemId) return;
+    
+    // Determine table and fetch item ownership
+    let tableName = "";
+    let capacityField = "";
+    if (type === "trip" || type === "event") {
+      tableName = "trips";
+      capacityField = "available_tickets";
+    } else if (type === "hotel") {
+      tableName = "hotels";
+      capacityField = "available_rooms";
+    } else if (type === "adventure" || type === "adventure_place") {
+      tableName = "adventure_places";
+      capacityField = "available_slots";
+    }
+    
+    if (!tableName) {
+      navigate("/host-bookings");
+      return;
+    }
+
+    const { data: item } = await supabase
+      .from(tableName as any)
+      .select(`name,created_by,${capacityField}`)
+      .eq("id", itemId)
+      .single();
+      
+    if (!item || (item as any).created_by !== user.id) {
+      navigate("/host-bookings");
+      return;
+    }
+
+    setItemName((item as any).name);
+    setItemCapacity((item as any)[capacityField] || 0);
+
+    // Fetch bookings with specific fields
+    const { data: bookingsData } = await supabase
+      .from("bookings")
+      .select("id,user_id,guest_name,guest_email,guest_phone,total_amount,created_at,visit_date,slots_booked,status,payment_status,booking_type,is_guest_booking,booking_details")
+      .eq("item_id", itemId)
+      .in("payment_status", ["paid", "completed"])
+      .order("created_at", { ascending: false });
+
+    if (bookingsData && bookingsData.length > 0) {
+      // Batch fetch profiles for non-guest bookings
+      const userIds = bookingsData
+        .filter(b => !b.is_guest_booking && b.user_id)
+        .map(b => b.user_id);
+      
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id,name,email,phone_number")
+          .in("id", userIds);
+        
+        (profiles || []).forEach(p => {
+          profilesMap[p.id] = p;
+        });
+      }
+
+      const enrichedBookings = bookingsData.map(booking => {
+        if (!booking.is_guest_booking && booking.user_id && profilesMap[booking.user_id]) {
+          const profile = profilesMap[booking.user_id];
+          return {
+            ...booking,
+            userName: profile.name || "N/A",
+            userEmail: profile.email || "N/A",
+            userPhone: profile.phone_number || "N/A",
+          };
+        }
+        return booking;
+      });
+      setBookings(enrichedBookings);
+    } else {
+      setBookings([]);
+    }
+    setLoading(false);
+  }, [user, type, itemId, navigate]);
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
       return;
     }
-
-    const fetchBookings = async () => {
-      // Determine table and fetch item ownership
-      let tableName = "";
-      if (type === "trip" || type === "event") tableName = "trips";
-      else if (type === "hotel") tableName = "hotels";
-      else if (type === "adventure" || type === "adventure_place") tableName = "adventure_places";
-      
-      if (!tableName) {
-        navigate("/host-bookings");
-        return;
-      }
-
-      const { data: item } = await supabase
-        .from(tableName as any)
-        .select("name,created_by")
-        .eq("id", itemId)
-        .single();
-        
-      if (!item || (item as any).created_by !== user.id) {
-        navigate("/host-bookings");
-        return;
-      }
-
-      setItemName((item as any).name);
-
-      // Fetch bookings with specific fields
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select("id,user_id,guest_name,guest_email,guest_phone,total_amount,created_at,visit_date,slots_booked,status,payment_status,booking_type,is_guest_booking,booking_details")
-        .eq("item_id", itemId)
-        .in("payment_status", ["paid", "completed"])
-        .order("created_at", { ascending: false });
-
-      if (bookingsData && bookingsData.length > 0) {
-        // Batch fetch profiles for non-guest bookings
-        const userIds = bookingsData
-          .filter(b => !b.is_guest_booking && b.user_id)
-          .map(b => b.user_id);
-        
-        let profilesMap: Record<string, any> = {};
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id,name,email,phone_number")
-            .in("id", userIds);
-          
-          (profiles || []).forEach(p => {
-            profilesMap[p.id] = p;
-          });
-        }
-
-        const enrichedBookings = bookingsData.map(booking => {
-          if (!booking.is_guest_booking && booking.user_id && profilesMap[booking.user_id]) {
-            const profile = profilesMap[booking.user_id];
-            return {
-              ...booking,
-              userName: profile.name || "N/A",
-              userEmail: profile.email || "N/A",
-              userPhone: profile.phone_number || "N/A",
-            };
-          }
-          return booking;
-        });
-        setBookings(enrichedBookings);
-      }
-      setLoading(false);
-    };
-
     fetchBookings();
-  }, [user, type, itemId, navigate]);
+  }, [user, fetchBookings]);
 
   const toggleExpanded = (bookingId: string) => {
     setExpandedBookings(prev => {
@@ -175,6 +189,17 @@ const HostBookingDetails = () => {
             Total Reservations: {bookings.length}
           </p>
         </div>
+
+        {/* Manual Booking Entry Section */}
+        {itemId && type && itemCapacity > 0 && (
+          <ManualBookingSection
+            itemId={itemId}
+            itemType={type as 'trip' | 'event' | 'hotel' | 'adventure' | 'adventure_place'}
+            itemName={itemName}
+            totalCapacity={itemCapacity}
+            onBookingCreated={fetchBookings}
+          />
+        )}
 
         {bookings.length === 0 ? (
           <div className="bg-white rounded-[28px] p-12 text-center border border-slate-100 shadow-sm">
