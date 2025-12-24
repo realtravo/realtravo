@@ -12,6 +12,7 @@ import {
   Ticket, Info, CheckCircle2, Download
 } from "lucide-react";
 import { BookingDownloadButton } from "@/components/booking/BookingDownloadButton";
+import { DownloadFormatDropdown } from "@/components/booking/DownloadFormatDropdown";
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { ManualBookingSection } from "@/components/host/ManualBookingSection";
-import { exportBookingsToCSV } from "@/lib/csvExport";
 
 const COLORS = {
   TEAL: "#008080",
@@ -224,13 +224,10 @@ const HostBookingDetails = () => {
               </p>
             </div>
             {bookings.length > 0 && (
-              <Button
-                onClick={() => exportBookingsToCSV(bookings, itemName)}
-                className="bg-[#008080] hover:bg-[#006666] text-white rounded-xl px-6 py-6 font-black uppercase tracking-widest text-xs flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Download All ({bookings.length})
-              </Button>
+              <DownloadFormatDropdown 
+                bookings={bookings} 
+                itemName={itemName} 
+              />
             )}
           </div>
         </div>
