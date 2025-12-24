@@ -58,7 +58,7 @@ const TripDetail = () => {
     try {
       const { data, error } = await supabase
         .from("trips")
-        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by")
+        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,opening_hours,closing_hours,days_opened")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -128,6 +128,40 @@ const TripDetail = () => {
       <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{trip.description}</p>
     </div>
   );
+
+  const OperatingHoursSection = () => {
+    if (!trip.is_custom_date || (!trip.opening_hours && !trip.days_opened?.length)) return null;
+    return (
+      <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-xl bg-teal-50"><Clock className="h-5 w-5 text-[#008080]" /></div>
+          <div>
+            <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Operating Hours</h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">When this tour operates</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {(trip.opening_hours || trip.closing_hours) && (
+            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+              <span className="text-[10px] font-black uppercase text-slate-400">Working Hours</span>
+              <span className="text-sm font-black text-slate-700">
+                {trip.opening_hours || "08:00"} - {trip.closing_hours || "18:00"}
+              </span>
+            </div>
+          )}
+          {trip.days_opened?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {trip.days_opened.map((day: string, i: number) => (
+                <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                  {day}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const ActivitiesSection = () => trip.activities?.length > 0 && (
     <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -282,6 +316,9 @@ const TripDetail = () => {
           {/* LEFT COLUMN: Main Content Stack */}
           <div className="flex flex-col gap-6">
             <OverviewSection />
+
+            {/* Operating Hours for custom date tours */}
+            <OperatingHoursSection />
 
             {/* Mobile Only Booking Card */}
             <div className="block lg:hidden">

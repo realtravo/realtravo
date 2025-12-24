@@ -72,14 +72,14 @@ const EventDetail = () => {
     try {
       let { data, error } = await supabase
         .from("trips")
-        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type")
+        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type,opening_hours,closing_hours,days_opened")
         .eq("id", id)
         .eq("type", "event")
         .single();
       if (error && id.length === 8) {
         const { data: prefixData, error: prefixError } = await supabase
           .from("trips")
-          .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type")
+          .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type,opening_hours,closing_hours,days_opened")
           .ilike("id", `${id}%`)
           .eq("type", "event")
           .single();
@@ -202,6 +202,38 @@ const EventDetail = () => {
               <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About</h2>
               <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{event.description}</p>
             </div>
+
+            {/* Operating Hours for events */}
+            {(event.opening_hours || event.days_opened?.length > 0) && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-teal-50"><Clock className="h-5 w-5 text-[#008080]" /></div>
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Event Hours</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">When this event runs</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {(event.opening_hours || event.closing_hours) && (
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Operating Hours</span>
+                      <span className="text-sm font-black text-slate-700">
+                        {event.opening_hours || "08:00"} - {event.closing_hours || "18:00"}
+                      </span>
+                    </div>
+                  )}
+                  {event.days_opened?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {event.days_opened.map((day: string, i: number) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {event.activities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">

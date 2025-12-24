@@ -16,6 +16,17 @@ import { CountrySelector } from "@/components/creation/CountrySelector";
 import { PhoneInput } from "@/components/creation/PhoneInput";
 import { approvalStatusSchema } from "@/lib/validation";
 import { compressImages } from "@/lib/imageCompression";
+import { OperatingHoursSection } from "@/components/creation/OperatingHoursSection";
+
+interface WorkingDays {
+  Mon: boolean;
+  Tue: boolean;
+  Wed: boolean;
+  Thu: boolean;
+  Fri: boolean;
+  Sat: boolean;
+  Sun: boolean;
+}
 
 const COLORS = {
   TEAL: "#008080",
@@ -24,7 +35,7 @@ const COLORS = {
   SOFT_GRAY: "#F8F9FA"
 };
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const CreateTripEvent = () => {
   const navigate = useNavigate();
@@ -49,7 +60,13 @@ const CreateTripEvent = () => {
     is_custom_date: false,
     type: "trip" as "trip" | "event",
     latitude: null as number | null,
-    longitude: null as number | null
+    longitude: null as number | null,
+    opening_hours: "",
+    closing_hours: "",
+  });
+  
+  const [workingDays, setWorkingDays] = useState<WorkingDays>({
+    Mon: true, Tue: true, Wed: true, Thu: true, Fri: true, Sat: true, Sun: false
   });
   
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
@@ -147,6 +164,20 @@ const CreateTripEvent = () => {
         }
         return true;
       case 5:
+        // Operating hours validation - only for custom date trips or events
+        if (formData.is_custom_date || formData.type === 'event') {
+          if (!formData.opening_hours || !formData.closing_hours) {
+            toast({ title: "Required", description: "Operating hours are required", variant: "destructive" });
+            return false;
+          }
+          const hasWorkingDays = Object.values(workingDays).some(Boolean);
+          if (!hasWorkingDays) {
+            toast({ title: "Required", description: "Select at least one operating day", variant: "destructive" });
+            return false;
+          }
+        }
+        return true;
+      case 6:
         if (!formData.description.trim()) {
           toast({ title: "Required", description: "Description is required", variant: "destructive" });
           return false;
@@ -182,6 +213,10 @@ const CreateTripEvent = () => {
         uploadedUrls.push(publicUrl);
       }
 
+      // Convert working days to array of day names
+      const daysOpened = (Object.keys(workingDays) as (keyof WorkingDays)[])
+        .filter(day => workingDays[day]);
+
       const { error } = await supabase.from("trips").insert([{
         name: formData.name,
         description: formData.description,
@@ -200,6 +235,9 @@ const CreateTripEvent = () => {
         email: formData.email,
         phone_number: formData.phone_number,
         map_link: formData.map_link,
+        opening_hours: formData.opening_hours || null,
+        closing_hours: formData.closing_hours || null,
+        days_opened: daysOpened.length > 0 ? daysOpened : null,
         created_by: user.id,
         approval_status: approvalStatusSchema.parse("pending")
       }]);
@@ -435,8 +473,31 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
-        {/* Step 5: Description */}
+        {/* Step 5: Operating Hours (for custom date or events) */}
         {currentStep === 5 && (
+          <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>
+              Operating Hours {(formData.is_custom_date || formData.type === 'event') ? '*' : '(Optional)'}
+            </h2>
+            {!(formData.is_custom_date || formData.type === 'event') && (
+              <p className="text-xs text-slate-400 mb-4">
+                Since you have a fixed date, operating hours are optional. Skip if not applicable.
+              </p>
+            )}
+            <OperatingHoursSection
+              openingHours={formData.opening_hours}
+              closingHours={formData.closing_hours}
+              workingDays={workingDays}
+              onOpeningChange={(value) => setFormData({...formData, opening_hours: value})}
+              onClosingChange={(value) => setFormData({...formData, closing_hours: value})}
+              onDaysChange={setWorkingDays}
+              accentColor={COLORS.TEAL}
+            />
+          </Card>
+        )}
+
+        {/* Step 6: Description */}
+        {currentStep === 6 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <Label className="text-xs font-black uppercase tracking-widest mb-4 block" style={{ color: COLORS.TEAL }}>Experience Description *</Label>
             <Textarea

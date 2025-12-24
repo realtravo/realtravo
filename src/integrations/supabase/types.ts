@@ -926,10 +926,12 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           available_tickets: number | null
+          closing_hours: string | null
           country: string
           created_at: string
           created_by: string | null
           date: string
+          days_opened: string[] | null
           description: string | null
           email: string | null
           gallery_images: string[] | null
@@ -942,6 +944,7 @@ export type Database = {
           location: string
           map_link: string | null
           name: string
+          opening_hours: string | null
           phone_number: string | null
           place: string
           price: number
@@ -954,10 +957,12 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           available_tickets?: number | null
+          closing_hours?: string | null
           country: string
           created_at?: string
           created_by?: string | null
           date: string
+          days_opened?: string[] | null
           description?: string | null
           email?: string | null
           gallery_images?: string[] | null
@@ -970,6 +975,7 @@ export type Database = {
           location: string
           map_link?: string | null
           name: string
+          opening_hours?: string | null
           phone_number?: string | null
           place: string
           price: number
@@ -982,10 +988,12 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           available_tickets?: number | null
+          closing_hours?: string | null
           country?: string
           created_at?: string
           created_by?: string | null
           date?: string
+          days_opened?: string[] | null
           description?: string | null
           email?: string | null
           gallery_images?: string[] | null
@@ -998,6 +1006,7 @@ export type Database = {
           location?: string
           map_link?: string | null
           name?: string
+          opening_hours?: string | null
           phone_number?: string | null
           place?: string
           price?: number
