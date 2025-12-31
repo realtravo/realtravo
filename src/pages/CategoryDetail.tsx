@@ -252,19 +252,18 @@ const CategoryDetail = () => {
         </div>
       </div>
 
-      {/* FILTER BAR: Collapsible filter with overlay location */}
-      <div className={cn(
-        "bg-background/95 backdrop-blur-sm border-b relative z-40",
-        isSearchFocused && "opacity-0 pointer-events-none"
-      )}>
-        <div className="container px-4 py-2">
-          <FilterBar 
-            type={category === "hotels" ? "hotels" : category === "campsite" ? "adventure" : "trips-events"} 
-            onApplyFilters={handleApplyFilters}
-            collapsible={true}
-          />
+      {/* FILTER BAR: Collapsible filter with overlay location - hides when search is focused */}
+      {!isSearchFocused && (
+        <div className="bg-background/95 backdrop-blur-sm border-b relative z-40 transition-all duration-300">
+          <div className="container px-4 py-2">
+            <FilterBar 
+              type={category === "hotels" ? "hotels" : category === "campsite" ? "adventure" : "trips-events"} 
+              onApplyFilters={handleApplyFilters}
+              collapsible={true}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MAIN CONTENT */}
       <main className={cn(

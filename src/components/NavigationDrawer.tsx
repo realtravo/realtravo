@@ -55,9 +55,11 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
       {/* Brand Header */}
       <div className="p-6 bg-[#008080] text-white">
         <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
-            <span className="font-black text-xl">R</span>
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Realtravo Logo"
+            className="h-10 w-10 rounded-xl shadow-lg object-contain bg-white"
+          />
           <div>
             <span className="font-black text-lg uppercase tracking-tighter leading-none block">
               Realtravo

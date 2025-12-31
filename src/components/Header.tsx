@@ -79,12 +79,11 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
           </Sheet>
           
           <Link to="/" className={`flex items-center gap-3 group ${isIndexPage ? 'hidden md:flex' : 'flex'}`}>
-            <div 
-              className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg transition-transform group-hover:rotate-12"
-              style={{ backgroundColor: 'white', color: COLORS.TEAL }}
-            >
-              T
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Realtravo Logo"
+              className="h-10 w-10 rounded-xl shadow-lg transition-transform group-hover:rotate-12 object-contain bg-white"
+            />
             <div className="hidden sm:block">
               <span className="font-black text-lg uppercase tracking-tighter text-white block leading-none">
                 Realtravo

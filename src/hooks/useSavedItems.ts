@@ -51,7 +51,9 @@ export const useSavedItems = () => {
 
   useEffect(() => {
     if (!user) {
-      // Load local saved items for non-logged-in users
+      // For non-logged-in users, still track items locally but don't show in UI state
+      // The local items are stored but hidden until login
+      // Load local saved items to show the heart icon filled on cards
       const localIds = getLocalSavedItemIds();
       setSavedItems(localIds);
       setLoading(false);

@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/lib/sessionManager";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trash2, CheckCircle, LogIn, Bookmark, ArrowRight } from "lucide-react";
+import { Trash2, CheckCircle, Bookmark, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   AlertDialog,
@@ -227,10 +227,10 @@ const Saved = () => {
         ) : !user ? (
           <div className="bg-white rounded-[40px] p-12 text-center shadow-sm border border-slate-100 flex flex-col items-center max-w-2xl mx-auto">
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
-                <LogIn className="h-10 w-10 text-slate-300" />
+                <Bookmark className="h-10 w-10 text-slate-300" />
             </div>
-            <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Login Required</h2>
-            <p className="text-slate-500 text-sm mb-8 font-medium">Save your favorite spots and experiences to access them anytime.</p>
+            <h2 className="text-2xl font-black uppercase tracking-tight mb-2">No Saved Items</h2>
+            <p className="text-slate-500 text-sm mb-8 font-medium">Log in to see your saved items and sync them across devices.</p>
             <Link to="/auth">
               <Button 
                 className="py-7 px-10 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95"
