@@ -32,6 +32,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
     const fetchUserProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        // Keeping database fetch code as requested
         await supabase.from('profiles').select('name').eq('id', session.user.id).single();
       }
     };
@@ -42,11 +43,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
     ? "fixed top-0 left-0 right-0 bg-transparent flex" 
     : "hidden md:flex sticky top-0 left-0 right-0 border-b border-white/10 shadow-lg";
 
-  /**
-   * UNIFIED ICON STYLING
-   * - On mobile: Dark semi-transparent circles (bg-black/50)
-   * - On desktop (md:): Matches the Menu icon exactly (bg-white/15 with glass hover)
-   */
   const headerIconStyles = `
     h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-200 
     active:scale-90 shadow-md md:shadow-none text-white
@@ -82,7 +78,8 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             <img 
               src="/fulllogo.png" 
               alt="Realtravo Logo"
-              className="h-10 w-10 rounded-xl shadow-lg transition-transform group-hover:rotate-12 object-contain bg-white"
+              /* Removed group-hover:rotate-12 as requested */
+              className="h-10 w-10 rounded-xl shadow-lg object-contain bg-white"
             />
             <div className="hidden sm:block">
               <span className="font-black text-lg uppercase tracking-tighter text-white block leading-none">
@@ -125,7 +122,6 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             </button>
           )}
           
-          {/* Notification Bell - Opens Sheet directly */}
           <NotificationBell />
 
           <div className="hidden md:flex items-center gap-3">
