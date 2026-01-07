@@ -33,6 +33,16 @@ const BecomeHost = () => {
       return;
     }
 
+    // Check profile completion
+    const checkProfileComplete = async () => {
+      const { data } = await supabase.from('profiles').select('profile_completed').eq('id', user.id).single();
+      if (data && !data.profile_completed) {
+        navigate('/complete-profile');
+        return;
+      }
+    };
+    checkProfileComplete();
+
     const urlParams = new URLSearchParams(window.location.search);
     const refId = urlParams.get("ref");
     if (refId) {

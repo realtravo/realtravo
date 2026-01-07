@@ -53,10 +53,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Check if this is a new Google OAuth user who needs to complete profile
+        if (event === 'SIGNED_IN' && session?.user) {
+          const isOAuth = session.user.app_metadata?.provider === 'google';
+          if (isOAuth) {
+            // Defer profile check to avoid deadlock
+            setTimeout(async () => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('profile_completed')
+                .eq('id', session.user.id)
+                .single();
+              
+              // Only redirect if profile is incomplete and not already on complete-profile page
+              if (profile && !profile.profile_completed && !window.location.pathname.includes('complete-profile')) {
+                window.location.href = '/complete-profile';
+              }
+            }, 100);
+          }
+        }
       }
     );
 

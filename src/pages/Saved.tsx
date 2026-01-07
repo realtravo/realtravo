@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
@@ -33,6 +33,10 @@ const COLORS = {
   SOFT_GRAY: "#F8F9FA"
 };
 
+// Cache for saved items
+const savedCache = { data: null as any[] | null, timestamp: 0 };
+const CACHE_TTL = 5 * 60 * 1000;
+
 const Saved = () => {
   const [savedListings, setSavedListings] = useState<any[]>([]);
   const { savedItems, handleSave } = useSavedItems();
@@ -44,6 +48,7 @@ const Saved = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -54,14 +59,25 @@ const Saved = () => {
         return;
       }
       setUserId(uid);
-      fetchSavedItems(uid);
+      
+      // Use cache if available
+      if (savedCache.data && Date.now() - savedCache.timestamp < CACHE_TTL && !hasFetched.current) {
+        setSavedListings(savedCache.data);
+        setIsLoading(false);
+        hasFetched.current = true;
+      } else {
+        fetchSavedItems(uid);
+      }
     };
     initializeData();
   }, [authLoading]);
 
   useEffect(() => {
-    if (userId) fetchSavedItems(userId, 0, 20);
-  }, [savedItems, userId]);
+    if (userId && hasFetched.current) {
+      // Only refetch if items changed
+      fetchSavedItems(userId, 0, 20);
+    }
+  }, [savedItems]);
 
   const fetchSavedItems = async (uid: string, offset: number = 0, limit: number = 20) => {
     setIsLoading(true);
@@ -109,8 +125,14 @@ const Saved = () => {
       .map(saved => itemMap.get(saved.item_id))
       .filter(Boolean);
 
-    if (offset === 0) setSavedListings(items);
-    else setSavedListings(prev => [...prev, ...items]);
+    if (offset === 0) {
+      setSavedListings(items);
+      savedCache.data = items;
+      savedCache.timestamp = Date.now();
+      hasFetched.current = true;
+    } else {
+      setSavedListings(prev => [...prev, ...items]);
+    }
     
     setIsLoading(false);
     return items;

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Header } from "@/components/Header";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,10 @@ import { useOfflineBookings } from "@/hooks/useOfflineBookings";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+// Cache for bookings data
+const bookingsCache = { data: null as any[] | null, timestamp: 0 };
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const COLORS = {
   TEAL: "#008080",
@@ -65,14 +69,33 @@ const Bookings = () => {
   const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null);
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
 
+  const hasFetched = useRef(false);
+
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
+  // Check profile completion for protected route
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('profile_completed').eq('id', user.id).single();
+      if (data && !data.profile_completed) navigate('/complete-profile');
+    };
+    if (user) checkProfile();
+  }, [user, navigate]);
+
   useEffect(() => {
     if (user) {
       if (isOnline) {
-        fetchBookings();
+        // Check cache first
+        if (bookingsCache.data && Date.now() - bookingsCache.timestamp < CACHE_TTL && !hasFetched.current) {
+          setBookings(bookingsCache.data);
+          setLoading(false);
+          hasFetched.current = true;
+        } else {
+          fetchBookings();
+        }
         const channel = supabase.channel('payments-updates').on('postgres_changes', {
           event: '*', schema: 'public', table: 'payments', filter: `user_id=eq.${user.id}`
         }, () => fetchBookings()).subscribe();
@@ -97,6 +120,11 @@ const Bookings = () => {
       
       if (bookingsError) throw bookingsError;
       setBookings(confirmedBookings || []);
+      
+      // Update cache
+      bookingsCache.data = confirmedBookings || [];
+      bookingsCache.timestamp = Date.now();
+      hasFetched.current = true;
       
       if (confirmedBookings) {
         cacheBookings(confirmedBookings.map(b => ({
