@@ -385,7 +385,7 @@ export const MultiStepBooking = ({
     const insufficientSlots = totalCapacity > 0 && requestedSlots > remainingSlots;
 
     return (
-        <div className="flex flex-col max-h-[90vh] bg-gradient-to-br from-white via-white to-slate-50 rounded-[32px] overflow-hidden shadow-2xl border border-slate-100">
+        <div className="flex flex-col h-[90vh] max-h-[90vh] bg-gradient-to-br from-white via-white to-slate-50 rounded-[32px] overflow-hidden shadow-2xl border border-slate-100">
             {/* Sold Out Banner - Shows real-time if item becomes sold out during booking */}
             {isSoldOut && totalCapacity > 0 && (
                 <div className="flex-shrink-0 px-6 py-3 bg-red-50 border-b border-red-200 flex items-center gap-3">
@@ -397,7 +397,7 @@ export const MultiStepBooking = ({
                 </div>
             )}
 
-            {/* Fixed Header */}
+            {/* Fixed Header with Cancel Button */}
             <div className="flex-shrink-0 p-6 pb-4 border-b border-slate-100">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: primaryColor }}>
@@ -406,32 +406,37 @@ export const MultiStepBooking = ({
                     {onCancel && (
                         <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={onCancel}
-                            className="rounded-full h-8 w-8 hover:bg-slate-100"
+                            className="rounded-full px-4 h-8 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
                         </Button>
                     )}
                 </div>
                 <p className="text-sm text-slate-500 font-medium">{itemName}</p>
                 
-                {/* Progress Indicator */}
-                <div className="flex items-center gap-2 mt-4">
+                {/* Progress Indicator - Page dots */}
+                <div className="flex items-center justify-center gap-2 mt-4">
                     {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
                         <div
                             key={step}
-                            className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                            className={cn(
+                                "h-2 rounded-full transition-all duration-300",
+                                step === currentStep ? "w-6" : "w-2"
+                            )}
                             style={{ 
                                 backgroundColor: step <= currentStep ? primaryColor : '#e2e8f0'
                             }}
                         />
                     ))}
                 </div>
+                <p className="text-xs text-center text-slate-400 mt-2 font-medium">Step {currentStep} of {totalSteps}</p>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y p-6 space-y-6">
                 {/* Step 1: Visit Date */}
                 {currentStep === dateStepNum && !skipDateSelection && (
                     <div className="space-y-4">
@@ -444,7 +449,7 @@ export const MultiStepBooking = ({
                                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Choose your preferred date</p>
                             </div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="p-4 rounded-2xl border-2 border-[#008080]">
                             <Label htmlFor="visit_date" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Visit Date</Label>
                             <Input
                                 id="visit_date"
@@ -452,7 +457,7 @@ export const MultiStepBooking = ({
                                 value={formData.visit_date}
                                 min={new Date().toISOString().split('T')[0]} 
                                 onChange={(e) => setFormData({ ...formData, visit_date: e.target.value })}
-                                className="border-none bg-white rounded-xl h-12 font-medium"
+                                className="border-none bg-white rounded-xl h-12 font-medium focus:ring-[#008080] focus:ring-2"
                             />
                             {!formData.visit_date && <p className="text-xs text-red-500 mt-2 font-medium">Please select a date to proceed.</p>}
                         </div>
@@ -472,7 +477,7 @@ export const MultiStepBooking = ({
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                            <div className="p-4 rounded-2xl border-2 border-[#008080]">
                                 <Label htmlFor="adults" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Adults (18+)</Label>
                                 <Input
                                     id="adults"
@@ -480,13 +485,13 @@ export const MultiStepBooking = ({
                                     min="0"
                                     value={formData.num_adults}
                                     onChange={(e) => setFormData({ ...formData, num_adults: parseInt(e.target.value) || 0 })}
-                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg"
+                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg focus:ring-[#008080] focus:ring-2"
                                 />
                                 {entranceType !== 'free' && priceAdult > 0 && (
                                     <p className="text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceAdult.toLocaleString()} each</p>
                                 )}
                             </div>
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                            <div className="p-4 rounded-2xl border-2 border-[#008080]">
                                 <Label htmlFor="children" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Children</Label>
                                 <Input
                                     id="children"
@@ -494,7 +499,7 @@ export const MultiStepBooking = ({
                                     min="0"
                                     value={formData.num_children}
                                     onChange={(e) => setFormData({ ...formData, num_children: parseInt(e.target.value) || 0 })}
-                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg"
+                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg focus:ring-[#008080] focus:ring-2"
                                 />
                                 {entranceType !== 'free' && priceChild > 0 && (
                                     <p className="text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceChild.toLocaleString()} each</p>
@@ -688,14 +693,14 @@ export const MultiStepBooking = ({
                                         <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">We'll send your booking confirmation here</p>
                                     </div>
                                 </div>
-                                <div className="space-y-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                <div className="space-y-4 p-4 rounded-2xl border-2 border-[#008080]">
                                     <div>
                                         <Label htmlFor="guest_name" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Full Name</Label>
                                         <Input
                                             id="guest_name"
                                             value={formData.guest_name}
                                             onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-xl h-12 focus:ring-[#008080] focus:ring-2"
                                             placeholder="Enter your full name"
                                         />
                                     </div>
@@ -706,7 +711,7 @@ export const MultiStepBooking = ({
                                             type="email"
                                             value={formData.guest_email}
                                             onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-xl h-12 focus:ring-[#008080] focus:ring-2"
                                             placeholder="Enter your email"
                                         />
                                     </div>
@@ -717,7 +722,7 @@ export const MultiStepBooking = ({
                                             type="tel"
                                             value={formData.guest_phone}
                                             onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-xl h-12 focus:ring-[#008080] focus:ring-2"
                                             placeholder="e.g., 0712345678"
                                         />
                                     </div>
@@ -793,7 +798,7 @@ export const MultiStepBooking = ({
                                 </div>
 
                                 {isMpesaSelected && (
-                                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div className="p-4 rounded-2xl border-2 border-[#008080]">
                                         <Label htmlFor="mpesa_phone_final" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">M-Pesa Phone Number</Label>
                                         <Input
                                             id="mpesa_phone_final"
@@ -801,7 +806,7 @@ export const MultiStepBooking = ({
                                             value={formData.mpesa_phone}
                                             onChange={(e) => setFormData({ ...formData, mpesa_phone: e.target.value })}
                                             placeholder="e.g., 0712345678"
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-xl h-12 focus:ring-[#008080] focus:ring-2"
                                         />
                                         <p className="text-xs text-slate-400 mt-2">You'll receive an M-Pesa prompt on this number</p>
                                     </div>
