@@ -87,19 +87,24 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (booking.guest_email && booking.guest_email.toLowerCase() !== email.toLowerCase()) {
-      console.error("Email mismatch for booking:", bookingId);
+    // Use the email from the booking record if available, otherwise use the provided email
+    const recipientEmail = booking.guest_email || email;
+    
+    if (!recipientEmail) {
+      console.error("No email found for booking:", bookingId);
       return new Response(
-        JSON.stringify({ error: "Email does not match booking" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "No email found for booking" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Sending booking confirmation to: ${recipientEmail} for booking: ${bookingId}`);
 
     const safeGuestName = escapeHtml(guestName);
     const safeItemName = escapeHtml(itemName);
     const safeBookingType = escapeHtml(bookingType);
 
-    const isPaid = paymentStatus === 'paid' || paymentStatus === 'completed';
+    const isPaid = paymentStatus === 'paid' || paymentStatus === 'completed' || booking.payment_status === 'paid' || booking.payment_status === 'completed';
     const typeDisplay = safeBookingType.charAt(0).toUpperCase() + safeBookingType.slice(1);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(bookingId)}`;
 
@@ -226,8 +231,8 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: "Bookings <onboarding@resend.dev>",
-      to: [email],
+      from: "Realtravo <onboarding@resend.dev>",
+      to: [recipientEmail],
       subject: `Booking ${isPaid ? 'Confirmed' : 'Submitted'} - ${safeItemName}`,
       html: emailHTML,
     });

@@ -2,11 +2,11 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-import { BookingDownloadData, generateQRCodeData, downloadBookingAsHTML } from "@/lib/bookingDownload";
+import { BookingPDFData, generateQRCodeData, downloadBookingAsPDF } from "@/lib/pdfBookingExport";
 import { toast } from "sonner";
 
 interface BookingDownloadButtonProps {
-  booking: BookingDownloadData;
+  booking: BookingPDFData;
   variant?: "default" | "outline" | "ghost" | "secondary";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
@@ -31,8 +31,8 @@ export const BookingDownloadButton = ({
       }
       const qrCodeDataUrl = canvas.toDataURL("image/png");
       
-      await downloadBookingAsHTML(booking, qrCodeDataUrl);
-      toast.success("Booking downloaded successfully");
+      await downloadBookingAsPDF(booking, qrCodeDataUrl);
+      toast.success("Booking PDF downloaded successfully");
     } catch (error) {
       console.error("Download error:", error);
       toast.error("Failed to download booking");
@@ -71,7 +71,7 @@ export const BookingDownloadButton = ({
         ) : (
           <>
             <Download className="h-4 w-4 mr-2" />
-            Download
+            Download PDF
           </>
         )}
       </Button>
