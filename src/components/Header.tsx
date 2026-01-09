@@ -124,10 +124,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             </button>
           )}
           
-          {/* FIX: Set overflow-visible and relative z-index here */}
-          <div className="relative overflow-visible z-20">
-            <NotificationBell />
-          </div>
+          <NotificationBell />
 
           <div className="hidden md:flex items-center gap-3">
             <button 
