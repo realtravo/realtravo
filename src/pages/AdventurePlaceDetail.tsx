@@ -45,15 +45,15 @@ const AdventurePlaceDetail = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isOpenNow, setIsOpenNow] = useState(false);
   const [liveRating, setLiveRating] = useState({ avg: 0, count: 0 });
-  const [scrolled, setScrolled] = useState(false); // Track scroll position
-  
+  const [scrolled, setScrolled] = useState(false);
+
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
-  // Handle scroll effect for the header
+  // Track scroll position to handle the sticky header appearance
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 60);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -129,7 +129,7 @@ const AdventurePlaceDetail = () => {
 
   const openInMaps = () => {
     const query = encodeURIComponent(`${place?.name}, ${place?.location}`);
-    window.open(place?.map_link || `https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
   };
 
   const handleCopyLink = async () => {
@@ -170,114 +170,35 @@ const AdventurePlaceDetail = () => {
   const allImages = [place.image_url, ...(place.gallery_images || []), ...(place.images || [])].filter(Boolean);
   const entryPrice = place.entry_fee || 0;
 
-  const DescriptionSection = () => (
-    <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-1">
-      <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Description</h2>
-      <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{place.description}</p>
-    </section>
-  );
-
-  const PriceCard = () => (
-    <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee</p>
-          <span className="text-4xl font-black text-red-600">{entryPrice === 0 ? "FREE" : `KSh ${entryPrice}`}</span>
-        </div>
-        <div className="text-right">
-          <div className="flex items-center gap-1 justify-end text-amber-500 font-black text-lg"><Star className="h-4 w-4 fill-current" />{liveRating.avg}</div>
-          <p className="text-[8px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
-        </div>
-      </div>
-
-      <div className="space-y-3 mb-6 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-400"><Clock className="h-4 w-4 text-[#008080]" /><span className="text-[10px] font-black uppercase tracking-tight">hours</span></div>
-          <span className={`text-[10px] font-black uppercase ${isOpenNow ? "text-emerald-600" : "text-red-500"}`}>{place.opening_hours || "08:00 AM"} - {place.closing_hours || "06:00 PM"}</span>
-        </div>
-        <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
-          <div className="flex items-center gap-2 text-slate-400"><Calendar className="h-4 w-4 text-[#008080]" /><span className="text-[10px] font-black uppercase tracking-tight">working days</span></div>
-          <p className="text-[9px] font-normal leading-tight text-slate-500 lowercase italic">
-            {Array.isArray(place.days_opened) ? place.days_opened.join(", ") : "mon to sun"}
-          </p>
-        </div>
-      </div>
-
-      <Button onClick={() => navigate(`/booking/adventure_place/${place.id}`)} className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl border-none mb-6 transition-all active:scale-95" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
-        Book Adventure
-      </Button>
-
-      <div className="grid grid-cols-3 gap-3 mb-2">
-        <UtilityButton icon={<MapPin className="h-5 w-5" />} label="Map" onClick={openInMaps} />
-        <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={handleCopyLink} />
-        <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={() => { if(navigator.share) navigator.share({title: place.name, url: window.location.href}) }} />
-      </div>
-    </div>
-  );
-
-  const AmenitiesSection = () => place.amenities && (
-    <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-3">
-      <div className="flex items-center gap-3 mb-6"><ShieldCheck className="h-5 w-5 text-red-600" /><h2 className="text-xl font-black uppercase tracking-tight text-red-600">Amenities</h2></div>
-      <div className="flex flex-wrap gap-2">
-        {(Array.isArray(place.amenities) ? place.amenities : place.amenities.split(',')).map((item: string, i: number) => (
-          <div key={i} className="flex items-center gap-2 bg-red-50/50 px-4 py-2.5 rounded-2xl border border-red-100">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-            <span className="text-[11px] font-black text-red-700 uppercase">{item.trim()}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-
-  const FacilitiesSection = () => place.facilities?.length > 0 && (
-    <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-4">
-      <div className="flex items-center gap-3 mb-6"><Tent className="h-5 w-5 text-[#008080]" /><h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities</h2></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {place.facilities.map((f: any, i: number) => (
-          <div key={i} className="p-5 rounded-[22px] bg-slate-50 border border-slate-100 flex justify-between items-center"><span className="text-sm font-black uppercase text-slate-700">{f.name}</span><Badge className="bg-white text-[#008080] text-[10px] font-black">KSH {f.price}</Badge></div>
-        ))}
-      </div>
-    </section>
-  );
-
-  const ActivitiesSection = () => place.activities?.length > 0 && (
-    <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-5">
-      <div className="flex items-center gap-3 mb-6"><Zap className="h-5 w-5 text-[#FF9800]" /><h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Activities</h2></div>
-      <div className="flex flex-wrap gap-3">
-        {place.activities.map((act: any, i: number) => (
-          <div key={i} className="px-5 py-3 rounded-2xl bg-orange-50/50 border border-orange-100 flex items-center gap-3">
-            <span className="text-[11px] font-black text-slate-700 uppercase">{act.name}</span>
-            <span className="text-[10px] font-bold text-[#FF9800]">KSh {act.price}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* 1. Main Header - Standard behavior, scrolls away */}
       <Header className="hidden md:block" />
 
-      {/* FIXED TOP NAVIGATION BAR */}
+      {/* 2. Sticky Action Bar - Remains at top when Header is gone */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
-          scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-transparent"
+        className={`sticky top-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center w-full ${
+          scrolled 
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
+            : "bg-transparent"
         }`}
       >
-        <Button 
-          onClick={() => navigate(-1)} 
-          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
-            scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
-          }`}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        
-        {scrolled && (
-          <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate px-4 animate-in fade-in slide-in-from-top-2">
-            {place.name}
-          </h2>
-        )}
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => navigate(-1)} 
+            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
+              scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
+            }`}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          
+          {scrolled && (
+            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
+              {place.name}
+            </h2>
+          )}
+        </div>
 
         <Button 
           onClick={() => id && handleSaveItem(id, "adventure_place")} 
@@ -289,7 +210,8 @@ const AdventurePlaceDetail = () => {
         </Button>
       </div>
 
-      <div className="relative w-full h-[55vh] md:h-[70vh] bg-slate-900 overflow-hidden">
+      {/* 3. Hero Section - Offset negatively to tuck under the transparent sticky bar */}
+      <div className="relative w-full h-[55vh] md:h-[70vh] bg-slate-900 overflow-hidden -mt-[64px]">
         <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
           <CarouselContent className="h-full ml-0">
             {allImages.map((img, idx) => (
@@ -306,14 +228,17 @@ const AdventurePlaceDetail = () => {
         <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
           <div className="space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
             <div className="flex flex-wrap gap-2">
-                <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
-                  <Star className="h-3 w-3 fill-current" />
-                  {liveRating.avg > 0 ? liveRating.avg : "New"}
-                </Badge>
-                <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}><Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />{isOpenNow ? "open" : "closed"}</Badge>
+              <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
+                <Star className="h-3 w-3 fill-current" />
+                {liveRating.avg > 0 ? liveRating.avg : "New"}
+              </Badge>
+              <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}>
+                <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
+                {isOpenNow ? "open" : "closed"}
+              </Badge>
             </div>
             <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-none">{place.name}</h1>
-            <div className="flex items-center gap-2" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place?.name}, ${place?.location}`)}`, "_blank")}>
+            <div className="flex items-center gap-2" onClick={openInMaps}>
               <MapPin className="h-4 w-4 text-white" />
               <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer">
                 {[place.place, place.location, place.country].filter(Boolean).join(', ')}
@@ -326,11 +251,53 @@ const AdventurePlaceDetail = () => {
       <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           <div className="flex flex-col gap-6">
-            <DescriptionSection />
-            <div className="block lg:hidden order-2"><PriceCard /></div>
-            <AmenitiesSection />
-            <FacilitiesSection />
-            <ActivitiesSection />
+            <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-1">
+              <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Description</h2>
+              <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{place.description}</p>
+            </section>
+            
+            <div className="block lg:hidden order-2">
+              <PriceCardComponent entryPrice={entryPrice} liveRating={liveRating} isOpenNow={isOpenNow} place={place} openInMaps={openInMaps} handleCopyLink={handleCopyLink} navigate={navigate} />
+            </div>
+
+            {place.amenities && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-3">
+                <div className="flex items-center gap-3 mb-6"><ShieldCheck className="h-5 w-5 text-red-600" /><h2 className="text-xl font-black uppercase tracking-tight text-red-600">Amenities</h2></div>
+                <div className="flex flex-wrap gap-2">
+                  {(Array.isArray(place.amenities) ? place.amenities : place.amenities.split(',')).map((item: string, i: number) => (
+                    <div key={i} className="flex items-center gap-2 bg-red-50/50 px-4 py-2.5 rounded-2xl border border-red-100">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      <span className="text-[11px] font-black text-red-700 uppercase">{item.trim()}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {place.facilities?.length > 0 && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-4">
+                <div className="flex items-center gap-3 mb-6"><Tent className="h-5 w-5 text-[#008080]" /><h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities</h2></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {place.facilities.map((f: any, i: number) => (
+                    <div key={i} className="p-5 rounded-[22px] bg-slate-50 border border-slate-100 flex justify-between items-center"><span className="text-sm font-black uppercase text-slate-700">{f.name}</span><Badge className="bg-white text-[#008080] text-[10px] font-black">KSH {f.price}</Badge></div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {place.activities?.length > 0 && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100 order-5">
+                <div className="flex items-center gap-3 mb-6"><Zap className="h-5 w-5 text-[#FF9800]" /><h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Activities</h2></div>
+                <div className="flex flex-wrap gap-3">
+                  {place.activities.map((act: any, i: number) => (
+                    <div key={i} className="px-5 py-3 rounded-2xl bg-orange-50/50 border border-orange-100 flex items-center gap-3">
+                      <span className="text-[11px] font-black text-slate-700 uppercase">{act.name}</span>
+                      <span className="text-[10px] font-bold text-[#FF9800]">KSh {act.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <div className="block lg:hidden space-y-6 order-6">
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -344,7 +311,7 @@ const AdventurePlaceDetail = () => {
           </div>
 
           <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
-            <PriceCard />
+            <PriceCardComponent entryPrice={entryPrice} liveRating={liveRating} isOpenNow={isOpenNow} place={place} openInMaps={openInMaps} handleCopyLink={handleCopyLink} navigate={navigate} />
           </div>
         </div>
 
@@ -375,6 +342,45 @@ const AdventurePlaceDetail = () => {
     </div>
   );
 };
+
+// Extracted Sub-component for clarity
+const PriceCardComponent = ({ entryPrice, liveRating, isOpenNow, place, openInMaps, handleCopyLink, navigate }: any) => (
+  <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
+    <div className="flex justify-between items-end mb-8">
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee</p>
+        <span className="text-4xl font-black text-red-600">{entryPrice === 0 ? "FREE" : `KSh ${entryPrice}`}</span>
+      </div>
+      <div className="text-right">
+        <div className="flex items-center gap-1 justify-end text-amber-500 font-black text-lg"><Star className="h-4 w-4 fill-current" />{liveRating.avg}</div>
+        <p className="text-[8px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
+      </div>
+    </div>
+
+    <div className="space-y-3 mb-6 bg-slate-50 p-5 rounded-2xl border border-dashed border-slate-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-slate-400"><Clock className="h-4 w-4 text-[#008080]" /><span className="text-[10px] font-black uppercase tracking-tight">hours</span></div>
+        <span className={`text-[10px] font-black uppercase ${isOpenNow ? "text-emerald-600" : "text-red-500"}`}>{place.opening_hours || "08:00 AM"} - {place.closing_hours || "06:00 PM"}</span>
+      </div>
+      <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
+        <div className="flex items-center gap-2 text-slate-400"><Calendar className="h-4 w-4 text-[#008080]" /><span className="text-[10px] font-black uppercase tracking-tight">working days</span></div>
+        <p className="text-[9px] font-normal leading-tight text-slate-500 lowercase italic">
+          {Array.isArray(place.days_opened) ? place.days_opened.join(", ") : "mon to sun"}
+        </p>
+      </div>
+    </div>
+
+    <Button onClick={() => navigate(`/booking/adventure_place/${place.id}`)} className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl border-none mb-6 transition-all active:scale-95" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
+      Book Adventure
+    </Button>
+
+    <div className="grid grid-cols-3 gap-3 mb-2">
+      <UtilityButton icon={<MapPin className="h-5 w-5" />} label="Map" onClick={openInMaps} />
+      <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={handleCopyLink} />
+      <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={() => { if(navigator.share) navigator.share({title: place.name, url: window.location.href}) }} />
+    </div>
+  </div>
+);
 
 const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
   <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl border border-slate-100 flex-1 hover:bg-slate-100 transition-colors">
