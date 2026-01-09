@@ -609,13 +609,15 @@ const Index = () => {
      {!isSearchFocused && (
     <div 
       ref={searchRef}
-      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] md:mt-16" 
-      style={{
-        backgroundImage: `url(/images/hero-background.webp)`, 
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
+      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] md:mt-16 overflow-hidden"
     >
+      {/* Hero background image with high priority for LCP */}
+      <img 
+        src="/images/hero-background.webp" 
+        alt="Travel destination background" 
+        fetchPriority="high"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
       {/* Dark overlay for visibility */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70" />
       
