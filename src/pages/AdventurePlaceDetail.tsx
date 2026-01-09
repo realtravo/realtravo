@@ -194,7 +194,7 @@ const AdventurePlaceDetail = () => {
         </div>
       </div>
 
-      <Button onClick={() => setBookingOpen(true)} className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl border-none mb-6 transition-all active:scale-95" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
+      <Button onClick={() => navigate(`/booking/adventure_place/${place.id}`)} className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl border-none mb-6 transition-all active:scale-95" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
         Book Adventure
       </Button>
 
@@ -268,26 +268,21 @@ const AdventurePlaceDetail = () => {
           </CarouselContent>
         </Carousel>
 
-        <div className="absolute bottom-12 left-0 z-40 w-full p-6 md:p-12 pointer-events-none">
-          <div className="space-y-4 pointer-events-auto max-w-4xl">
+        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
+          <div className="space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
             <div className="flex flex-wrap gap-2">
-                <Badge className="bg-amber-400 text-black border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
+                <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
                   <Star className="h-3 w-3 fill-current" />
                   {liveRating.avg > 0 ? liveRating.avg : "New"}
                 </Badge>
-                <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5`}><Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />{isOpenNow ? "open now" : "closed"}</Badge>
+                <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}><Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />{isOpenNow ? "open" : "closed"}</Badge>
             </div>
-            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-white leading-[0.9]">{place.name}</h1>
-            <div className="flex items-center gap-2 mt-3" onClick={() => window.open(place?.map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place?.name}, ${place?.location}`)}`, "_blank")}>
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-none">{place.name}</h1>
+            <div className="flex items-center gap-2" onClick={() => window.open(place?.map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place?.name}, ${place?.location}`)}`, "_blank")}>
               <MapPin className="h-4 w-4 text-white" />
-              <span className="text-sm font-bold text-white uppercase tracking-wider px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors">
+              <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer">
                 {[place.place, place.location, place.country].filter(Boolean).join(', ')}
               </span>
-              {position && place.latitude && place.longitude && (
-                <span className="text-xs font-bold text-white px-2 py-1 rounded-full bg-[#FF7F50]/80 backdrop-blur-sm">
-                  {calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude).toFixed(2)} km away
-                </span>
-              )}
             </div>
           </div>
         </div>

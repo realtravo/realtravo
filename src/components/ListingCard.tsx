@@ -44,13 +44,15 @@ interface ListingCardProps {
   avgRating?: number;
   reviewCount?: number;
   place?: string;
+  showFlexibleDate?: boolean;
 }
 
 const ListingCardComponent = ({
   id, type, name, imageUrl, location, country, price, date,
   isOutdated = false, onSave, isSaved = false, activities, 
   hidePrice = false, availableTickets = 0, bookedTickets = 0, 
-  priority = false, compact = false, avgRating, distance, place
+  priority = false, compact = false, avgRating, distance, place,
+  isFlexibleDate = false
 }: ListingCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const navigate = useNavigate();
@@ -211,11 +213,11 @@ const ListingCardComponent = ({
             </div>
 
             <div className="flex flex-col items-end">
-                {date && (
+                {(date || isFlexibleDate) && (
                   <div className="flex items-center gap-1 text-slate-600">
                       <Calendar className="h-3 w-3" />
-                      <span className="text-[10px] font-black uppercase">
-                          {new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                      <span className={`text-[10px] font-black uppercase ${isFlexibleDate ? 'text-emerald-600' : ''}`}>
+                          {isFlexibleDate ? 'Flexible' : new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                       </span>
                   </div>
                 )}

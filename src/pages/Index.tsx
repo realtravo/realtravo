@@ -569,28 +569,37 @@ const Index = () => {
       result = sortedByRating;
     }
     
-    // For trips/events, prioritize available items (sold out last)
+    // For trips/events, prioritize flexible dates and available items (sold out last)
+    // On small screens, flexible date items come first
     if (isTripsOrEvents) {
       const today = new Date().toISOString().split('T')[0];
-      const available: any[] = [];
+      const flexibleAndAvailable: any[] = [];
+      const fixedDateAvailable: any[] = [];
       const soldOutOrOutdated: any[] = [];
       
       result.forEach(item => {
         const isOutdated = item.date && !item.is_flexible_date && item.date < today;
-        const isSoldOut = item.available_tickets !== null && item.available_tickets !== undefined && item.available_tickets <= 0;
+        const bookedCount = bookingStats[item.id] || 0;
+        const isSoldOut = item.available_tickets !== null && item.available_tickets !== undefined && 
+          (item.available_tickets <= 0 || bookedCount >= item.available_tickets);
         
         if (isOutdated || isSoldOut) {
           soldOutOrOutdated.push(item);
+        } else if (item.is_flexible_date) {
+          // Flexible date items are prioritized
+          flexibleAndAvailable.push(item);
         } else {
-          available.push(item);
+          fixedDateAvailable.push(item);
         }
       });
       
-      return [...available, ...soldOutOrOutdated];
+      // On mobile (small screens), flexible items come first, then available, then sold out
+      // isLargeScreen is from useResponsiveLimit
+      return [...flexibleAndAvailable, ...fixedDateAvailable, ...soldOutOrOutdated];
     }
     
     return result;
-  }, [listingViewMode, position]);
+  }, [listingViewMode, position, bookingStats]);
 
   const displayCampsites = useMemo(() => getDisplayItems(scrollableRows.campsites, sortedCampsites, false), [scrollableRows.campsites, sortedCampsites, getDisplayItems]);
   const displayHotels = useMemo(() => getDisplayItems(scrollableRows.hotels, sortedHotels, false), [scrollableRows.hotels, sortedHotels, getDisplayItems]);
@@ -942,7 +951,7 @@ const Index = () => {
                 const isOutdated = trip.date && !trip.is_flexible_date && trip.date < today;
                 const ratingData = ratings.get(trip.id);
                 return <div key={trip.id} className="flex-shrink-0 w-[45vw] md:w-56">
-                                        <ListingCard id={trip.id} type={isEvent ? "EVENT" : "TRIP"} name={trip.name} imageUrl={trip.image_url} location={trip.location} country={trip.country} price={trip.price} date={trip.date} isCustomDate={trip.is_custom_date} isOutdated={isOutdated} onSave={handleSave} isSaved={savedItems.has(trip.id)} showBadge={isEvent} availableTickets={trip.available_tickets} bookedTickets={bookingStats[trip.id] || 0} activities={trip.activities} priority={index === 0} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} />
+                                        <ListingCard id={trip.id} type={isEvent ? "EVENT" : "TRIP"} name={trip.name} imageUrl={trip.image_url} location={trip.location} country={trip.country} price={trip.price} date={trip.date} isCustomDate={trip.is_custom_date} isFlexibleDate={trip.is_flexible_date} isOutdated={isOutdated} onSave={handleSave} isSaved={savedItems.has(trip.id)} showBadge={isEvent} availableTickets={trip.available_tickets} bookedTickets={bookingStats[trip.id] || 0} activities={trip.activities} priority={index === 0} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} />
                                     </div>;
               })}
                             </div>
@@ -984,7 +993,7 @@ const Index = () => {
                                   const today = new Date().toISOString().split('T')[0];
                                   const isOutdated = event.date && !event.is_flexible_date && event.date < today;
                                   return <div key={event.id} className="flex-shrink-0 w-[45vw] md:w-56">
-                                        <ListingCard id={event.id} type="EVENT" name={event.name} imageUrl={event.image_url} location={event.location} country={event.country} price={event.price} date={event.date} isCustomDate={event.is_custom_date} isOutdated={isOutdated} onSave={handleSave} isSaved={savedItems.has(event.id)} showBadge={false} priority={index === 0} activities={event.activities} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} availableTickets={event.available_tickets} bookedTickets={bookingStats[event.id] || 0} />
+                                        <ListingCard id={event.id} type="EVENT" name={event.name} imageUrl={event.image_url} location={event.location} country={event.country} price={event.price} date={event.date} isCustomDate={event.is_custom_date} isFlexibleDate={event.is_flexible_date} isOutdated={isOutdated} onSave={handleSave} isSaved={savedItems.has(event.id)} showBadge={false} priority={index === 0} activities={event.activities} avgRating={ratingData?.avgRating} reviewCount={ratingData?.reviewCount} availableTickets={event.available_tickets} bookedTickets={bookingStats[event.id] || 0} />
                                     </div>;
                                 })}
                             </div>

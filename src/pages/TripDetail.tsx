@@ -245,7 +245,7 @@ const TripDetail = () => {
       </div>
 
       <Button 
-        onClick={() => setBookingOpen(true)}
+        onClick={() => navigate(`/booking/trip/${trip.id}`)}
         disabled={!canBook}
         className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none mb-6"
         style={{ 
@@ -305,13 +305,13 @@ const TripDetail = () => {
           </CarouselContent>
         </Carousel>
 
-        <div className="absolute bottom-10 left-0 z-40 w-full p-8 pointer-events-none">
-          <div className="relative z-10 space-y-4 pointer-events-auto">
-            <Button className="bg-[#FF7F50] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg">Scheduled Trip</Button>
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl mb-3">{trip.name}</h1>
-          <div className="flex items-center gap-3 group w-fit cursor-pointer" onClick={openInMaps}>
-               <MapPin className="h-5 w-5 text-white" />
-               <span className="text-sm font-black text-white uppercase tracking-wider px-3 py-1 rounded-full bg-black/30 backdrop-blur-sm">
+        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
+          <div className="relative z-10 space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
+            <Button className="bg-[#FF7F50] border-none px-3 py-1 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg">Scheduled Trip</Button>
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">{trip.name}</h1>
+          <div className="flex items-center gap-2 group w-fit cursor-pointer" onClick={openInMaps}>
+               <MapPin className="h-4 w-4 text-white" />
+               <span className="text-xs font-bold text-white uppercase tracking-wide">
                  {[trip.place, trip.location, trip.country].filter(Boolean).join(', ')}
                </span>
           </div>
@@ -354,19 +354,6 @@ const TripDetail = () => {
         </div>
       </main>
 
-      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
-          <MultiStepBooking 
-            onSubmit={handleBookingSubmit} activities={trip.activities || []} 
-            priceAdult={trip.price} priceChild={trip.price_child} 
-            isProcessing={isProcessing} isCompleted={isCompleted} 
-            itemName={trip.name} itemId={trip.id} bookingType="trip"
-            hostId={trip.created_by || ""} onPaymentSuccess={() => setIsCompleted(true)}
-            primaryColor={COLORS.TEAL} accentColor={COLORS.CORAL}
-            totalCapacity={trip.available_tickets || 0}
-          />
-        </DialogContent>
-      </Dialog>
       <MobileBottomBar />
     </div>
   );

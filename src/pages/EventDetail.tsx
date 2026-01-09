@@ -184,20 +184,15 @@ const EventDetail = () => {
           </CarouselContent>
         </Carousel>
 
-        <div className="absolute bottom-10 left-0 z-40 w-full md:w-3/4 lg:w-1/2 p-8 pointer-events-none">
-          <div className="relative z-10 space-y-4 pointer-events-auto">
-            <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-4 py-1.5 h-auto uppercase font-black tracking-[0.15em] text-[10px] rounded-full shadow-lg">Experience</Button>
-            <div>
-              <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9] text-white drop-shadow-2xl mb-3">{event.name}</h1>
-              <div className="flex items-center gap-3 cursor-pointer group w-fit" onClick={openInMaps}>
-                 <div className="bg-black/30 backdrop-blur-md p-2 rounded-xl group-hover:bg-[#FF7F50] transition-all duration-300"><MapPin className="h-5 w-5 text-white" /></div>
-                 <div className="flex flex-col">
-                   <span className="text-[10px] font-bold text-[#FF7F50] uppercase tracking-widest px-2 py-0.5 bg-black/30 rounded-full backdrop-blur-sm">Location</span>
-                   <span className="text-sm font-black text-white uppercase tracking-wider group-hover:text-[#008080] transition-colors px-3 py-1 bg-black/30 rounded-full backdrop-blur-sm mt-1">
-                     {[event.place, event.location, event.country].filter(Boolean).join(', ')}
-                   </span>
-                 </div>
-               </div>
+        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
+          <div className="relative z-10 space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
+            <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-3 py-1 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg">Experience</Button>
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">{event.name}</h1>
+            <div className="flex items-center gap-2 cursor-pointer group w-fit" onClick={openInMaps}>
+               <MapPin className="h-4 w-4 text-white" />
+               <span className="text-xs font-bold text-white uppercase tracking-wide">
+                 {[event.place, event.location, event.country].filter(Boolean).join(', ')}
+               </span>
             </div>
           </div>
         </div>
@@ -321,7 +316,7 @@ const EventDetail = () => {
               </div>
 
               <Button 
-                onClick={() => setShowBooking(true)}
+                onClick={() => navigate(`/booking/event/${event.id}`)}
                 disabled={!canBook}
                 className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
                 style={{ 
@@ -369,22 +364,6 @@ const EventDetail = () => {
            <SimilarItems currentItemId={event.id} itemType="trip" location={event.location} country={event.country} />
         </div>
       </main>
-
-      <Dialog open={showBooking} onOpenChange={setShowBooking}>
-        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
-          <MultiStepBooking 
-            onSubmit={handleBookingSubmit} activities={event.activities || []} 
-            priceAdult={event.price} priceChild={event.price_child} 
-            isProcessing={isProcessing} isCompleted={isCompleted} 
-            itemName={event.name} skipDateSelection={true} fixedDate={event.date} 
-            skipFacilitiesAndActivities={true} itemId={event.id} bookingType="event" 
-            hostId={event.created_by || ""} onPaymentSuccess={() => setIsCompleted(true)}
-            primaryColor={COLORS.TEAL}
-            accentColor={COLORS.CORAL}
-            totalCapacity={event.available_tickets || 0}
-          />
-        </DialogContent>
-      </Dialog>
 
       <MobileBottomBar />
     </div>
