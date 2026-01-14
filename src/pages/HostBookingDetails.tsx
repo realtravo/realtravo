@@ -765,10 +765,14 @@ const BookingCard = ({ booking, itemName, isExpanded, onToggleExpand, getGuestIn
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Revenue</p>
                 <span className="text-2xl font-black text-[#FF7F50]">KES {booking.total_amount.toLocaleString()}</span>
               </div>
-              {showConfirmButton && onConfirm && (
+              {showConfirmButton && onConfirm ? (
                 <Button onClick={onConfirm} size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-xl gap-1 text-[10px] font-black uppercase">
                   <Eye className="h-3 w-3" /> Mark as Seen
                 </Button>
+              ) : !showConfirmButton && (
+                <Badge className="bg-green-100 text-green-700 border-none font-black uppercase text-[9px] tracking-widest px-3 py-1 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Confirmed
+                </Badge>
               )}
               <BookingDownloadButton
                 booking={{

@@ -2,6 +2,7 @@ import { useState, memo, useCallback, useMemo } from "react";
 import { MapPin, Heart, Star, Calendar, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn, optimizeSupabaseImage } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { createDetailPath } from "@/lib/slugUtils";
@@ -55,10 +56,12 @@ const ListingCardComponent = ({
   isFlexibleDate = false
 }: ListingCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
 
   const { ref: imageContainerRef, isIntersecting } = useIntersectionObserver({
-    rootMargin: '200px', triggerOnce: true
+    rootMargin: '300px', // Increased margin for earlier loading
+    triggerOnce: true
   });
 
   const shouldLoadImage = priority || isIntersecting;
@@ -75,8 +78,9 @@ const ListingCardComponent = ({
   
   // Unified "Unavailable" state for visual overlays
   const isUnavailable = useMemo(() => isOutdated || isSoldOut, [isOutdated, isSoldOut]);
-  
+  // Optimized image with smaller thumbnail for blur-up effect
   const optimizedImageUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 400, height: 300, quality: 80 }), [imageUrl]);
+  const thumbnailUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 32, height: 24, quality: 30 }), [imageUrl]);
   const displayType = useMemo(() => isEventOrSport ? "Event & Sports" : type.replace('_', ' '), [isEventOrSport, type]);
   const formattedDistance = useMemo(() => distance?.toFixed(2), [distance]);
   const locationString = useMemo(() => [place, location, country].filter(Boolean).join(', '), [place, location, country]);
@@ -95,6 +99,7 @@ const ListingCardComponent = ({
   }, [onSave, id, type]);
 
   const handleImageLoad = useCallback(() => setImageLoaded(true), []);
+  const handleImageError = useCallback(() => setImageError(true), []);
 
   // Show distance for all types when location is available
   const showDistanceBadge = useMemo(() => distance !== undefined && distance > 0, [distance]);
@@ -109,19 +114,50 @@ const ListingCardComponent = ({
         isUnavailable && "opacity-90"
       )}
     >
-      {/* Image Section */}
-      <div ref={imageContainerRef} className="relative overflow-hidden m-2 rounded-[20px] bg-slate-200" style={{ paddingBottom: '70%' }}>
-        {shouldLoadImage && (
+      {/* Image Section with improved loading */}
+      <div 
+        ref={imageContainerRef} 
+        className="relative overflow-hidden m-2 rounded-[20px] bg-slate-200" 
+        style={{ paddingBottom: '70%' }}
+      >
+        {/* Skeleton placeholder - always present until loaded */}
+        {!imageLoaded && !imageError && (
+          <Skeleton className="absolute inset-0 w-full h-full" />
+        )}
+        
+        {/* Blur-up thumbnail for smooth transition */}
+        {shouldLoadImage && !imageLoaded && !imageError && (
+          <img 
+            src={thumbnailUrl} 
+            alt="" 
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-md scale-110"
+          />
+        )}
+        
+        {/* Main image */}
+        {shouldLoadImage && !imageError && (
           <img 
             src={optimizedImageUrl} 
-            alt={name} 
-            onLoad={handleImageLoad} 
+            alt={name}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding={priority ? "sync" : "async"}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
             className={cn(
-                "absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110", 
+                "absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110", 
                 imageLoaded ? "opacity-100" : "opacity-0",
                 isUnavailable && "grayscale-[0.6]" 
             )} 
           />
+        )}
+        
+        {/* Error fallback */}
+        {imageError && (
+          <div className="absolute inset-0 w-full h-full bg-slate-100 flex items-center justify-center">
+            <span className="text-slate-400 text-xs font-bold uppercase">No Image</span>
+          </div>
         )}
 
         {/* SOLD OUT / NOT AVAILABLE OVERLAY */}

@@ -758,14 +758,16 @@ const Index = () => {
             <div 
               className="flex items-end justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative overflow-hidden"
             >
-              {/* Category background image - lazy loaded */}
-              <img 
-                src={cat.bgImage}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              {/* Category background image - optimized loading */}
+              <div className="absolute inset-0 bg-slate-200">
+                <img 
+                  src={cat.bgImage}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover transition-opacity duration-300"
+                />
+              </div>
               {/* Dark overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/70 group-hover:via-black/30 transition-all" />
               

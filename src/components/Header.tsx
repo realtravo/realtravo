@@ -92,6 +92,11 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             <img 
               src="/fulllogo.png" 
               alt="Realtravo Logo"
+              loading="eager"
+              fetchPriority="high"
+              decoding="sync"
+              width={40}
+              height={40}
               className="h-10 w-10 rounded-full shadow-md object-contain bg-slate-50 p-1 border border-slate-100"
             />
             <div className="hidden sm:block">

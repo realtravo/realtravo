@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Edit, Eye, MapPin, Mail, Phone, Download, FileText, 
-  ArrowLeft, CheckCircle2, AlertCircle, Clock, ShieldCheck 
+  ArrowLeft, CheckCircle2, AlertCircle, Clock, ShieldCheck, Loader2 
 } from "lucide-react";
 import { exportBookingsToCSV } from "@/lib/csvExport";
 import { downloadAllBookingsAsPDF } from "@/lib/bookingDownload";
@@ -33,6 +33,12 @@ const HostItemDetail = () => {
   const [item, setItem] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Pagination state
+  const ITEMS_PER_PAGE = 20;
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -64,6 +70,7 @@ const HostItemDetail = () => {
           .select("id,guest_name_masked,status,total_amount,created_at,payment_status")
           .eq("item_id", id)
           .order("created_at", { ascending: false })
+          .range(0, ITEMS_PER_PAGE - 1)
       ]);
 
       if (itemRes.error) throw itemRes.error;
@@ -73,12 +80,37 @@ const HostItemDetail = () => {
         return;
       }
       setItem({ ...(itemRes.data as any), type });
-      setBookings(bookingsRes.data || []);
+      const bookingsData = bookingsRes.data || [];
+      setBookings(bookingsData);
+      setHasMore(bookingsData.length >= ITEMS_PER_PAGE);
+      setOffset(0);
     } catch (error) {
       toast({ title: "Error", description: "Failed to load details", variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMoreBookings = async () => {
+    if (loadingMore || !hasMore || !id) return;
+    setLoadingMore(true);
+    
+    const newOffset = offset + ITEMS_PER_PAGE;
+    const { data } = await supabase
+      .from("creator_booking_summary")
+      .select("id,guest_name_masked,status,total_amount,created_at,payment_status")
+      .eq("item_id", id)
+      .order("created_at", { ascending: false })
+      .range(newOffset, newOffset + ITEMS_PER_PAGE - 1);
+    
+    if (data && data.length > 0) {
+      setBookings(prev => [...prev, ...data]);
+      setOffset(newOffset);
+      setHasMore(data.length >= ITEMS_PER_PAGE);
+    } else {
+      setHasMore(false);
+    }
+    setLoadingMore(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -227,6 +259,27 @@ const HostItemDetail = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              
+              {/* Load More Button */}
+              {hasMore && bookings.length > 0 && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={loadMoreBookings}
+                    disabled={loadingMore}
+                    className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-8"
+                    style={{ background: COLORS.TEAL }}
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More Bookings"
+                    )}
+                  </Button>
                 </div>
               )}
             </div>

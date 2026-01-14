@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Users, CalendarClock, ChevronDown, ChevronUp, WifiOff, MapPin, CheckCircle2, XCircle, History } from "lucide-react";
+import { Calendar, DollarSign, Users, CalendarClock, ChevronDown, ChevronUp, WifiOff, MapPin, CheckCircle2, XCircle, History, Loader2 } from "lucide-react";
 import { RescheduleBookingDialog } from "@/components/booking/RescheduleBookingDialog";
 import { BookingDownloadButton } from "@/components/booking/BookingDownloadButton";
 import { toast } from "sonner";
@@ -68,6 +68,12 @@ const Bookings = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null);
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
+  
+  // Pagination state
+  const ITEMS_PER_PAGE = 20;
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const hasFetched = useRef(false);
 
@@ -107,7 +113,7 @@ const Bookings = () => {
     }
   }, [user, isOnline]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (fetchOffset: number = 0) => {
     try {
       const { data: confirmedBookings, error: bookingsError } = await supabase
         .from("bookings")
@@ -116,30 +122,43 @@ const Bookings = () => {
         .in("payment_status", ["paid", "completed"])
         .not("status", "eq", "cancelled")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .range(fetchOffset, fetchOffset + ITEMS_PER_PAGE - 1);
       
       if (bookingsError) throw bookingsError;
-      setBookings(confirmedBookings || []);
       
-      // Update cache
-      bookingsCache.data = confirmedBookings || [];
-      bookingsCache.timestamp = Date.now();
+      const newBookings = confirmedBookings || [];
+      
+      if (fetchOffset === 0) {
+        setBookings(newBookings);
+        // Update cache
+        bookingsCache.data = newBookings;
+        bookingsCache.timestamp = Date.now();
+      } else {
+        setBookings(prev => [...prev, ...newBookings]);
+      }
+      
+      setHasMore(newBookings.length >= ITEMS_PER_PAGE);
+      setOffset(fetchOffset);
       hasFetched.current = true;
       
-      if (confirmedBookings) {
-        cacheBookings(confirmedBookings.map(b => ({
+      if (newBookings.length > 0) {
+        cacheBookings(newBookings.map(b => ({
           ...b, item_name: itemDetails[b.item_id]?.name
         })));
-      }
-
-      if (confirmedBookings && confirmedBookings.length > 0) {
-        await fetchItemDetailsBatch(confirmedBookings);
+        await fetchItemDetailsBatch(fetchOffset === 0 ? newBookings : [...bookings, ...newBookings]);
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    await fetchBookings(offset + ITEMS_PER_PAGE);
   };
 
   const fetchItemDetailsBatch = async (bookings: Booking[]) => {
@@ -466,6 +485,27 @@ const Bookings = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+        
+        {/* Load More Button */}
+        {hasMore && bookings.length > 0 && (
+          <div className="flex justify-center mt-10">
+            <Button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-8"
+              style={{ background: COLORS.CORAL }}
+            >
+              {loadingMore ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Load More Bookings"
+              )}
+            </Button>
           </div>
         )}
       </main>
