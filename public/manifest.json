@@ -1,8 +1,8 @@
 {
   "id": "/?source=pwa",
-  "short_name": "Realtravo",
-  "name": "Realtravo",
-  "description": "Professional real estate and travel solutions.",
+  "short_name": "RealTravo",
+  "name": "RealTravo",
+  "description": "Professional adventure and travel solutions.",
   "icons": [
     {
       "src": "favicon.ico",
