@@ -3,12 +3,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Users, Loader2, CheckCircle2, Phone, CreditCard, X, AlertTriangle, Check } from "lucide-react";
+import { Calendar, Users, Loader2, CheckCircle2, Phone, CreditCard, X, AlertTriangle, Check, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentStatusDialog } from "./PaymentStatusDialog";
 import { useMpesaPayment } from "@/hooks/useMpesaPayment";
+import { usePaystackPayment } from "@/hooks/usePaystackPayment";
 import { cn } from "@/lib/utils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 import { useFacilityRangeAvailability } from "@/hooks/useDateRangeAvailability";
@@ -140,13 +141,14 @@ export const MultiStepBooking = ({
     const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card'>('mpesa');
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
 
-    const { paymentStatus, errorMessage, initiatePayment, resetPayment, isPaymentInProgress } = useMpesaPayment({
+    // M-Pesa payment via original hook (kept as fallback)
+    const { paymentStatus: mpesaStatus, errorMessage: mpesaError, initiatePayment: initiateMpesa, resetPayment: resetMpesa, isPaymentInProgress: mpesaInProgress } = useMpesaPayment({
         onSuccess: (bookingId) => {
-            console.log('✅ Payment succeeded for booking:', bookingId);
+            console.log('✅ M-Pesa Payment succeeded for booking:', bookingId);
             setPaymentSucceeded(true);
             
             setTimeout(() => {
-                resetPayment();
+                resetMpesa();
                 setPaymentSucceeded(false);
                 if (onPaymentSuccess) {
                     onPaymentSuccess();
@@ -154,10 +156,44 @@ export const MultiStepBooking = ({
             }, 2000);
         },
         onError: (error) => {
-            console.log('❌ Payment failed:', error);
+            console.log('❌ M-Pesa Payment failed:', error);
             setPaymentSucceeded(false);
         },
     });
+
+    // Paystack payment hook (for both card and mobile money)
+    const { 
+        paymentStatus: paystackStatus, 
+        errorMessage: paystackError, 
+        authorizationUrl,
+        initiateCardPayment, 
+        initiateMpesaPayment: initiatePaystackMpesa,
+        resetPayment: resetPaystack, 
+        isPaymentInProgress: paystackInProgress 
+    } = usePaystackPayment({
+        onSuccess: (bookingId) => {
+            console.log('✅ Paystack Payment succeeded for booking:', bookingId);
+            setPaymentSucceeded(true);
+            
+            setTimeout(() => {
+                resetPaystack();
+                setPaymentSucceeded(false);
+                if (onPaymentSuccess) {
+                    onPaymentSuccess();
+                }
+            }, 2000);
+        },
+        onError: (error) => {
+            console.log('❌ Paystack Payment failed:', error);
+            setPaymentSucceeded(false);
+        },
+    });
+
+    // Combined payment status
+    const paymentStatus = paymentMethod === 'card' ? paystackStatus : mpesaStatus;
+    const errorMessage = paymentMethod === 'card' ? paystackError : mpesaError;
+    const isPaymentInProgress = paymentMethod === 'card' ? paystackInProgress : mpesaInProgress;
+    const resetPayment = paymentMethod === 'card' ? resetPaystack : resetMpesa;
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -237,11 +273,6 @@ export const MultiStepBooking = ({
             return;
         }
         
-        if (paymentMethod === 'card') {
-            alert("Card payment selected. Integration required.");
-            return;
-        }
-
         const bookingData = {
             item_id: itemId,
             booking_type: bookingType,
@@ -259,7 +290,7 @@ export const MultiStepBooking = ({
             guest_phone: formData.guest_phone || undefined,
             visit_date: formData.visit_date,
             slots_booked: formData.num_adults + formData.num_children,
-            payment_method: 'mpesa',
+            payment_method: paymentMethod === 'mpesa' ? 'mpesa' : 'card',
             payment_phone: formData.mpesa_phone,
             host_id: hostId,
             emailData: {
@@ -267,7 +298,23 @@ export const MultiStepBooking = ({
             },
         };
 
-        await initiatePayment(formData.mpesa_phone, totalAmount, bookingData);
+        if (paymentMethod === 'card') {
+            // Use Paystack for card payments
+            const result = await initiateCardPayment(
+                formData.guest_email,
+                totalAmount,
+                bookingData,
+                window.location.origin + '/bookings'
+            );
+            
+            if (result.success && result.authorization_url) {
+                // Open Paystack checkout in a new tab
+                window.open(result.authorization_url, '_blank');
+            }
+        } else {
+            // Use M-Pesa STK push via existing hook
+            await initiateMpesa(formData.mpesa_phone, totalAmount, bookingData);
+        }
     };
 
     const toggleFacility = (facility: Facility) => {
@@ -841,6 +888,17 @@ export const MultiStepBooking = ({
                                             className="border-none bg-white rounded-xl h-12"
                                         />
                                         <p className="text-xs text-slate-400 mt-2">You will receive an STK push to complete payment</p>
+                                    </div>
+                                )}
+
+                                {isCardSelected && (
+                                    <div className="p-4 rounded-2xl border-2 border-[#008080] bg-[#008080]/5">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <ExternalLink className="h-4 w-4" style={{ color: primaryColor }} />
+                                            <span className="text-xs font-black uppercase tracking-wider" style={{ color: primaryColor }}>Secure Card Payment</span>
+                                        </div>
+                                        <p className="text-xs text-slate-500">You will be redirected to Paystack's secure checkout page to enter your card details.</p>
+                                        <p className="text-xs text-slate-400 mt-2">Supports Visa, Mastercard, and other major cards.</p>
                                     </div>
                                 )}
                             </div>
