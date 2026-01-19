@@ -1,5 +1,17 @@
 project_id = "lmkxpzemfvmffxppxzky"
 
+[functions.paystack-initialize]
+verify_jwt = false
+
+[functions.paystack-callback]
+verify_jwt = false
+
+[functions.paystack-verify]
+verify_jwt = false
+
+[functions.paystack-charge-mobile]
+verify_jwt = false
+
 [functions.mpesa-stk-push]
 verify_jwt = false
 
