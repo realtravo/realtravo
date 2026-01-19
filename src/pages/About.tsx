@@ -17,7 +17,7 @@ const About = () => {
           </h2>
           <div className="space-y-4 text-muted-foreground">
             <p>
-              TripTrac is your ultimate companion for discovering and booking amazing travel experiences around the world. 
+              TripTrac is your ultimate companion for discovering and booking amazing travel experiences around the world.
               We connect adventurous souls with unforgettable trips, events, accommodations, and destinations.
             </p>
             <p>
