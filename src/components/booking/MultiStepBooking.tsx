@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentStatusDialog } from "./PaymentStatusDialog";
-import { useMpesaPayment } from "@/hooks/useMpesaPayment";
+// M-Pesa now handled via Paystack hook
 import { usePaystackPayment } from "@/hooks/usePaystackPayment";
 import { cn } from "@/lib/utils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
@@ -141,25 +141,7 @@ export const MultiStepBooking = ({
     const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card'>('mpesa');
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
 
-    // M-Pesa payment via original hook (kept as fallback)
-    const { paymentStatus: mpesaStatus, errorMessage: mpesaError, initiatePayment: initiateMpesa, resetPayment: resetMpesa, isPaymentInProgress: mpesaInProgress } = useMpesaPayment({
-        onSuccess: (bookingId) => {
-            console.log('✅ M-Pesa Payment succeeded for booking:', bookingId);
-            setPaymentSucceeded(true);
-            
-            setTimeout(() => {
-                resetMpesa();
-                setPaymentSucceeded(false);
-                if (onPaymentSuccess) {
-                    onPaymentSuccess();
-                }
-            }, 2000);
-        },
-        onError: (error) => {
-            console.log('❌ M-Pesa Payment failed:', error);
-            setPaymentSucceeded(false);
-        },
-    });
+    // Note: M-Pesa is now handled via Paystack hook below
 
     // Paystack payment hook (for both card and mobile money)
     const { 
@@ -189,11 +171,11 @@ export const MultiStepBooking = ({
         },
     });
 
-    // Combined payment status
-    const paymentStatus = paymentMethod === 'card' ? paystackStatus : mpesaStatus;
-    const errorMessage = paymentMethod === 'card' ? paystackError : mpesaError;
-    const isPaymentInProgress = paymentMethod === 'card' ? paystackInProgress : mpesaInProgress;
-    const resetPayment = paymentMethod === 'card' ? resetPaystack : resetMpesa;
+    // Combined payment status - now both use Paystack
+    const paymentStatus = paystackStatus;
+    const errorMessage = paystackError;
+    const isPaymentInProgress = paystackInProgress;
+    const resetPayment = resetPaystack;
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -312,8 +294,13 @@ export const MultiStepBooking = ({
                 window.open(result.authorization_url, '_blank');
             }
         } else {
-            // Use M-Pesa STK push via existing hook
-            await initiateMpesa(formData.mpesa_phone, totalAmount, bookingData);
+            // Use M-Pesa STK push via Paystack
+            await initiatePaystackMpesa(
+                formData.mpesa_phone,
+                formData.guest_email,
+                totalAmount,
+                bookingData
+            );
         }
     };
 

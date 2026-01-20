@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.paystack-charge-mobile]
 verify_jwt = false
 
+[functions.paystack-config]
+verify_jwt = false
+
 [functions.mpesa-stk-push]
 verify_jwt = false
 
