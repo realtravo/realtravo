@@ -41,10 +41,9 @@ const TripDetail = () => {
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
-  // Scroll listener for Sticky Bar transparency and name appearance
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 150);
+      setScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -81,7 +80,7 @@ const TripDetail = () => {
   const handleCopyLink = async () => {
     const refLink = await generateReferralLink(trip.id, "trip", trip.id);
     await navigator.clipboard.writeText(refLink);
-    toast({ title: "Link Copied!" });
+    toast({ title: "Link copied!" });
   };
 
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, trip?.available_tickets || 0);
@@ -90,7 +89,7 @@ const TripDetail = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white">
         <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Trip...</p>
+        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading...</p>
       </div>
     );
   }
@@ -100,21 +99,20 @@ const TripDetail = () => {
   const isExpired = !trip.is_custom_date && trip.date && new Date(trip.date) < new Date().setHours(0,0,0,0);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      
-      {/* FIXED TOP ACTION BAR */}
+    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
+      {/* STICKY TOP NAVIGATION BAR */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
           scrolled 
             ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
-            : "bg-transparent"
+            : "bg-transparent pointer-events-none"
         }`}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pointer-events-auto">
           <Button 
             onClick={() => navigate(-1)} 
             className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
-              scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
+              scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
             }`}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -129,7 +127,7 @@ const TripDetail = () => {
 
         <Button 
           onClick={() => id && handleSaveItem(id, "trip")} 
-          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
+          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg pointer-events-auto ${
             isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
           }`}
         >
@@ -137,36 +135,49 @@ const TripDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto pt-6">
+      <main className="container px-4 max-w-6xl mx-auto">
         
         {/* IMAGE GALLERY */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
+          {/* Static Buttons (only visible when not scrolled) */}
+          <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
+            <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/30 text-white backdrop-blur-md">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button onClick={() => id && handleSaveItem(id, "trip")} className={`rounded-full w-10 h-10 p-0 border-none shadow-lg ${isSaved ? "bg-red-500" : "bg-black/30 backdrop-blur-md text-white"}`}>
+              <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-white"}`} />
+            </Button>
+          </div>
+
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.map((img, idx) => (
                 <CarouselItem key={idx} className="h-full pl-0 basis-full">
                   <div className="relative h-full w-full">
                     <img src={img} alt={trip.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                    {/* BLACK FADE TOWARDS BOTTOM */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10" />
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
           </Carousel>
 
-          {/* RGBA FADING COLOR OVERLAY FOR TEXT READABILITY */}
-          <div className="absolute bottom-6 left-6 z-40 p-4 rounded-2xl bg-black/40 backdrop-blur-sm border border-white/10 max-w-[90%]">
-            <Badge className="bg-[#FF7F50] text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full mb-2">
-              Scheduled Trip
-            </Badge>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-1">
-              {trip.name}
-            </h1>
-            <div className="flex items-center gap-2" onClick={openInMaps}>
-              <MapPin className="h-4 w-4 text-white/80" />
-              <span className="text-xs font-bold text-white/90 uppercase tracking-wide cursor-pointer hover:underline">
-                {[trip.place, trip.location].filter(Boolean).join(', ')}
-              </span>
+          {/* NAME AND LOCATION WITH RGBA FADE BACKGROUND */}
+          <div className="absolute bottom-0 left-0 z-40 w-full p-6 pb-8">
+            <div className="max-w-xl bg-gradient-to-r from-black/60 via-black/40 to-transparent rounded-2xl p-4 backdrop-blur-[2px]">
+              <Badge className="bg-[#FF7F50] text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full mb-2">
+                Scheduled Trip
+              </Badge>
+              <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-1">
+                {trip.name}
+              </h1>
+              <div className="flex items-center gap-2 cursor-pointer" onClick={openInMaps}>
+                <MapPin className="h-4 w-4 text-white/80" />
+                <span className="text-xs font-bold text-white/90 uppercase tracking-wide">
+                   {[trip.place, trip.location].filter(Boolean).join(', ')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -198,9 +209,7 @@ const TripDetail = () => {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-slate-400 text-sm italic">none</p>
-              )}
+              ) : <p className="text-slate-400 text-sm italic">none</p>}
             </section>
 
             <div className="lg:hidden">
@@ -250,6 +259,10 @@ const BookingPriceCard = ({ trip, remainingSlots, isSoldOut, isExpired, openInMa
           <span className="text-[10px] font-black uppercase text-slate-700">
             {trip.is_custom_date ? "flexible" : new Date(trip.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
           </span>
+        </div>
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <span className="text-[10px] font-black uppercase text-slate-400 tracking-tight">Child Rate</span>
+          <span className="text-[10px] font-black uppercase text-slate-700">KSh {trip.price_child || 'n/a'}</span>
         </div>
       </div>
 
