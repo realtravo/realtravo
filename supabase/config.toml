@@ -41,3 +41,15 @@ verify_jwt = false
 
 [functions.verify-item-access]
 verify_jwt = false
+
+[functions.process-payouts]
+verify_jwt = false
+
+[functions.create-transfer-recipient]
+verify_jwt = false
+
+[functions.withdraw-referral]
+verify_jwt = false
+
+[functions.get-banks]
+verify_jwt = false
