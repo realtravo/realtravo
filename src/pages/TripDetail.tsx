@@ -5,8 +5,8 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Phone, Share2, Clock, ArrowLeft, 
-  Heart, Copy, Star, Zap, Calendar, Users, ShieldCheck 
+  MapPin, Share2, Clock, ArrowLeft, 
+  Heart, Copy, Star, Zap, Calendar, ShieldCheck 
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -36,10 +36,19 @@ const TripDetail = () => {
   
   const [trip, setTrip] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
+
+  // Handle scroll for sticky bar transparency and name appearance
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -52,11 +61,7 @@ const TripDetail = () => {
   const fetchTrip = async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase
-        .from("trips")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data, error } = await supabase.from("trips").select("*").eq("id", id).single();
       if (error) throw error;
       setTrip(data);
     } catch (error) {
@@ -91,29 +96,45 @@ const TripDetail = () => {
   const isExpired = !trip.is_custom_date && trip.date && new Date(trip.date) < new Date().setHours(0,0,0,0);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
-      <main className="container px-4 max-w-6xl mx-auto">
-        
-        {/* IMAGE GALLERY - Restricted to Body Width */}
-        <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
-          {/* Top Actions Over Image Corners */}
-          <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
-            <Button 
-              onClick={() => navigate(-1)} 
-              className="rounded-full w-10 h-10 p-0 border-none bg-black/30 text-white backdrop-blur-md hover:bg-black/50"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Button 
-              onClick={() => id && handleSaveItem(id, "trip")} 
-              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-md ${
-                isSaved ? "bg-red-500" : "bg-black/30 text-white hover:bg-black/50"
-              }`}
-            >
-              <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-white"}`} />
-            </Button>
-          </div>
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* STICKY TOP ACTION BAR */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
+          scrolled 
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
+            : "bg-transparent"
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => navigate(-1)} 
+            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
+              scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
+            }`}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          
+          {scrolled && (
+            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
+              {trip.name}
+            </h2>
+          )}
+        </div>
 
+        <Button 
+          onClick={() => id && handleSaveItem(id, "trip")} 
+          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
+            isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
+          }`}
+        >
+          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
+        </Button>
+      </div>
+
+      <main className="container px-4 max-w-6xl mx-auto pt-4">
+        {/* IMAGE GALLERY */}
+        <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.map((img, idx) => (
@@ -140,8 +161,6 @@ const TripDetail = () => {
         {/* CONTENT GRID */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           <div className="flex flex-col gap-6">
-            
-            {/* Overview Section */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Overview</h2>
               <p className="text-slate-500 text-sm leading-relaxed lowercase">
@@ -149,7 +168,6 @@ const TripDetail = () => {
               </p>
             </section>
 
-            {/* Activities Section */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="h-5 w-5 text-[#FF9800]" />
@@ -180,8 +198,7 @@ const TripDetail = () => {
             </div>
           </div>
 
-          {/* Sticky Sidebar */}
-          <div className="hidden lg:block lg:sticky lg:top-6 h-fit">
+          <div className="hidden lg:block lg:sticky lg:top-20 h-fit">
             <BookingPriceCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} openInMaps={openInMaps} handleCopyLink={handleCopyLink} navigate={navigate} />
           </div>
         </div>
