@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Users, DollarSign, Wallet, TrendingUp, Award, Percent, ShieldX, ShieldCheck, Clock } from "lucide-react";
 import { useHostVerificationStatus } from "@/hooks/useHostVerificationStatus";
+import { WithdrawSection } from "@/components/referral/WithdrawSection";
 
 const COLORS = {
   TEAL: "#008080",
@@ -274,6 +275,15 @@ export default function MyReferrals() {
             color={COLORS.CORAL}
           />
         </div>
+
+        {/* Withdrawal Section */}
+        <WithdrawSection 
+          availableBalance={stats.withdrawableBalance} 
+          onWithdrawSuccess={() => {
+            // Refetch stats after withdrawal
+            window.location.reload();
+          }} 
+        />
 
         {/* Promotional Banner */}
         <div 

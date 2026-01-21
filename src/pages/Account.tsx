@@ -67,6 +67,7 @@ export default function Account() {
     { section: "Host Tools", items: [
       { icon: Briefcase, label: "Become a Host", path: "/become-host", show: true },
       { icon: CalendarCheck, label: "My Host Bookings", path: "/host-bookings", show: true },
+      { icon: CreditCard, label: "Bank Details", path: "/host-bank-details", show: true },
     ]},
     { section: "Personal", items: [
       { icon: User, label: "Edit Profile", path: "/profile/edit", show: true },
