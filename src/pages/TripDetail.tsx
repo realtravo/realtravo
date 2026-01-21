@@ -5,8 +5,8 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Share2, Clock, ArrowLeft, 
-  Heart, Copy, Star, Zap, Calendar, ShieldCheck 
+  MapPin, Phone, Share2, Clock, ArrowLeft, 
+  Heart, Copy, Star, Zap, Calendar, Users, ShieldCheck 
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -41,10 +41,10 @@ const TripDetail = () => {
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
-  // Handle scroll for sticky bar transparency and name appearance
+  // Scroll listener for Sticky Bar transparency and name appearance
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 150);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -61,7 +61,11 @@ const TripDetail = () => {
   const fetchTrip = async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase.from("trips").select("*").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("trips")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (error) throw error;
       setTrip(data);
     } catch (error) {
@@ -97,7 +101,8 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* STICKY TOP ACTION BAR */}
+      
+      {/* FIXED TOP ACTION BAR */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
           scrolled 
@@ -132,7 +137,8 @@ const TripDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto pt-4">
+      <main className="container px-4 max-w-6xl mx-auto pt-6">
+        
         {/* IMAGE GALLERY */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
@@ -148,19 +154,27 @@ const TripDetail = () => {
             </CarouselContent>
           </Carousel>
 
-          <div className="absolute bottom-6 left-6 z-40">
+          {/* RGBA FADING COLOR OVERLAY FOR TEXT READABILITY */}
+          <div className="absolute bottom-6 left-6 z-40 p-4 rounded-2xl bg-black/40 backdrop-blur-sm border border-white/10 max-w-[90%]">
             <Badge className="bg-[#FF7F50] text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full mb-2">
               Scheduled Trip
             </Badge>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight">
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-1">
               {trip.name}
             </h1>
+            <div className="flex items-center gap-2" onClick={openInMaps}>
+              <MapPin className="h-4 w-4 text-white/80" />
+              <span className="text-xs font-bold text-white/90 uppercase tracking-wide cursor-pointer hover:underline">
+                {[trip.place, trip.location].filter(Boolean).join(', ')}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* CONTENT GRID */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           <div className="flex flex-col gap-6">
+            
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Overview</h2>
               <p className="text-slate-500 text-sm leading-relaxed lowercase">
@@ -198,7 +212,7 @@ const TripDetail = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block lg:sticky lg:top-20 h-fit">
+          <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
             <BookingPriceCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} openInMaps={openInMaps} handleCopyLink={handleCopyLink} navigate={navigate} />
           </div>
         </div>
@@ -236,10 +250,6 @@ const BookingPriceCard = ({ trip, remainingSlots, isSoldOut, isExpired, openInMa
           <span className="text-[10px] font-black uppercase text-slate-700">
             {trip.is_custom_date ? "flexible" : new Date(trip.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
           </span>
-        </div>
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          <span className="text-[10px] font-black uppercase text-slate-400 tracking-tight">Child Rate</span>
-          <span className="text-[10px] font-black uppercase text-slate-700">KSh {trip.price_child || 'n/a'}</span>
         </div>
       </div>
 
