@@ -953,6 +953,7 @@ export const MultiStepBooking = ({
                 status={paymentStatus}
                 errorMessage={errorMessage || undefined}
                 onClose={resetPayment}
+                paymentMethod={paymentMethod}
             />
         </div>
     );

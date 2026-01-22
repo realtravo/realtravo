@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, XCircle, Smartphone } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Smartphone, CreditCard, ExternalLink } from "lucide-react";
 
 export type PaymentStatus = 'idle' | 'waiting' | 'processing' | 'success' | 'failed';
 
@@ -10,6 +10,7 @@ interface PaymentStatusDialogProps {
   errorMessage?: string;
   onClose: () => void;
   onRetry?: () => void;
+  paymentMethod?: 'mpesa' | 'card';
 }
 
 export const PaymentStatusDialog = ({
@@ -18,10 +19,19 @@ export const PaymentStatusDialog = ({
   errorMessage,
   onClose,
   onRetry,
+  paymentMethod = 'mpesa',
 }: PaymentStatusDialogProps) => {
   const getContent = () => {
     switch (status) {
       case 'waiting':
+        if (paymentMethod === 'card') {
+          return {
+            icon: <CreditCard className="h-16 w-16 text-primary animate-pulse" />,
+            title: "Redirecting to Card Payment",
+            message: "You are being redirected to Paystack's secure checkout page. Please complete your card payment in the new window.",
+            showClose: true,
+          };
+        }
         return {
           icon: <Smartphone className="h-16 w-16 text-primary animate-pulse" />,
           title: "Check Your Phone",
@@ -29,6 +39,14 @@ export const PaymentStatusDialog = ({
           showClose: false,
         };
       case 'processing':
+        if (paymentMethod === 'card') {
+          return {
+            icon: <ExternalLink className="h-16 w-16 text-primary animate-pulse" />,
+            title: "Processing Card Payment",
+            message: "Please complete your payment in the Paystack checkout window. This page will update automatically once confirmed.",
+            showClose: true,
+          };
+        }
         return {
           icon: <Loader2 className="h-16 w-16 text-primary animate-spin" />,
           title: "Processing Payment",

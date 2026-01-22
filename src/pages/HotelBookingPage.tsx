@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,10 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystackPayment } from "@/hooks/usePaystackPayment";
 import { PaymentStatusDialog } from "@/components/booking/PaymentStatusDialog";
+import { useFacilityRangeAvailability } from "@/hooks/useDateRangeAvailability";
 import { 
   ArrowLeft, Calendar, Users, MapPin, Star, Phone, CreditCard, 
-  Loader2, CheckCircle2, Building2, Bed, AlertTriangle 
+  Loader2, CheckCircle2, Building2, Bed, AlertTriangle, Check, X
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const HotelBookingPage = () => {
   const { id } = useParams();
@@ -27,16 +29,20 @@ const HotelBookingPage = () => {
   
   const [formData, setFormData] = useState({
     visit_date: "",
-    checkout_date: "",
     num_adults: 1,
     num_children: 0,
     guest_name: "",
-    guest_email: user?.email || "",
+    guest_email: "",
     guest_phone: "",
     mpesa_phone: "",
-    selectedFacilities: [] as Array<{ name: string; price: number }>,
+    selectedFacilities: [] as Array<{ name: string; price: number; capacity?: number; startDate?: string; endDate?: string }>,
     selectedActivities: [] as Array<{ name: string; price: number; numberOfPeople: number }>,
   });
+
+  // Facility availability checking
+  const { checkFacilityAvailability, loading: checkingFacility } = useFacilityRangeAvailability(id || undefined);
+  const [facilityAvailabilityStatus, setFacilityAvailabilityStatus] = useState<Record<string, { isAvailable: boolean; message: string | null }>>({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   const { 
     paymentStatus, 
@@ -58,10 +64,17 @@ const HotelBookingPage = () => {
 
   useEffect(() => {
     if (id) fetchHotel();
+  }, [id]);
+
+  useEffect(() => {
     if (user) fetchUserProfile();
-  }, [id, user]);
+  }, [user]);
 
   const fetchHotel = async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("hotels")
@@ -80,10 +93,11 @@ const HotelBookingPage = () => {
   };
 
   const fetchUserProfile = async () => {
+    if (!user?.id) return;
     const { data: profile } = await supabase
       .from("profiles")
       .select("name, email, phone_number")
-      .eq("id", user?.id)
+      .eq("id", user.id)
       .single();
       
     if (profile) {
@@ -92,40 +106,77 @@ const HotelBookingPage = () => {
         guest_name: profile.name || "",
         guest_email: profile.email || user?.email || "",
         guest_phone: profile.phone_number || "",
+        mpesa_phone: profile.phone_number || "",
       }));
     }
   };
 
-  const getStartingPrice = () => {
-    if (!hotel) return 0;
-    const prices: number[] = [];
-    const extractPrices = (arr: any[]) => {
-      if (!Array.isArray(arr)) return;
-      arr.forEach((item) => {
-        const p = typeof item === 'object' ? item.price : null;
-        if (p) prices.push(Number(p));
-      });
-    };
-    extractPrices(hotel.facilities);
-    extractPrices(hotel.activities);
-    return prices.length > 0 ? Math.min(...prices) : 0;
+  const updateFacilityDates = useCallback((name: string, field: 'startDate' | 'endDate', value: string) => {
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        selectedFacilities: prev.selectedFacilities.map(f =>
+          f.name === name ? { ...f, [field]: value } : f
+        ),
+      };
+      
+      // Check availability after updating dates
+      const facility = updated.selectedFacilities.find(f => f.name === name);
+      if (facility?.startDate && facility?.endDate) {
+        setCheckingAvailability(true);
+        const result = checkFacilityAvailability(name, facility.startDate, facility.endDate);
+        setFacilityAvailabilityStatus(prevStatus => ({
+          ...prevStatus,
+          [name]: { isAvailable: result.isAvailable, message: result.conflictMessage }
+        }));
+        setCheckingAvailability(false);
+      } else {
+        // Clear status if dates incomplete
+        setFacilityAvailabilityStatus(prevStatus => {
+          const newStatus = { ...prevStatus };
+          delete newStatus[name];
+          return newStatus;
+        });
+      }
+      
+      return updated;
+    });
+  }, [checkFacilityAvailability]);
+
+  const areFacilityDatesValid = () => {
+    return formData.selectedFacilities.every(f => {
+      if (!f.startDate || !f.endDate) return false;
+      const start = new Date(f.startDate).getTime();
+      const end = new Date(f.endDate).getTime();
+      if (end < start) return false;
+      // Check if facility is available
+      const status = facilityAvailabilityStatus[f.name];
+      if (status && !status.isAvailable) return false;
+      return true;
+    });
   };
 
   const calculateTotal = () => {
     let total = 0;
+    
+    // Calculate facilities cost based on date range
     formData.selectedFacilities.forEach(f => {
-      if (formData.visit_date && formData.checkout_date) {
-        const start = new Date(formData.visit_date).getTime();
-        const end = new Date(formData.checkout_date).getTime();
-        if (end > start) {
-          const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      if (f.startDate && f.endDate) {
+        const start = new Date(f.startDate).getTime();
+        const end = new Date(f.endDate).getTime();
+        if (end >= start) {
+          const dayDifferenceMs = end - start;
+          const days = Math.ceil(dayDifferenceMs / (1000 * 60 * 60 * 24));
           total += f.price * Math.max(days, 1);
         }
       }
     });
+    
+    // Calculate activities cost based on number of people
     formData.selectedActivities.forEach(a => {
       total += a.price * a.numberOfPeople;
     });
+    
     return total;
   };
 
@@ -136,10 +187,22 @@ const HotelBookingPage = () => {
         ...formData,
         selectedFacilities: formData.selectedFacilities.filter(f => f.name !== facility.name),
       });
+      // Clear availability status
+      setFacilityAvailabilityStatus(prev => {
+        const newStatus = { ...prev };
+        delete newStatus[facility.name];
+        return newStatus;
+      });
     } else {
       setFormData({
         ...formData,
-        selectedFacilities: [...formData.selectedFacilities, { name: facility.name, price: facility.price }],
+        selectedFacilities: [...formData.selectedFacilities, { 
+          name: facility.name, 
+          price: facility.price,
+          capacity: facility.capacity,
+          startDate: formData.visit_date || "",
+          endDate: ""
+        }],
       });
     }
   };
@@ -159,19 +222,34 @@ const HotelBookingPage = () => {
     }
   };
 
+  const updateActivityPeople = (name: string, count: number) => {
+    setFormData({
+      ...formData,
+      selectedActivities: formData.selectedActivities.map(a =>
+        a.name === name ? { ...a, numberOfPeople: Math.max(1, count) } : a
+      ),
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!formData.visit_date || !formData.checkout_date) {
-      toast({ title: "Please select dates", variant: "destructive" });
+    if (!formData.visit_date) {
+      toast({ title: "Please select a visit date", variant: "destructive" });
       return;
     }
     if (!formData.guest_name || !formData.guest_email) {
       toast({ title: "Please fill in your details", variant: "destructive" });
       return;
     }
+    
+    // Validate facility dates
+    if (formData.selectedFacilities.length > 0 && !areFacilityDatesValid()) {
+      toast({ title: "Please set valid dates for all selected facilities", variant: "destructive" });
+      return;
+    }
 
     const totalAmount = calculateTotal();
     if (totalAmount === 0) {
-      toast({ title: "Please select at least one room", variant: "destructive" });
+      toast({ title: "Please select at least one room or activity", variant: "destructive" });
       return;
     }
 
@@ -181,8 +259,7 @@ const HotelBookingPage = () => {
       total_amount: totalAmount,
       booking_details: {
         hotel_name: hotel.name,
-        check_in: formData.visit_date,
-        check_out: formData.checkout_date,
+        visit_date: formData.visit_date,
         adults: formData.num_adults,
         children: formData.num_children,
         selectedFacilities: formData.selectedFacilities,
@@ -223,8 +300,8 @@ const HotelBookingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA]">
-        <Loader2 className="h-10 w-10 animate-spin text-teal-600" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -236,16 +313,17 @@ const HotelBookingPage = () => {
   const activities = (hotel.activities || []).filter((a: any) => a.price > 0);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-8">
+    <div className="min-h-screen bg-background pb-8">
       <PaymentStatusDialog
         open={isPaymentInProgress}
         status={paymentStatus}
         errorMessage={errorMessage}
         onClose={resetPayment}
+        paymentMethod={paymentMethod}
       />
 
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-50">
+      <div className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button
             variant="ghost"
@@ -256,7 +334,7 @@ const HotelBookingPage = () => {
           </Button>
           <div className="flex-1">
             <h1 className="text-lg font-black uppercase tracking-tight truncate">{hotel.name}</h1>
-            <div className="flex items-center gap-1 text-slate-500 text-xs">
+            <div className="flex items-center gap-1 text-muted-foreground text-xs">
               <MapPin className="h-3 w-3" />
               <span className="truncate">{hotel.location}</span>
             </div>
@@ -283,45 +361,33 @@ const HotelBookingPage = () => {
           </div>
         </div>
 
-        {/* Dates Section */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+        {/* Visit Date Section */}
+        <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 text-teal-600" />
-            <h2 className="text-sm font-black uppercase tracking-widest text-teal-600">Select Dates</h2>
+            <Calendar className="h-5 w-5 text-primary" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-primary">Select Visit Date</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Check-in</Label>
-              <Input
-                type="date"
-                value={formData.visit_date}
-                onChange={(e) => setFormData({ ...formData, visit_date: e.target.value })}
-                min={new Date().toISOString().split("T")[0]}
-                className="h-12 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Check-out</Label>
-              <Input
-                type="date"
-                value={formData.checkout_date}
-                onChange={(e) => setFormData({ ...formData, checkout_date: e.target.value })}
-                min={formData.visit_date || new Date().toISOString().split("T")[0]}
-                className="h-12 rounded-xl"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Visit Date</Label>
+            <Input
+              type="date"
+              value={formData.visit_date}
+              onChange={(e) => setFormData({ ...formData, visit_date: e.target.value })}
+              min={new Date().toISOString().split("T")[0]}
+              className="h-12 rounded-xl"
+            />
           </div>
         </section>
 
         {/* Guests Section */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+        <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5 text-teal-600" />
-            <h2 className="text-sm font-black uppercase tracking-widest text-teal-600">Guests</h2>
+            <Users className="h-5 w-5 text-primary" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-primary">Guests</h2>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Adults</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Adults</Label>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -343,7 +409,7 @@ const HotelBookingPage = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Children</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Children</Label>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -367,40 +433,108 @@ const HotelBookingPage = () => {
           </div>
         </section>
 
-        {/* Rooms/Facilities Section */}
+        {/* Rooms/Facilities Section with Date Range */}
         {facilities.length > 0 && (
-          <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+          <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
             <div className="flex items-center gap-2 mb-4">
-              <Bed className="h-5 w-5 text-teal-600" />
-              <h2 className="text-sm font-black uppercase tracking-widest text-teal-600">Select Rooms</h2>
+              <Bed className="h-5 w-5 text-primary" />
+              <h2 className="text-sm font-black uppercase tracking-widest text-primary">Select Rooms</h2>
             </div>
             <div className="space-y-3">
               {facilities.map((facility: any, idx: number) => {
-                const isSelected = formData.selectedFacilities.some(f => f.name === facility.name);
+                const selected = formData.selectedFacilities.find(f => f.name === facility.name);
+                const isDateInvalid = selected && (
+                  !selected.startDate || 
+                  !selected.endDate || 
+                  new Date(selected.endDate).getTime() < new Date(selected.startDate).getTime()
+                );
+                
                 return (
                   <div
                     key={idx}
-                    onClick={() => toggleFacility(facility)}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      isSelected 
-                        ? "border-teal-500 bg-teal-50" 
-                        : "border-slate-100 hover:border-slate-200"
+                    className={`p-4 rounded-2xl border-2 transition-all ${
+                      selected 
+                        ? "border-primary bg-primary/5" 
+                        : "border-border hover:border-muted-foreground"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div 
+                      className="flex items-center justify-between cursor-pointer"
+                      onClick={() => toggleFacility(facility)}
+                    >
                       <div className="flex items-center gap-3">
-                        <Checkbox checked={isSelected} />
+                        <Checkbox checked={!!selected} />
                         <div>
-                          <p className="font-bold text-slate-900">{facility.name}</p>
+                          <p className="font-bold">{facility.name}</p>
                           {facility.capacity && (
-                            <p className="text-xs text-slate-500">Capacity: {facility.capacity} guests</p>
+                            <p className="text-xs text-muted-foreground">Capacity: {facility.capacity} guests</p>
                           )}
                         </div>
                       </div>
-                      <span className="font-black text-teal-600">
+                      <span className="font-black text-primary">
                         KSh {Number(facility.price).toLocaleString()}/night
                       </span>
                     </div>
+                    
+                    {/* Date Range Selection for Selected Facility */}
+                    {selected && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">Rental Period</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Start Date</Label>
+                            <Input
+                              type="date"
+                              value={selected.startDate || ""}
+                              onChange={(e) => updateFacilityDates(facility.name, 'startDate', e.target.value)}
+                              min={formData.visit_date || new Date().toISOString().split('T')[0]}
+                              className="mt-1 rounded-xl h-10 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">End Date</Label>
+                            <Input
+                              type="date"
+                              value={selected.endDate || ""}
+                              onChange={(e) => updateFacilityDates(facility.name, 'endDate', e.target.value)}
+                              min={selected.startDate || formData.visit_date || new Date().toISOString().split('T')[0]} 
+                              className="mt-1 rounded-xl h-10 text-sm"
+                            />
+                          </div>
+                        </div>
+                        {isDateInvalid && (
+                          <p className="text-xs text-destructive mt-2 font-medium">Please select valid dates.</p>
+                        )}
+                        {/* Availability Status Indicator */}
+                        {selected.startDate && selected.endDate && !isDateInvalid && (
+                          <div className={cn(
+                            "flex items-center gap-2 mt-3 p-2 rounded-lg text-sm font-medium",
+                            facilityAvailabilityStatus[facility.name]?.isAvailable === true 
+                              ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                              : facilityAvailabilityStatus[facility.name]?.isAvailable === false
+                              ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {checkingAvailability ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Checking availability...
+                              </>
+                            ) : facilityAvailabilityStatus[facility.name]?.isAvailable === true ? (
+                              <>
+                                <Check className="h-4 w-4" />
+                                Room Available
+                              </>
+                            ) : facilityAvailabilityStatus[facility.name]?.isAvailable === false ? (
+                              <>
+                                <X className="h-4 w-4" />
+                                {facilityAvailabilityStatus[facility.name]?.message || 'Dates not available'}
+                              </>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -408,78 +542,127 @@ const HotelBookingPage = () => {
           </section>
         )}
 
-        {/* Activities Section */}
+        {/* Activities Section with Number of People */}
         {activities.length > 0 && (
-          <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+          <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Star className="h-5 w-5 text-orange-500" />
               <h2 className="text-sm font-black uppercase tracking-widest text-orange-500">Add Activities</h2>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-3">
               {activities.map((activity: any, idx: number) => {
-                const isSelected = formData.selectedActivities.some(a => a.name === activity.name);
+                const selected = formData.selectedActivities.find(a => a.name === activity.name);
                 return (
-                  <Badge
+                  <div
                     key={idx}
-                    onClick={() => toggleActivity(activity)}
-                    className={`px-4 py-2 cursor-pointer text-xs font-bold uppercase transition-all ${
-                      isSelected
-                        ? "bg-orange-500 text-white border-orange-500"
-                        : "bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100"
+                    className={`p-4 rounded-2xl border-2 transition-all ${
+                      selected
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/10"
+                        : "border-border hover:border-muted-foreground"
                     }`}
                   >
-                    {activity.name} • KSh {Number(activity.price).toLocaleString()}
-                  </Badge>
+                    <div 
+                      className="flex items-center justify-between cursor-pointer"
+                      onClick={() => toggleActivity(activity)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox checked={!!selected} />
+                        <span className="font-bold">{activity.name}</span>
+                      </div>
+                      <span className="font-black text-orange-600">
+                        KSh {Number(activity.price).toLocaleString()}/person
+                      </span>
+                    </div>
+                    
+                    {/* Number of People Selection for Selected Activity */}
+                    {selected && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">Number of People</Label>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-8 w-8 rounded-full p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateActivityPeople(activity.name, selected.numberOfPeople - 1);
+                              }}
+                            >
+                              -
+                            </Button>
+                            <span className="text-lg font-bold w-8 text-center">{selected.numberOfPeople}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-8 w-8 rounded-full p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateActivityPeople(activity.name, selected.numberOfPeople + 1);
+                              }}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Subtotal: KSh {(activity.price * selected.numberOfPeople).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </section>
         )}
 
-        {/* Guest Details Section */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5 text-teal-600" />
-            <h2 className="text-sm font-black uppercase tracking-widest text-teal-600">Your Details</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Full Name *</Label>
-              <Input
-                value={formData.guest_name}
-                onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
-                placeholder="Enter your full name"
-                className="h-12 rounded-xl"
-              />
+        {/* Guest Details Section - Only show for non-logged in users */}
+        {!user && (
+          <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-primary" />
+              <h2 className="text-sm font-black uppercase tracking-widest text-primary">Your Details</h2>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Email *</Label>
-              <Input
-                type="email"
-                value={formData.guest_email}
-                onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
-                placeholder="your@email.com"
-                className="h-12 rounded-xl"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Full Name *</Label>
+                <Input
+                  value={formData.guest_name}
+                  onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
+                  placeholder="Enter your full name"
+                  className="h-12 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Email *</Label>
+                <Input
+                  type="email"
+                  value={formData.guest_email}
+                  onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
+                  placeholder="your@email.com"
+                  className="h-12 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Phone Number</Label>
+                <Input
+                  type="tel"
+                  value={formData.guest_phone}
+                  onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
+                  placeholder="+254 700 000 000"
+                  className="h-12 rounded-xl"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Phone Number</Label>
-              <Input
-                type="tel"
-                value={formData.guest_phone}
-                onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
-                placeholder="+254 700 000 000"
-                className="h-12 rounded-xl"
-              />
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Payment Section */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+        <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-5 w-5 text-teal-600" />
-            <h2 className="text-sm font-black uppercase tracking-widest text-teal-600">Payment Method</h2>
+            <CreditCard className="h-5 w-5 text-primary" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-primary">Payment Method</h2>
           </div>
           
           <div className="grid grid-cols-2 gap-3 mb-4">
@@ -488,11 +671,11 @@ const HotelBookingPage = () => {
               onClick={() => setPaymentMethod('mpesa')}
               className={`p-4 rounded-2xl border-2 transition-all ${
                 paymentMethod === 'mpesa'
-                  ? "border-green-500 bg-green-50"
-                  : "border-slate-100 hover:border-slate-200"
+                  ? "border-green-500 bg-green-50 dark:bg-green-900/10"
+                  : "border-border hover:border-muted-foreground"
               }`}
             >
-              <Phone className={`h-6 w-6 mx-auto mb-2 ${paymentMethod === 'mpesa' ? 'text-green-600' : 'text-slate-400'}`} />
+              <Phone className={`h-6 w-6 mx-auto mb-2 ${paymentMethod === 'mpesa' ? 'text-green-600' : 'text-muted-foreground'}`} />
               <p className="text-xs font-black uppercase">M-Pesa</p>
             </button>
             <button
@@ -500,18 +683,18 @@ const HotelBookingPage = () => {
               onClick={() => setPaymentMethod('card')}
               className={`p-4 rounded-2xl border-2 transition-all ${
                 paymentMethod === 'card'
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-slate-100 hover:border-slate-200"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10"
+                  : "border-border hover:border-muted-foreground"
               }`}
             >
-              <CreditCard className={`h-6 w-6 mx-auto mb-2 ${paymentMethod === 'card' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <CreditCard className={`h-6 w-6 mx-auto mb-2 ${paymentMethod === 'card' ? 'text-blue-600' : 'text-muted-foreground'}`} />
               <p className="text-xs font-black uppercase">Card</p>
             </button>
           </div>
 
           {paymentMethod === 'mpesa' && (
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">M-Pesa Phone Number *</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">M-Pesa Phone Number *</Label>
               <Input
                 type="tel"
                 value={formData.mpesa_phone}
@@ -519,6 +702,15 @@ const HotelBookingPage = () => {
                 placeholder="254 7XX XXX XXX"
                 className="h-12 rounded-xl"
               />
+              <p className="text-xs text-muted-foreground">You will receive an STK push to complete payment</p>
+            </div>
+          )}
+          
+          {paymentMethod === 'card' && (
+            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-700 dark:text-blue-400">
+                You will be redirected to Paystack's secure checkout page to complete your card payment.
+              </p>
             </div>
           )}
         </section>
@@ -530,9 +722,8 @@ const HotelBookingPage = () => {
           {formData.selectedFacilities.length > 0 && (
             <div className="space-y-2 mb-4">
               {formData.selectedFacilities.map((f, idx) => {
-                const days = formData.visit_date && formData.checkout_date
-                  ? Math.max(1, Math.ceil((new Date(formData.checkout_date).getTime() - new Date(formData.visit_date).getTime()) / (1000 * 60 * 60 * 24)))
-                  : 1;
+                if (!f.startDate || !f.endDate) return null;
+                const days = Math.max(1, Math.ceil((new Date(f.endDate).getTime() - new Date(f.startDate).getTime()) / (1000 * 60 * 60 * 24)));
                 return (
                   <div key={idx} className="flex justify-between text-sm">
                     <span className="text-slate-300">{f.name} x {days} night{days > 1 ? 's' : ''}</span>
@@ -547,7 +738,7 @@ const HotelBookingPage = () => {
             <div className="space-y-2 mb-4 pt-4 border-t border-slate-700">
               {formData.selectedActivities.map((a, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-slate-300">{a.name} x {a.numberOfPeople}</span>
+                  <span className="text-slate-300">{a.name} x {a.numberOfPeople} person{a.numberOfPeople > 1 ? 's' : ''}</span>
                   <span className="font-bold">KSh {(a.price * a.numberOfPeople).toLocaleString()}</span>
                 </div>
               ))}
@@ -563,7 +754,13 @@ const HotelBookingPage = () => {
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={isPaymentInProgress || totalAmount === 0}
+          disabled={
+            isPaymentInProgress || 
+            totalAmount === 0 ||
+            (formData.selectedFacilities.length > 0 && !areFacilityDatesValid()) ||
+            (paymentMethod === 'mpesa' && !formData.mpesa_phone) ||
+            (!user && (!formData.guest_name || !formData.guest_email))
+          }
           className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-lg bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] shadow-xl"
         >
           {isPaymentInProgress ? (
