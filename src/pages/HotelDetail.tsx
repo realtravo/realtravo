@@ -57,8 +57,27 @@ const HotelDetail = () => {
     } finally { setLoading(false); }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!hotel) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground">Loading hotel details...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!hotel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-lg font-bold text-foreground mb-2">Hotel not found</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   const allImages = [hotel.image_url, ...(hotel.gallery_images || []), ...(hotel.images || [])].filter(Boolean);
   const amenitiesList = Array.isArray(hotel.amenities) ? hotel.amenities : hotel.amenities?.split(',').filter(Boolean) || [];

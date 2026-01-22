@@ -65,11 +65,32 @@ const TripDetail = () => {
 
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, trip?.available_tickets || 0);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!trip) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground">Loading trip details...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-lg font-bold text-foreground mb-2">Trip not found</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   const allImages = [trip.image_url, ...(trip.gallery_images || []), ...(trip.images || [])].filter(Boolean);
-  const isExpired = !trip.is_custom_date && trip.date && new Date(trip.date) < new Date().setHours(0,0,0,0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isExpired = !trip.is_custom_date && trip.date && new Date(trip.date) < today;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
