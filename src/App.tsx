@@ -67,7 +67,6 @@ const QRScanner = lazy(() => import("./pages/QRScanner"));
 const PublicManualBooking = lazy(() => import("./pages/PublicManualBooking"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
-const HotelBookingPage = lazy(() => import("./pages/HotelBookingPage"));
 
 const queryClient = new QueryClient();
 
@@ -153,7 +152,6 @@ const App = () => {
                     <Route path="/book/:itemType/:itemId" element={<PublicManualBooking />} />
                     <Route path="/complete-profile" element={<CompleteProfile />} />
                     <Route path="/booking/:type/:id" element={<BookingPage />} />
-                    <Route path="/booking/hotel/:id" element={<HotelBookingPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>

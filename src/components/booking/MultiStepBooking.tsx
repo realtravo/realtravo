@@ -3,12 +3,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Users, Loader2, CheckCircle2, Phone, CreditCard, X, AlertTriangle, Check, ExternalLink } from "lucide-react";
+import { Calendar, Users, Loader2, CheckCircle2, Phone, CreditCard, AlertTriangle, Check, X, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentStatusDialog } from "./PaymentStatusDialog";
-// M-Pesa now handled via Paystack hook
+import { useMpesaPayment } from "@/hooks/useMpesaPayment";
 import { usePaystackPayment } from "@/hooks/usePaystackPayment";
 import { cn } from "@/lib/utils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
@@ -45,9 +45,7 @@ interface MultiStepBookingProps {
     primaryColor?: string;
     accentColor?: string;
     totalCapacity?: number;
-    // NEW: slotLimitType determines if capacity is inventory-based or per-booking limit
     slotLimitType?: 'inventory' | 'per_booking';
-    // NEW: isFlexibleDate indicates if this is a flexible date trip
     isFlexibleDate?: boolean;
 }
 
@@ -88,35 +86,24 @@ export const MultiStepBooking = ({
 }: MultiStepBookingProps) => {
     const { user } = useAuth();
     
-    // Real-time availability check - prevents booking if sold out during booking flow
-    // For per_booking limit type (flexible trips), we don't check global availability
     const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(
         slotLimitType === 'inventory' ? (itemId || undefined) : undefined, 
         slotLimitType === 'inventory' ? totalCapacity : 0
     );
     
-    // Facility availability checking
     const { checkFacilityAvailability, loading: checkingFacility } = useFacilityRangeAvailability(itemId || undefined);
     const [facilityAvailabilityStatus, setFacilityAvailabilityStatus] = useState<Record<string, { isAvailable: boolean; message: string | null }>>({});
     const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-    // Separate facilities and activities into sequential steps to reduce cognitive load
     const hasFacilities = facilities.filter(f => f.price > 0).length > 0;
     const hasActivities = activities.filter(a => a.price > 0).length > 0;
     
-    // Calculate total steps:
-    // Step 1: Date selection (unless skipped)
-    // Step 2: Number of guests
-    // Step 3: Facilities (if has facilities and not skipping)
-    // Step 4: Activities (if has activities and not skipping)
-    // Final step: Summary/Payment (adds +1 if guest user for contact details)
-    const baseSteps = skipDateSelection ? 1 : 2; // guests step is always there
+    const baseSteps = skipDateSelection ? 1 : 2;
     const facilityStep = !skipFacilitiesAndActivities && hasFacilities ? 1 : 0;
     const activityStep = !skipFacilitiesAndActivities && hasActivities ? 1 : 0;
-    const guestInfoStep = !user ? 1 : 0; // guest users need contact details
-    const totalSteps = baseSteps + facilityStep + activityStep + 1; // +1 for summary/payment
+    const guestInfoStep = !user ? 1 : 0;
+    const totalSteps = baseSteps + facilityStep + activityStep + 1;
     
-    // Calculate which step number corresponds to what
     const dateStepNum = skipDateSelection ? 0 : 1;
     const guestsStepNum = skipDateSelection ? 1 : 2;
     const facilitiesStepNum = !skipFacilitiesAndActivities && hasFacilities ? guestsStepNum + 1 : 0;
@@ -141,41 +128,58 @@ export const MultiStepBooking = ({
     const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card'>('mpesa');
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
 
-    // Note: M-Pesa is now handled via Paystack hook below
+    // M-Pesa Daraja payment hook
+    const { 
+        paymentStatus: mpesaStatus, 
+        errorMessage: mpesaError, 
+        initiatePayment: initiateMpesaPayment, 
+        resetPayment: resetMpesa, 
+        isPaymentInProgress: mpesaInProgress 
+    } = useMpesaPayment({
+        onSuccess: (bookingId) => {
+            console.log('✅ M-Pesa Payment succeeded for booking:', bookingId);
+            setPaymentSucceeded(true);
+            setTimeout(() => {
+                resetMpesa();
+                setPaymentSucceeded(false);
+                if (onPaymentSuccess) onPaymentSuccess();
+            }, 2000);
+        },
+        onError: (error) => {
+            console.log('❌ M-Pesa Payment failed:', error);
+            setPaymentSucceeded(false);
+        },
+    });
 
-    // Paystack payment hook (for both card and mobile money)
+    // Paystack payment hook (for card payments only)
     const { 
         paymentStatus: paystackStatus, 
         errorMessage: paystackError, 
         authorizationUrl,
         initiateCardPayment, 
-        initiateMpesaPayment: initiatePaystackMpesa,
         resetPayment: resetPaystack, 
         isPaymentInProgress: paystackInProgress 
     } = usePaystackPayment({
         onSuccess: (bookingId) => {
-            console.log('✅ Paystack Payment succeeded for booking:', bookingId);
+            console.log('✅ Card Payment succeeded for booking:', bookingId);
             setPaymentSucceeded(true);
-            
             setTimeout(() => {
                 resetPaystack();
                 setPaymentSucceeded(false);
-                if (onPaymentSuccess) {
-                    onPaymentSuccess();
-                }
+                if (onPaymentSuccess) onPaymentSuccess();
             }, 2000);
         },
         onError: (error) => {
-            console.log('❌ Paystack Payment failed:', error);
+            console.log('❌ Card Payment failed:', error);
             setPaymentSucceeded(false);
         },
     });
 
-    // Combined payment status - now both use Paystack
-    const paymentStatus = paystackStatus;
-    const errorMessage = paystackError;
-    const isPaymentInProgress = paystackInProgress;
-    const resetPayment = resetPaystack;
+    // Combined payment status based on method
+    const paymentStatus = paymentMethod === 'mpesa' ? mpesaStatus : paystackStatus;
+    const errorMessage = paymentMethod === 'mpesa' ? mpesaError : paystackError;
+    const isPaymentInProgress = paymentMethod === 'mpesa' ? mpesaInProgress : paystackInProgress;
+    const resetPayment = paymentMethod === 'mpesa' ? resetMpesa : resetPaystack;
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -290,14 +294,12 @@ export const MultiStepBooking = ({
             );
             
             if (result.success && result.authorization_url) {
-                // Open Paystack checkout in a new tab
                 window.open(result.authorization_url, '_blank');
             }
         } else {
-            // Use M-Pesa STK push via Paystack
-            await initiatePaystackMpesa(
+            // Use M-Pesa Daraja STK push
+            await initiateMpesaPayment(
                 formData.mpesa_phone,
-                formData.guest_email,
                 totalAmount,
                 bookingData
             );
@@ -894,8 +896,8 @@ export const MultiStepBooking = ({
                 )}
             </div>
 
-            {/* Footer with Navigation */}
-            <div className="p-6 pt-4 border-t border-slate-100 bg-white sticky bottom-0">
+            {/* Footer with Navigation - scrolls with content */}
+            <div className="p-6 pt-4 border-t border-slate-100 bg-white">
                 <div className="flex gap-3">
                     {currentStep > (skipDateSelection ? guestsStepNum : dateStepNum) && (
                         <Button
