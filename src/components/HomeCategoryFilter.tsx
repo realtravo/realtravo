@@ -8,20 +8,19 @@ interface HomeCategoryFilterProps {
   onCategoryChange: (category: CategoryType) => void;
 }
 
-// Categories without "All" - defaults to showing all listings when none selected
-const categories: { id: CategoryType; icon: typeof Tent; label: string }[] = [
-  { id: "campsite", icon: Tent, label: "Adventure" },
-  { id: "hotels", icon: Hotel, label: "Hotels" },
-  { id: "trips", icon: Calendar, label: "Trips" },
-  { id: "events", icon: Compass, label: "Events" },
-];
+// Define specific colors for each category
+const categories = [
+  { id: "campsite", icon: Tent, label: "Adventure", color: "bg-orange-500", border: "border-orange-200" },
+  { id: "hotels", icon: Hotel, label: "Hotels", color: "bg-blue-500", border: "border-blue-200" },
+  { id: "trips", icon: Calendar, label: "Trips", color: "bg-emerald-500", border: "border-emerald-200" },
+  { id: "events", icon: Compass, label: "Events", color: "bg-purple-500", border: "border-purple-200" },
+] as const;
 
 export const HomeCategoryFilter = ({
   activeCategory,
   onCategoryChange,
 }: HomeCategoryFilterProps) => {
   const handleCategoryClick = (catId: CategoryType) => {
-    // Toggle: if already active, go back to "all" (show everything)
     if (activeCategory === catId) {
       onCategoryChange("all");
     } else {
@@ -31,8 +30,7 @@ export const HomeCategoryFilter = ({
 
   return (
     <div className="w-full bg-background border-b border-border">
-      {/* Centered container with rounded colored categories */}
-      <div className="flex justify-center overflow-x-auto scrollbar-hide gap-2 px-3 py-3">
+      <div className="flex justify-center overflow-x-auto scrollbar-hide gap-4 px-3 py-4">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
           return (
@@ -40,15 +38,31 @@ export const HomeCategoryFilter = ({
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all",
-                "border-2 shadow-sm",
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary shadow-md"
-                  : "bg-muted/60 text-muted-foreground border-muted hover:bg-primary/10 hover:border-primary/50 hover:text-primary"
+                "group flex items-center gap-3 px-2 py-1.5 rounded-full transition-all duration-200",
+                "hover:bg-muted/80", // Slight background hover for the whole button
+                isActive ? "ring-2 ring-offset-2 ring-primary" : "ring-0"
               )}
             >
-              <cat.icon className="h-4 w-4" />
-              <span>{cat.label}</span>
+              {/* The Rounded Circle for the Icon */}
+              <div
+                className={cn(
+                  "flex items-center justify-center h-10 w-10 rounded-full text-white transition-transform duration-200 shadow-sm",
+                  cat.color,
+                  isActive ? "scale-110 shadow-md" : "scale-100 opacity-80 group-hover:opacity-100"
+                )}
+              >
+                <cat.icon className="h-5 w-5" />
+              </div>
+
+              {/* The Label (Outside the circle) */}
+              <span
+                className={cn(
+                  "text-xs font-bold pr-2 transition-colors",
+                  isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                )}
+              >
+                {cat.label}
+              </span>
             </button>
           );
         })}
