@@ -1,196 +1,157 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { Search as SearchIcon, MapPin, Sparkles, TrendingUp, Calendar, Map, Mountain, Hotel, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef } from "react";
+import { 
+  Home, Ticket, Heart, Phone, Info, LogIn, LogOut, User, 
+  FileText, Shield, ChevronRight, Trophy, Map, Mountain, Bed 
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
 
-const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-};
-
-// Category Definitions
-const CATEGORIES = [
-  { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'event', label: 'Events & Sports', icon: Calendar },
-  { id: 'trip', label: 'Trip & Tours', icon: Map },
-  { id: 'adventure', label: 'Adventure Places', icon: Mountain },
-  { id: 'hotel', label: 'Hotels', icon: Hotel },
-];
-
-interface SearchResult {
-  id: string;
-  name: string;
-  type: string;
-  location?: string;
-  country?: string;
-  image_url?: string;
+interface NavigationDrawerProps {
+  onClose: () => void;
 }
 
-export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value: string; onChange: (v: string) => void; onSubmit: () => void }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [dbResults, setDbResults] = useState<SearchResult[]>([]);
-  const [trendingSearches, setTrendingSearches] = useState<{query: string, search_count: number}[]>([]);
-  const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
+const Separator = () => (
+  <hr className="my-1 border-slate-100 dark:border-gray-800/50" />
+);
+
+export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
+  const { user, signOut } = useAuth();
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
-      // Fetch all items
-      const { data: items } = await supabase.from("trips").select("*");
-      if (items) setDbResults(items);
-      
-      const { data: trending } = await supabase.rpc('get_trending_searches', { limit_count: 6 });
-      if (trending) setTrendingSearches(trending);
+    const fetchUserData = async () => {
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
+      if (profile?.name) setUserName(profile.name);
     };
-    fetchData();
-  }, []);
+    fetchUserData();
+  }, [user]);
 
-  // Filter Logic: Category + Text
-  const filteredSuggestions = useMemo(() => {
-    let results = dbResults;
+  const handleProtectedNavigation = (path: string) => {
+    window.location.href = user ? path : "/auth";
+    onClose();
+  };
 
-    if (activeCategory !== 'all') {
-      results = results.filter(item => item.type?.toLowerCase() === activeCategory.toLowerCase());
-    }
-
-    if (value.trim()) {
-      const searchTerm = value.toLowerCase();
-      results = results.filter(item => 
-        item.name?.toLowerCase().includes(searchTerm) || 
-        item.location?.toLowerCase().includes(searchTerm) ||
-        item.country?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    return results;
-  }, [value, dbResults, activeCategory]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsExpanded(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const NavItem = ({ icon: Icon, label, path, isProtected = false }: any) => (
+    <li>
+      <button
+        onClick={() => isProtected ? handleProtectedNavigation(path) : (window.location.href = path, onClose())}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800 transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-slate-100 dark:bg-gray-800 group-hover:bg-[#008080] transition-colors">
+            <Icon className="h-4 w-4 text-slate-600 dark:text-slate-300 group-hover:text-white" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">
+            {label}
+          </span>
+        </div>
+        <ChevronRight className="h-3 w-3 text-slate-300 group-hover:text-[#008080] transition-transform group-hover:translate-x-1" />
+      </button>
+      <Separator />
+    </li>
+  );
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-2xl mx-auto z-50">
-      {/* Main Search Bar */}
-      <div className={cn("relative transition-all duration-300", isExpanded && "scale-[1.01]")}>
-        <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-600 z-10" />
-        <Input
-          type="text"
-          placeholder="Where to next?"
-          value={value}
-          onFocus={() => setIsExpanded(true)}
-          onChange={(e) => onChange(e.target.value)}
-          className="pl-14 pr-32 h-16 text-base rounded-full border-none shadow-2xl bg-white focus-visible:ring-2 focus-visible:ring-teal-500"
-        />
-        <Button
-          onClick={onSubmit}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-12 px-8 text-sm font-bold text-white shadow-lg border-none hover:opacity-90 transition-all active:scale-95"
-          style={{ backgroundColor: COLORS.CORAL }}
-        >
-          Search
-        </Button>
-      </div>
-
-      {/* Suggestions and Categories Panel */}
-      {isExpanded && (
-        <div className="absolute left-0 right-0 top-full mt-3 bg-white rounded-[32px] shadow-[0_25px_60px_rgba(0,0,0,0.2)] overflow-hidden p-4 animate-in fade-in slide-in-from-top-2">
-          
-          {/* Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 pt-2 no-scrollbar px-2 border-b border-slate-50">
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all text-[11px] font-black uppercase tracking-wider border",
-                    isActive 
-                      ? "bg-teal-600 text-white border-teal-600 shadow-md" 
-                      : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100"
-                  )}
-                >
-                  <Icon className={cn("h-3.5 w-3.5", isActive ? "text-white" : "text-teal-600")} />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Dynamic List */}
-          <div className="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-1 mt-4">
-            {filteredSuggestions.length > 0 ? (
-              filteredSuggestions.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(`/${item.type}/${item.id}`)}
-                  className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all text-left rounded-2xl group"
-                >
-                  <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden shadow-sm bg-slate-100">
-                    <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <Badge className="bg-teal-50 text-teal-700 text-[9px] font-black border-none px-1.5 py-0 hover:bg-teal-100">
-                        {item.type.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-sm truncate">{item.name}</h4>
-                    <div className="flex items-center gap-1 text-slate-400">
-                      <MapPin className="h-3 w-3" />
-                      <span className="text-[10px] font-bold uppercase tracking-tight">{item.location || item.country}</span>
-                    </div>
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="py-12 text-center flex flex-col items-center">
-                <div className="bg-slate-50 p-4 rounded-full mb-3">
-                  <SearchIcon className="h-6 w-6 text-slate-300" />
-                </div>
-                <p className="text-slate-400 text-sm font-bold uppercase tracking-tighter">No items found</p>
-                <button 
-                  onClick={() => {setActiveCategory('all'); onChange('');}}
-                  className="mt-2 text-teal-600 text-xs font-bold underline"
-                >
-                  Clear all filters
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Trending Footer */}
-          <div className="mt-4 pt-4 border-t border-slate-100 px-2 pb-2">
-             <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-4 w-4 text-slate-400" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Popular Right Now</span>
-             </div>
-             <div className="flex flex-wrap gap-2">
-                {trendingSearches.map((t, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => {onChange(t.query); setActiveCategory('all');}}
-                    className="px-3 py-1.5 bg-slate-50 rounded-full text-[11px] font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                  >
-                    {t.query}
-                  </button>
-                ))}
-             </div>
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950">
+      {/* Brand Header */}
+      <div className="p-6 bg-white dark:bg-gray-950 border-b border-slate-100 dark:border-gray-800">
+        <div className="flex items-center gap-4">
+          <img 
+            src="/fulllogo.png" 
+            alt="Realtravo Logo"
+            className="h-10 w-10 rounded-full shadow-md object-contain bg-slate-50 p-1 border border-slate-100"
+          />
+          <div>
+            <span 
+              className="font-bold text-2xl tracking-tight leading-none block italic"
+              style={{
+                background: "linear-gradient(to right, #1a365d, #2b6cb0, #4fd1c5)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0px 2px 2px rgba(0,0,0,0.1))"
+              }}
+            >
+              RealTravo
+            </span>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">
+              Click.Pack.Go!.
+            </p>
           </div>
         </div>
-      )}
+      </div>
+
+      <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+        {/* User Profile Card */}
+        <div className="mb-6">
+          {user ? (
+            <div className="p-4 rounded-[24px] bg-slate-50 dark:bg-gray-900 border border-slate-100 dark:border-gray-800">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-full bg-[#008080] flex items-center justify-center text-white font-black">
+                  {userName?.charAt(0) || "U"}
+                </div>
+                <div className="flex flex-col overflow-hidden">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Welcome back</span>
+                  <span className="text-sm font-black uppercase tracking-tight truncate dark:text-white text-slate-900">
+                    {userName || "Explorer"}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Link 
+                  to="/profile" onClick={onClose}
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-[9px] font-black uppercase tracking-widest hover:border-[#008080] transition-colors text-slate-600"
+                >
+                  <User className="h-3 w-3" /> Profile
+                </Link>
+                <button 
+                  onClick={() => { signOut(); onClose(); }}
+                  className="flex items-center justify-center gap-2 py-2 rounded-lg bg-red-50 text-red-600 text-[9px] font-black uppercase tracking-widest hover:bg-red-100 transition-colors"
+                >
+                  <LogOut className="h-3 w-3" /> Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              to="/auth" onClick={onClose}
+              className="flex items-center justify-center w-full py-4 rounded-[20px] bg-[#008080] text-white shadow-lg shadow-[#008080]/20 active:scale-95 transition-all"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em]">Login / Register</span>
+            </Link>
+          )}
+        </div>
+
+        <ul className="space-y-1">
+          <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Main Menu</p>
+          <NavItem icon={Home} label="Home" path="/" />
+          <NavItem icon={Ticket} label="My Bookings" path="/bookings" isProtected />
+          <NavItem icon={Heart} label="Wishlist" path="/saved" isProtected />
+          
+          <div className="h-4" />
+          {/* NEW CATEGORIES SECTION */}
+          <p className="px-4 text-[9px] font-black text-[#008080] uppercase tracking-[0.2em] mb-2">Explore Categories</p>
+          <NavItem icon={Trophy} label="Events & Sports" path="/events" />
+          <NavItem icon={Map} label="Trips & Tours" path="/trips" />
+          <NavItem icon={Mountain} label="Adventure Places" path="/adventures" />
+          <NavItem icon={Bed} label="Hotels & Stays" path="/hotels" />
+
+          <div className="h-4" />
+          <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Support & Legal</p>
+          <NavItem icon={Phone} label="Contact" path="/contact" />
+          <NavItem icon={Info} label="About" path="/about" />
+          <NavItem icon={FileText} label="Terms" path="/terms-of-service" />
+          <NavItem icon={Shield} label="Privacy" path="/privacy-policy" />
+        </ul>
+      </nav>
+      
+      <div className="p-6 border-t border-slate-50 dark:border-gray-900 text-center">
+        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">
+          RealTravo v2.0
+        </span>
+      </div>
     </div>
   );
 };
