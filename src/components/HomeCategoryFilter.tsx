@@ -8,8 +8,8 @@ interface HomeCategoryFilterProps {
   onCategoryChange: (category: CategoryType) => void;
 }
 
+// Categories without "All" - defaults to showing all listings when none selected
 const categories: { id: CategoryType; icon: typeof Tent; label: string }[] = [
-  { id: "all", icon: Compass, label: "All" },
   { id: "campsite", icon: Tent, label: "Adventure" },
   { id: "hotels", icon: Hotel, label: "Hotels" },
   { id: "trips", icon: Calendar, label: "Trips" },
@@ -20,24 +20,34 @@ export const HomeCategoryFilter = ({
   activeCategory,
   onCategoryChange,
 }: HomeCategoryFilterProps) => {
+  const handleCategoryClick = (catId: CategoryType) => {
+    // Toggle: if already active, go back to "all" (show everything)
+    if (activeCategory === catId) {
+      onCategoryChange("all");
+    } else {
+      onCategoryChange(catId);
+    }
+  };
+
   return (
     <div className="w-full bg-background border-b border-border">
-      <div className="flex overflow-x-auto scrollbar-hide gap-1 px-3 py-2">
+      {/* Centered container with rounded colored categories */}
+      <div className="flex justify-center overflow-x-auto scrollbar-hide gap-2 px-3 py-3">
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
           return (
             <button
               key={cat.id}
-              onClick={() => onCategoryChange(cat.id)}
+              onClick={() => handleCategoryClick(cat.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
-                "border border-transparent",
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all",
+                "border-2 shadow-sm",
                 isActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-muted/60 text-muted-foreground border-muted hover:bg-primary/10 hover:border-primary/50 hover:text-primary"
               )}
             >
-              <cat.icon className="h-3.5 w-3.5" />
+              <cat.icon className="h-4 w-4" />
               <span>{cat.label}</span>
             </button>
           );

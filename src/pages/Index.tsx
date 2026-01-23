@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SearchBarWithSuggestions } from "@/components/SearchBarWithSuggestions";
-import { ListingCardWithDescription } from "@/components/ListingCardWithDescription";
 import { ListingCard } from "@/components/ListingCard";
 import { HomeCategoryFilter, CategoryType } from "@/components/HomeCategoryFilter";
 import { HomeFilterBar, HomeFilterValues } from "@/components/HomeFilterBar";
@@ -29,7 +28,6 @@ import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { useResponsiveLimit } from "@/hooks/useResponsiveLimit";
 
 const MemoizedListingCard = memo(ListingCard);
-const MemoizedListingCardWithDescription = memo(ListingCardWithDescription);
 
 const Index = () => {
   const navigate = useNavigate();
@@ -598,7 +596,7 @@ const Index = () => {
                 const ratingData = ratings.get(listing.id);
                 
                 return (
-                  <MemoizedListingCardWithDescription
+                  <MemoizedListingCard
                     key={listing.id}
                     id={listing.id}
                     type={listing.type}
@@ -606,7 +604,6 @@ const Index = () => {
                     location={listing.location}
                     country={listing.country}
                     imageUrl={listing.image_url}
-                    description={listing.description}
                     price={listing.price || listing.entry_fee || 0}
                     date={listing.date}
                     isCustomDate={listing.is_custom_date}
@@ -617,7 +614,6 @@ const Index = () => {
                     activities={listing.activities}
                     distance={itemDistance}
                     avgRating={ratingData?.avgRating}
-                    reviewCount={ratingData?.reviewCount}
                     place={listing.place}
                     availableTickets={listing.type === "TRIP" || listing.type === "EVENT" ? listing.available_tickets : undefined}
                     bookedTickets={listing.type === "TRIP" || listing.type === "EVENT" ? bookingStats[listing.id] || 0 : undefined}
