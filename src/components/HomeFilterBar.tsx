@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MapPin, Search, Loader2 } from "lucide-react";
+import { MapPin, Search, Loader2, X } from "lucide-react";
 import { format, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ interface LocationSuggestion {
   location: string;
   place?: string;
   country: string;
-  type?: string; // Added to match your initial logic
+  type?: string;
 }
 
 interface HomeFilterBarProps {
@@ -37,13 +37,11 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
 
   const today = startOfDay(new Date());
 
-  // 1. Unified Fetch Logic
   const fetchLocations = useCallback(async (query: string = "") => {
     setIsLoading(true);
     try {
       const searchTerm = query.toLowerCase();
       
-      // We fetch from multiple tables to give a "global" feel as per your original code
       const [hotels, adventures] = await Promise.all([
         supabase.from("hotels").select("location, place, country").eq("approval_status", "approved").limit(5),
         supabase.from("adventure_places").select("location, place, country").eq("approval_status", "approved").limit(5)
@@ -59,7 +57,6 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
         );
       }
 
-      // Deduplicate
       const seen = new Set();
       const uniqueResults = allResults.filter(item => {
         const key = `${item.location}-${item.place}`;
@@ -76,7 +73,6 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
     }
   }, []);
 
-  // 2. Typing Debounce
   useEffect(() => {
     if (location.trim().length > 0) {
       const timer = setTimeout(() => fetchLocations(location), 300);
@@ -84,15 +80,16 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
     }
   }, [location, fetchLocations]);
 
-  // 3. Handle Tapped (Focus)
   const handleInputFocus = () => {
+    // Close date popovers when location is focused to prevent overlap
+    setCheckInOpen(false);
+    setCheckOutOpen(false);
     setShowLocationSuggestions(true);
     if (location.length === 0) {
-      fetchLocations(); // Fetch defaults immediately on tap
+      fetchLocations();
     }
   };
 
-  // 4. Click Outside Logic
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
@@ -135,51 +132,67 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
                   onFocus={handleInputFocus}
                   className="border-none shadow-none focus-visible:ring-0 h-7 p-1 text-sm bg-transparent placeholder:text-muted-foreground/60"
                 />
-                {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground mr-2" />}
+                {isLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground mr-2" />
+                ) : location && (
+                  <button onClick={() => setLocation("")} className="mr-2 hover:text-foreground text-muted-foreground/50">
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Suggestions Dropdown - Fixed Z-index and Stacking */}
             {showLocationSuggestions && (locationSuggestions.length > 0 || isLoading) && (
-              <div className="absolute left-0 right-0 top-[calc(100%+10px)] bg-popover border border-border rounded-xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
-                <p className="px-4 py-1 text-[10px] font-semibold text-muted-foreground uppercase">
+              <div className="absolute left-0 right-0 top-[calc(100%+12px)] bg-popover border border-border rounded-2xl shadow-2xl z-[100] py-3 animate-in fade-in zoom-in-95 duration-200 min-w-[280px]">
+                <p className="px-5 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   {location.length > 0 ? "Suggestions" : "Popular Destinations"}
                 </p>
-                {locationSuggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setLocation(suggestion.place || suggestion.location);
-                      setShowLocationSuggestions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left hover:bg-accent transition-colors flex items-center gap-3"
-                  >
-                    <div className="bg-muted p-1.5 rounded-md">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium leading-none">{suggestion.place || suggestion.location}</span>
-                      <span className="text-xs text-muted-foreground mt-1">{suggestion.country}</span>
-                    </div>
-                  </button>
-                ))}
+                <div className="max-h-[350px] overflow-y-auto">
+                  {locationSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setLocation(suggestion.place || suggestion.location);
+                        setShowLocationSuggestions(false);
+                      }}
+                      className="w-full px-5 py-3 text-left hover:bg-accent transition-colors flex items-center gap-4 group/item"
+                    >
+                      <div className="bg-muted group-hover/item:bg-primary/10 p-2 rounded-lg transition-colors">
+                        <MapPin className="h-4 w-4 text-muted-foreground group-hover/item:text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-foreground">
+                          {suggestion.place || suggestion.location}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {suggestion.country}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="hidden md:block w-px h-8 bg-border" />
+          <div className="hidden md:block w-px h-8 bg-border mx-1" />
 
-          {/* Check-in/out and Search Button (remaining code same as before) */}
-          <div className="flex-1 group">
+          {/* Check-in Section */}
+          <div className="flex-1">
             <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
               <PopoverTrigger asChild>
-                <button className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors">
+                <button 
+                  onClick={() => setShowLocationSuggestions(false)}
+                  className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors"
+                >
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">From</span>
-                  <span className={cn("text-sm mt-0.5 truncate", !checkIn && "text-muted-foreground/60")}>
+                  <span className={cn("text-sm mt-0.5 truncate font-medium", !checkIn && "text-muted-foreground/60")}>
                     {checkIn ? format(checkIn, "MMM dd, yyyy") : "Add date"}
                   </span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+              <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-border" align="start" sideOffset={10}>
                 <Calendar
                   mode="single"
                   selected={checkIn}
@@ -191,19 +204,23 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
             </Popover>
           </div>
 
-          <div className="hidden md:block w-px h-8 bg-border" />
+          <div className="hidden md:block w-px h-8 bg-border mx-1" />
 
-          <div className="flex-1 group">
+          {/* Check-out Section */}
+          <div className="flex-1">
             <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
               <PopoverTrigger asChild>
-                <button className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors">
+                <button 
+                  onClick={() => setShowLocationSuggestions(false)}
+                  className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors"
+                >
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">To</span>
-                  <span className={cn("text-sm mt-0.5 truncate", !checkOut && "text-muted-foreground/60")}>
+                  <span className={cn("text-sm mt-0.5 truncate font-medium", !checkOut && "text-muted-foreground/60")}>
                     {checkOut ? format(checkOut, "MMM dd, yyyy") : "Add date"}
                   </span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+              <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border-border" align="start" sideOffset={10}>
                 <Calendar
                   mode="single"
                   selected={checkOut}
@@ -215,14 +232,15 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
             </Popover>
           </div>
 
+          {/* Actions Section */}
           <div className="flex items-center gap-1 pl-2 pr-1 py-1">
             {hasFilters && (
-              <Button onClick={handleClear} variant="ghost" className="h-10 px-4 text-xs font-semibold text-muted-foreground rounded-full">
+              <Button onClick={handleClear} variant="ghost" className="h-10 px-4 text-xs font-bold text-muted-foreground rounded-full hover:bg-destructive/10 hover:text-destructive">
                 Clear
               </Button>
             )}
-            <Button onClick={handleApply} className="h-11 px-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex gap-2">
-              <Search className="h-4 w-4" />
+            <Button onClick={handleApply} className="h-11 px-6 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex gap-2 shadow-sm">
+              <Search className="h-4 w-4 stroke-[3px]" />
               <span>Search</span>
             </Button>
           </div>
