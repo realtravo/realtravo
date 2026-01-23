@@ -28,9 +28,9 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 1. Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
+      // Fetching everything from trips to ensure we have "all items"
       const { data: trips } = await supabase.from("trips").select("*");
       if (trips) setDbResults(trips.map(t => ({ ...t, type: 'trip' })));
       
@@ -40,19 +40,20 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
     fetchData();
   }, []);
 
-  // 2. FILTER LOGIC: This makes the name/location show up while typing
+  // Updated logic: Returns ALL if empty, otherwise filters by name/location
   const filteredSuggestions = useMemo(() => {
-    if (!value.trim()) return dbResults.slice(0, 5); // Show top 5 if empty
+    if (!value.trim()) {
+      return dbResults; // Return everything when empty
+    }
     
     const searchTerm = value.toLowerCase();
     return dbResults.filter(item => 
       item.name?.toLowerCase().includes(searchTerm) || 
       item.location?.toLowerCase().includes(searchTerm) ||
       item.country?.toLowerCase().includes(searchTerm)
-    ).slice(0, 8); // Limit to 8 results
+    );
   }, [value, dbResults]);
 
-  // Handle clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -80,7 +81,7 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
         />
         <Button
           onClick={onSubmit}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-12 px-8 text-sm font-bold text-white shadow-lg border-none"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-12 px-8 text-sm font-bold text-white shadow-lg border-none hover:opacity-90 transition-opacity"
           style={{ backgroundColor: COLORS.CORAL }}
         >
           Search
@@ -90,16 +91,21 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
       {isExpanded && (
         <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden p-4 animate-in fade-in slide-in-from-top-2">
           
-          <div className="flex justify-between items-center px-4 py-2 mb-2">
+          <div className="flex justify-between items-center px-4 py-2 mb-2 border-b border-slate-50">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" style={{ color: COLORS.CORAL }} />
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
-                {value.length > 0 ? `Results for "${value}"` : "Popular Destinations"}
+                {value.length > 0 ? `Results for "${value}"` : "Discover All Destinations"}
               </span>
             </div>
+            {value.length > 0 && (
+              <button onClick={() => onChange("")} className="text-[10px] font-bold text-slate-400 hover:text-teal-600 uppercase">
+                Clear
+              </button>
+            )}
           </div>
 
-          <div className="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="space-y-1 max-h-[450px] overflow-y-auto custom-scrollbar pr-1">
             {filteredSuggestions.length > 0 ? (
               filteredSuggestions.map((item) => (
                 <button
@@ -107,12 +113,12 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
                   onClick={() => navigate(`/${item.type}/${item.id}`)}
                   className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all text-left rounded-2xl group"
                 >
-                  <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100">
-                    <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
+                  <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 shadow-sm">
+                    <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <Badge className="bg-teal-50 text-teal-700 text-[9px] font-bold border-none hover:bg-teal-50 px-1.5 py-0">
+                      <Badge className="bg-teal-50 text-teal-700 text-[9px] font-bold border-none px-1.5 py-0">
                         {item.type.toUpperCase()}
                       </Badge>
                     </div>
@@ -127,24 +133,25 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value:
                 </button>
               ))
             ) : (
-              <div className="p-8 text-center text-slate-400 text-sm italic">
-                No matches found for "{value}"
+              <div className="p-10 text-center flex flex-col items-center gap-2">
+                <SearchIcon className="h-8 w-8 text-slate-200" />
+                <p className="text-slate-400 text-sm italic">No matches found for "{value}"</p>
               </div>
             )}
           </div>
 
-          {/* Trending Section */}
+          {/* Trending Section - Visible all the time */}
           <div className="mt-4 pt-4 border-t border-slate-100 px-2 pb-2">
              <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-slate-400" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Trending Now</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Popular Searches</span>
              </div>
              <div className="flex flex-wrap gap-2">
                 {trendingSearches.map((t, i) => (
                   <button 
                     key={i} 
                     onClick={() => onChange(t.query)}
-                    className="px-3 py-1.5 bg-slate-50 rounded-full text-xs font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                    className="px-3 py-1.5 bg-slate-50 rounded-full text-[11px] font-bold text-slate-600 hover:bg-teal-600 hover:text-white transition-all"
                   >
                     {t.query}
                   </button>
