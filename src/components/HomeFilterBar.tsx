@@ -173,7 +173,7 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
             <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
               <PopoverTrigger asChild>
                 <button className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check in</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">From</span>
                   <span className={cn("text-sm mt-0.5 truncate", !checkIn && "text-muted-foreground/60")}>
                     {checkIn ? format(checkIn, "MMM dd, yyyy") : "Add date"}
                   </span>
@@ -197,7 +197,7 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
             <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
               <PopoverTrigger asChild>
                 <button className="flex flex-col w-full px-4 py-1 text-left hover:bg-accent/50 rounded-xl md:rounded-none transition-colors">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check out</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">To</span>
                   <span className={cn("text-sm mt-0.5 truncate", !checkOut && "text-muted-foreground/60")}>
                     {checkOut ? format(checkOut, "MMM dd, yyyy") : "Add date"}
                   </span>
