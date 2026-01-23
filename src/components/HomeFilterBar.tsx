@@ -3,12 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, MapPin, Search, X, RotateCcw } from "lucide-react";
-import { format } from "date-fns";
+import { MapPin, Search } from "lucide-react";
+import { format, startOfDay } from "date-fns"; // Added startOfDay
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 
-// ... (Interfaces remain the same)
+// 1. Define missing interfaces
+interface LocationSuggestion {
+  place?: string;
+  location: string;
+  country: string;
+}
+
+interface HomeFilterBarProps {
+  onApplyFilters: (filters: { 
+    location: string; 
+    checkIn?: Date; 
+    checkOut?: Date 
+  }) => void;
+  onClear: () => void;
+}
 
 export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) => {
   const [location, setLocation] = useState("");
@@ -19,8 +32,6 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   const locationRef = useRef<HTMLDivElement>(null);
-
-  // ... (useEffect logic for fetching suggestions and outside clicks remains the same)
 
   const handleApply = () => {
     onApplyFilters({ location: location.trim(), checkIn, checkOut });
@@ -36,6 +47,9 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
   };
 
   const hasFilters = location || checkIn || checkOut;
+
+  // Get today's date at 00:00:00 to ensure consistent disabling logic
+  const today = startOfDay(new Date());
 
   return (
     <div className="w-full bg-background border-b border-border px-4 py-6 md:py-8">
@@ -102,7 +116,8 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
                   mode="single"
                   selected={checkIn}
                   onSelect={(date) => { setCheckIn(date); setCheckInOpen(false); }}
-                  disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                  // Fixed: Simpler disabled logic
+                  disabled={(date) => date < today}
                   initialFocus
                 />
               </PopoverContent>
@@ -127,7 +142,8 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
                   mode="single"
                   selected={checkOut}
                   onSelect={(date) => { setCheckOut(date); setCheckOutOpen(false); }}
-                  disabled={(date) => (checkIn ? date <= checkIn : date < new Date())}
+                  // Fixed: Ensure checkout is after check-in and not in the past
+                  disabled={(date) => (checkIn ? date <= checkIn : date < today)}
                   initialFocus
                 />
               </PopoverContent>
