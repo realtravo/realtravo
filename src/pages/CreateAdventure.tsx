@@ -63,6 +63,17 @@ const CreateAdventure = () => {
   const [activities, setActivities] = useState<DynamicItem[]>([]);
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
 
+  // Clear specific error when user interacts with a field
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrs = { ...prev };
+        delete newErrs[field];
+        return newErrs;
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
@@ -90,16 +101,15 @@ const CreateAdventure = () => {
 
     if (step === 3) {
       if (!formData.email.trim()) newErrors.email = "Business email is required";
-      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email address";
+      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
       
-      if (!formData.phoneNumber || formData.phoneNumber.trim().length < 7) newErrors.phoneNumber = "A valid phone number is required";
+      if (!formData.phoneNumber || formData.phoneNumber.trim().length < 7) newErrors.phoneNumber = "Valid WhatsApp/Phone is required";
       if (!formData.description.trim()) newErrors.description = "Description is required";
     }
 
     if (step === 4) {
       if (!formData.openingHours) newErrors.openingHours = "Opening time is required";
       if (!formData.closingHours) newErrors.closingHours = "Closing time is required";
-      
       const hasSelectedDay = Object.values(workingDays).some(day => day === true);
       if (!hasSelectedDay) newErrors.workingDays = "Select at least one operating day";
     }
@@ -109,26 +119,26 @@ const CreateAdventure = () => {
     }
 
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) {
-      toast({ title: "Check required fields", description: "Please fill in all details highlighted in red.", variant: "destructive" });
-      return false;
-    }
-    return true;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+      window.scrollTo(0, 0);
+    } else {
+      toast({ title: "Form Incomplete", description: "Please fix the errors highlighted in red.", variant: "destructive" });
     }
   };
 
   const handlePrevious = () => {
     setErrors({});
     setCurrentStep(prev => Math.max(prev - 1, 1));
+    window.scrollTo(0, 0);
   };
 
-  // Helper for Input Error Styling
-  const inputErrorStyle = (field: string) => errors[field] ? "border-red-500 focus-visible:ring-red-500 bg-red-50/30" : "border-slate-100 bg-slate-50/50";
+  const inputErrorStyle = (field: string) => 
+    errors[field] ? "border-red-500 ring-1 ring-red-500 bg-red-50/30" : "border-slate-100 bg-slate-50/50";
 
   const getCurrentLocation = () => {
     if ("geolocation" in navigator) {
@@ -136,8 +146,8 @@ const CreateAdventure = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           setFormData(prev => ({ ...prev, latitude, longitude }));
-          setErrors(prev => ({ ...prev, gps: "" }));
-          toast({ title: "Coordinates captured", description: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` });
+          clearError("gps");
+          toast({ title: "Coordinates captured" });
         },
         () => toast({ title: "Location Error", variant: "destructive" })
       );
@@ -150,21 +160,10 @@ const CreateAdventure = () => {
     try {
       const compressed = await compressImages(newFiles);
       setGalleryImages(prev => [...prev, ...compressed.map(c => c.file)].slice(0, 5));
-      setErrors(prev => ({ ...prev, gallery: "" }));
+      clearError("gallery");
     } catch (error) {
       setGalleryImages(prev => [...prev, ...newFiles].slice(0, 5));
     }
-  };
-
-  const removeImage = (index: number) => setGalleryImages(prev => prev.filter((_, i) => i !== index));
-
-  const formatItemsForDB = (items: DynamicItem[]) => {
-    return items.map(item => ({
-      name: item.name,
-      price: item.priceType === "paid" ? parseFloat(item.price) || 0 : 0,
-      is_free: item.priceType === "free",
-      capacity: item.capacity ? parseInt(item.capacity) : null
-    }));
   };
 
   const handleSubmit = async () => {
@@ -175,7 +174,7 @@ const CreateAdventure = () => {
     try {
       const uploadedUrls: string[] = [];
       for (const file of galleryImages) {
-        const fileName = `${user.id}/${Math.random()}.${file.name.split('.').pop()}`;
+        const fileName = `${user.id}/${Date.now()}-${file.name}`;
         const { error: uploadError } = await supabase.storage.from('listing-images').upload(fileName, file);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(fileName);
@@ -204,17 +203,17 @@ const CreateAdventure = () => {
         entry_fee_type: formData.entranceFeeType,
         entry_fee: formData.entranceFeeType === "paid" ? parseFloat(formData.adultPrice) : 0,
         amenities: amenities.map(a => a.name),
-        facilities: formatItemsForDB(facilities),
-        activities: formatItemsForDB(activities),
+        facilities: facilities.map(f => ({ name: f.name, price: f.price, is_free: f.priceType === 'free' })),
+        activities: activities.map(a => ({ name: a.name, price: a.price, is_free: a.priceType === 'free' })),
         created_by: user.id,
         approval_status: "pending"
       }]);
 
       if (error) throw error;
-      toast({ title: "Experience Submitted", description: "Pending admin review." });
+      toast({ title: "Success!", description: "Adventure submitted for review." });
       navigate("/become-host");
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Submission Failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -224,208 +223,221 @@ const CreateAdventure = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
       
-      {/* Header UI */}
-      <div className="relative h-[30vh] w-full overflow-hidden bg-slate-900">
-        <img src="/images/category-campsite.webp" className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Header" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] via-transparent to-transparent" />
-        <Button onClick={() => navigate(-1)} className="absolute top-4 left-4 rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0 z-50">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="absolute bottom-8 left-0 w-full px-8 container max-w-4xl mx-auto">
-          <p className="text-[#FF7F50] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Step {currentStep} of {TOTAL_STEPS}</p>
-          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
-            Create <span style={{ color: COLORS.KHAKI }}>Adventure</span>
-          </h1>
+      {/* Visual Header */}
+      <div className="relative h-[25vh] w-full overflow-hidden bg-slate-900">
+        <img src="/images/category-campsite.webp" className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] to-transparent" />
+        <div className="absolute bottom-6 left-0 w-full px-6 container max-w-4xl mx-auto">
+          <p className="text-[#FF7F50] font-black uppercase tracking-widest text-[10px] mb-1">Step {currentStep} / {TOTAL_STEPS}</p>
+          <h1 className="text-2xl md:text-4xl font-black uppercase text-white tracking-tighter">Create Adventure</h1>
         </div>
       </div>
 
-      <main className="container px-4 max-w-4xl mx-auto -mt-6 relative z-50">
-        <div className="flex items-center gap-2 mb-8">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
-            <div key={step} className="h-2 flex-1 rounded-full transition-all duration-300"
-              style={{ backgroundColor: step <= currentStep ? COLORS.TEAL : '#e2e8f0' }}
-            />
+      <main className="container px-4 max-w-4xl mx-auto -mt-4 relative z-50">
+        {/* Progress Bar */}
+        <div className="flex gap-2 mb-6">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div key={i} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: i + 1 <= currentStep ? COLORS.TEAL : '#E2E8F0' }} />
           ))}
         </div>
 
-        {/* Step 1 */}
+        {/* Step 1: Legal */}
         {currentStep === 1 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Registration</h2>
-            <div className="grid gap-6">
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Business Identity</h2>
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Name *</Label>
-                <Input value={formData.registrationName} onChange={(e) => setFormData({...formData, registrationName: e.target.value})} placeholder="Official Government Name" className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationName")}`} />
-                {errors.registrationName && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationName}</p>}
+                <Label className="text-[10px] font-bold uppercase text-slate-500">Official Registration Name *</Label>
+                <Input 
+                  value={formData.registrationName} 
+                  onChange={(e) => { setFormData({...formData, registrationName: e.target.value}); clearError("registrationName"); }} 
+                  className={`h-12 rounded-xl font-medium ${inputErrorStyle("registrationName")}`}
+                />
+                {errors.registrationName && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationName}</span>}
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
-                  <Input value={formData.registrationNumber} onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})} placeholder="e.g. BN-X12345" className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationNumber")}`} />
-                  {errors.registrationNumber && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationNumber}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Reg. Number *</Label>
+                  <Input 
+                    value={formData.registrationNumber} 
+                    onChange={(e) => { setFormData({...formData, registrationNumber: e.target.value}); clearError("registrationNumber"); }} 
+                    className={`h-12 rounded-xl font-medium ${inputErrorStyle("registrationNumber")}`}
+                  />
+                  {errors.registrationNumber && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationNumber}</span>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country *</Label>
-                  <CountrySelector value={formData.country} onChange={(value) => setFormData({...formData, country: value})} />
-                  {errors.country && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.country}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Country *</Label>
+                  <CountrySelector 
+                    value={formData.country} 
+                    onChange={(v) => { setFormData({...formData, country: v}); clearError("country"); }} 
+                  />
+                  {errors.country && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.country}</span>}
                 </div>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2: Location */}
         {currentStep === 2 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Location Details</h2>
-            <div className="grid gap-6">
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Adventure Location</h2>
+            <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Location Name *</Label>
-                  <Input value={formData.locationName} onChange={(e) => setFormData({...formData, locationName: e.target.value})} placeholder="Area / Forest / Beach" className={`rounded-xl h-12 font-bold ${inputErrorStyle("locationName")}`} />
-                  {errors.locationName && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.locationName}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Location Name *</Label>
+                  <Input value={formData.locationName} onChange={(e) => { setFormData({...formData, locationName: e.target.value}); clearError("locationName"); }} className={`h-12 rounded-xl ${inputErrorStyle("locationName")}`} />
+                  {errors.locationName && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.locationName}</span>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Place (City/Town) *</Label>
-                  <Input value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} placeholder="e.g. Nairobi" className={`rounded-xl h-12 font-bold ${inputErrorStyle("place")}`} />
-                  {errors.place && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.place}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">City / Town *</Label>
+                  <Input value={formData.place} onChange={(e) => { setFormData({...formData, place: e.target.value}); clearError("place"); }} className={`h-12 rounded-xl ${inputErrorStyle("place")}`} />
+                  {errors.place && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.place}</span>}
                 </div>
               </div>
-              <div className={`p-6 rounded-2xl border ${errors.gps ? "bg-red-50 border-red-200" : "bg-[#F0E68C]/10 border-[#F0E68C]/30"} space-y-4`}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-[#857F3E]">GPS Coordinates *</h4>
-                  <Button type="button" onClick={getCurrentLocation} className="text-white rounded-xl px-6 h-12 font-black uppercase text-[10px]" style={{ background: formData.latitude ? COLORS.TEAL : COLORS.KHAKI_DARK }}>
-                    <Navigation className="h-4 w-4 mr-2" /> {formData.latitude ? '✓ Captured' : 'Capture GPS'}
+              <div className={`p-5 rounded-2xl border ${errors.gps ? "border-red-400 bg-red-50/50" : "border-khaki-dark/20 bg-khaki/10"}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase text-khaki-dark">Precise GPS Capture *</p>
+                    <p className="text-[10px] text-slate-500">Stand at the entrance for best accuracy</p>
+                  </div>
+                  <Button onClick={getCurrentLocation} variant="outline" className="rounded-xl border-khaki-dark text-khaki-dark font-bold text-xs h-10 px-4">
+                    <Navigation className="h-3 w-3 mr-2" /> {formData.latitude ? "Re-capture" : "Capture"}
                   </Button>
                 </div>
-                {errors.gps && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.gps}</p>}
+                {formData.latitude && <p className="mt-2 text-[10px] font-mono font-bold text-teal-700">COORD: {formData.latitude.toFixed(5)}, {formData.longitude?.toFixed(5)}</p>}
+                {errors.gps && <p className="mt-2 text-red-500 text-[10px] font-bold uppercase">{errors.gps}</p>}
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 3: Contact & Description - NEW VALIDATION UI */}
+        {/* Step 3: Contact */}
         {currentStep === 3 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Contact & About</h2>
-            <div className="space-y-6">
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Contact & Info</h2>
+            <div className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email *</Label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="contact@business.com" className={`rounded-xl h-12 font-bold ${inputErrorStyle("email")}`} />
-                  {errors.email && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.email}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Email Address *</Label>
+                  <Input value={formData.email} onChange={(e) => { setFormData({...formData, email: e.target.value}); clearError("email"); }} className={`h-12 rounded-xl ${inputErrorStyle("email")}`} />
+                  {errors.email && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.email}</span>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp / Phone *</Label>
-                  <PhoneInput value={formData.phoneNumber} onChange={(value) => setFormData({...formData, phoneNumber: value})} country={formData.country} className={errors.phoneNumber ? "border-red-500" : ""} />
-                  {errors.phoneNumber && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.phoneNumber}</p>}
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">WhatsApp Number *</Label>
+                  <PhoneInput 
+                    value={formData.phoneNumber} 
+                    onChange={(v) => { setFormData({...formData, phoneNumber: v}); clearError("phoneNumber"); }} 
+                    className={errors.phoneNumber ? "border-red-500" : ""}
+                  />
+                  {errors.phoneNumber && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.phoneNumber}</span>}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description *</Label>
-                <Textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Tell the community what makes this adventure special..." rows={5} className={`rounded-2xl font-bold resize-none ${inputErrorStyle("description")}`} />
-                {errors.description && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.description}</p>}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Step 4: Schedule - NEW VALIDATION UI */}
-        {currentStep === 4 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Access & Pricing</h2>
-            <div className="grid gap-8">
-              <div className={`p-6 rounded-2xl border transition-colors ${errors.workingDays || errors.openingHours || errors.closingHours ? "border-red-200 bg-red-50/30" : "border-slate-50"}`}>
-                <OperatingHoursSection
-                  openingHours={formData.openingHours}
-                  closingHours={formData.closingHours}
-                  workingDays={workingDays}
-                  onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
-                  onClosingChange={(v) => setFormData({...formData, closingHours: v})}
-                  onDaysChange={setWorkingDays}
-                  accentColor={COLORS.TEAL}
+                <Label className="text-[10px] font-bold uppercase text-slate-500">Detailed Description *</Label>
+                <Textarea 
+                  value={formData.description} 
+                  onChange={(e) => { setFormData({...formData, description: e.target.value}); clearError("description"); }} 
+                  rows={4} 
+                  className={`rounded-xl resize-none ${inputErrorStyle("description")}`} 
                 />
-                {(errors.workingDays || errors.openingHours || errors.closingHours) && (
-                  <div className="mt-4 p-3 bg-red-100/50 rounded-lg border border-red-200">
-                    <p className="text-red-600 text-[10px] font-black uppercase tracking-tight flex items-center gap-2">
-                      <Info className="h-3 w-3" /> 
-                      Error: {errors.workingDays || errors.openingHours || errors.closingHours}
-                    </p>
-                  </div>
-                )}
+                {errors.description && <span className="text-red-500 text-[10px] font-bold uppercase">{errors.description}</span>}
               </div>
+            </div>
+          </Card>
+        )}
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrance Fee</Label>
-                  <Select value={formData.entranceFeeType} onValueChange={(v) => setFormData({...formData, entranceFeeType: v})}>
-                    <SelectTrigger className="rounded-xl h-12 font-bold border-slate-100"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-white rounded-xl font-bold">
-                      <SelectItem value="free">FREE ACCESS</SelectItem>
-                      <SelectItem value="paid">PAID ADMISSION</SelectItem>
-                    </SelectContent>
-                  </Select>
+        {/* Step 4: Schedule */}
+        {currentStep === 4 && (
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Operating Schedule</h2>
+            <div className={`p-4 rounded-2xl border transition-all ${errors.workingDays || errors.openingHours ? "border-red-400 bg-red-50/20" : "border-slate-50 bg-slate-50/30"}`}>
+              <OperatingHoursSection
+                openingHours={formData.openingHours}
+                closingHours={formData.closingHours}
+                workingDays={workingDays}
+                onOpeningChange={(v) => { setFormData({...formData, openingHours: v}); clearError("openingHours"); }}
+                onClosingChange={(v) => { setFormData({...formData, closingHours: v}); clearError("closingHours"); }}
+                onDaysChange={(v) => { setWorkingDays(v); clearError("workingDays"); }}
+                accentColor={COLORS.TEAL}
+              />
+              {(errors.workingDays || errors.openingHours || errors.closingHours) && (
+                <div className="mt-4 flex items-center gap-2 text-red-600">
+                  <Info className="h-3 w-3" />
+                  <p className="text-[10px] font-bold uppercase">
+                    {errors.workingDays || errors.openingHours || errors.closingHours}
+                  </p>
                 </div>
-                {formData.entranceFeeType === "paid" && (
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Adult Entry (KSh)</Label>
-                    <Input type="number" value={formData.adultPrice} onChange={(e) => setFormData({...formData, adultPrice: e.target.value})} className="rounded-xl h-12 border-slate-100 font-bold" />
-                  </div>
-                )}
+              )}
+            </div>
+            
+            <div className="mt-8 grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase text-slate-500">Entrance Fee Type</Label>
+                <Select value={formData.entranceFeeType} onValueChange={(v) => setFormData({...formData, entranceFeeType: v})}>
+                  <SelectTrigger className="rounded-xl h-12 border-slate-100"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-white"><SelectItem value="free">FREE</SelectItem><SelectItem value="paid">PAID</SelectItem></SelectContent>
+                </Select>
               </div>
+              {formData.entranceFeeType === "paid" && (
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Price (KSh)</Label>
+                  <Input type="number" value={formData.adultPrice} onChange={(e) => setFormData({...formData, adultPrice: e.target.value})} className="rounded-xl h-12" />
+                </div>
+              )}
             </div>
           </Card>
         )}
 
-        {/* Step 5 */}
+        {/* Step 5: Items */}
         {currentStep === 5 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Amenities, Facilities & Activities</h2>
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Offerings</h2>
             <div className="space-y-8">
-              <DynamicItemList items={amenities} onChange={setAmenities} label="Amenities" placeholder="e.g. Parking" showCapacity={false} showPrice={false} accentColor={COLORS.TEAL} />
-              <DynamicItemList items={facilities} onChange={setFacilities} label="Facilities" placeholder="e.g. Campsite" showCapacity={true} accentColor={COLORS.CORAL} />
-              <DynamicItemList items={activities} onChange={setActivities} label="Activities" placeholder="e.g. Hiking" showCapacity={false} accentColor="#6366f1" />
+              <DynamicItemList items={amenities} onChange={setAmenities} label="Amenities" placeholder="e.g. WiFi, Parking" showPrice={false} accentColor={COLORS.TEAL} />
+              <DynamicItemList items={facilities} onChange={setFacilities} label="Facilities" placeholder="e.g. Tents" showCapacity={true} accentColor={COLORS.CORAL} />
+              <DynamicItemList items={activities} onChange={setActivities} label="Activities" placeholder="e.g. Hiking" accentColor="#6366f1" />
             </div>
           </Card>
         )}
 
-        {/* Step 6 */}
+        {/* Step 6: Gallery */}
         {currentStep === 6 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Gallery (Max 5) *</h2>
-            <div className={`grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-2xl ${errors.gallery ? "border-2 border-red-500 bg-red-50/50" : ""}`}>
+          <Card className="p-6 md:p-8 rounded-[24px] border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <h2 className="text-lg font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Photo Gallery *</h2>
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-2xl border-2 border-dashed ${errors.gallery ? "border-red-400 bg-red-50/50" : "border-slate-100"}`}>
               {galleryImages.map((file, index) => (
-                <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100">
-                  <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
-                  <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"><X className="h-3 w-3" /></button>
+                <div key={index} className="relative aspect-square rounded-xl overflow-hidden shadow-sm">
+                  <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="" />
+                  <button onClick={() => removeImage(index)} className="absolute top-1.5 right-1.5 bg-red-500 text-white p-1 rounded-full"><X className="h-3 w-3" /></button>
                 </div>
               ))}
               {galleryImages.length < 5 && (
-                <Label className={`aspect-square rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 ${errors.gallery ? "border-red-400" : "border-slate-200"}`}>
-                  <Plus className="h-6 w-6 text-slate-400" />
-                  <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add Photo</span>
+                <Label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
+                  <Plus className="h-5 w-5 text-slate-400" />
+                  <span className="text-[8px] font-black uppercase text-slate-400 mt-1">Upload</span>
                   <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
                 </Label>
               )}
             </div>
-            {errors.gallery && <p className="text-red-500 text-[10px] font-bold uppercase mt-2 text-center">{errors.gallery}</p>}
+            {errors.gallery && <p className="text-red-500 text-[10px] font-bold uppercase mt-3 text-center">{errors.gallery}</p>}
           </Card>
         )}
 
-        {/* Footer Navigation */}
+        {/* Action Buttons */}
         <div className="flex gap-4 mt-8">
           {currentStep > 1 && (
-            <Button type="button" onClick={handlePrevious} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase text-sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Previous
+            <Button onClick={handlePrevious} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase text-xs">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back
             </Button>
           )}
           {currentStep < TOTAL_STEPS ? (
-            <Button type="button" onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
-              Next <ArrowRight className="h-4 w-4 ml-2" />
+            <Button onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase text-xs text-white" style={{ background: COLORS.CORAL }}>
+              Next Step <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}>
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : "Submit"}
+            <Button onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase text-xs text-white" style={{ background: COLORS.TEAL }}>
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Finish & Submit"}
             </Button>
           )}
         </div>
