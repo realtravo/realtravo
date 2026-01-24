@@ -1,18 +1,12 @@
 import { useState, useEffect } from "react";
-import { Menu, Heart, Ticket, Home, User, Search } from "lucide-react";
+import { Menu, Heart, Ticket, Home, User, Search, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationDrawer } from "./NavigationDrawer";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
-
-const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-  SOFT_GRAY: "#F8F9FA",
-  DARK_BG: "rgba(0, 0, 0, 0.5)"
-};
+import { useTheme } from "next-themes";
 
 export interface HeaderProps {
   onSearchClick?: () => void;
@@ -21,57 +15,50 @@ export interface HeaderProps {
   hideIcons?: boolean;
 }
 
-export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIcons = false }: HeaderProps) => {
+export const Header = ({ onSearchClick, showSearchIcon = true, className }: HeaderProps) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isIndexPage = location.pathname === '/';
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Handle scroll effect for visibility
+  // 1. Fix: Ensure theme/icons only render after mount to prevent hydration mismatch
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    setMounted(true);
   }, []);
 
+  // 2. Fix: Simplified Profile Fetch (preventing potential single() errors)
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await supabase.from('profiles').select('name').eq('id', session.user.id).single();
-      }
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle(); // Use maybeSingle to avoid throwing if profile doesn't exist yet
+        
+      if (error) console.error("Error fetching profile:", error.message);
     };
     fetchUserProfile();
   }, [user]);
 
-  // Mobile: Always white background with clean header
   const mobileHeaderClasses = "sticky top-0 left-0 right-0 flex bg-background border-b border-border shadow-sm py-2";
 
-  // Icon styles for clean header
   const headerIconStyles = `
     h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-200 
     active:scale-90 text-foreground hover:bg-muted
   `;
 
   return (
-    <header 
-      className={`z-[100] items-center ${mobileHeaderClasses} ${className || ''}`}
-    >
+    <header className={`z-[100] items-center ${mobileHeaderClasses} ${className || ''}`}>
       <div className="container mx-auto px-4 flex items-center justify-between h-full">
-        {/* Left: Menu Icon */}
-        <div className="flex items-center gap-3">
+        
+        {/* Left: Menu & Brand */}
+        <div className="flex items-center gap-2">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              <button className={headerIconStyles} aria-label="Open Menu">
+              <button className={`${headerIconStyles} lg:hidden`} aria-label="Open Menu">
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -80,21 +67,15 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
             </SheetContent>
           </Sheet>
           
-          {/* Logo - hidden on mobile for cleaner look */}
-          <Link to="/" className="hidden md:flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <img 
               src="/fulllogo.png" 
-              alt="Realtravo Logo"
-              loading="eager"
-              fetchPriority="high"
-              decoding="sync"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-full shadow-md object-contain bg-muted p-1 border border-border"
+              alt="Logo"
+              className="h-8 w-8 rounded-full shadow-sm object-contain bg-muted p-1 border border-border"
             />
-            <div className="hidden sm:block">
+            <div className="flex flex-col justify-center">
               <span 
-                className="font-bold text-2xl tracking-tight block italic leading-none"
+                className="font-bold text-lg tracking-tight italic leading-none"
                 style={{
                   background: "linear-gradient(to right, #1a365d, #2b6cb0, #4fd1c5)",
                   WebkitBackgroundClip: "text",
@@ -103,13 +84,11 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
               >
                 RealTravo
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Click.Pack.Go!.
-              </span>
             </div>
           </Link>
         </div>
 
+        {/* Center: Nav */}
         <nav className="hidden lg:flex items-center gap-8">
           {[
             { to: "/", icon: <Home className="h-4 w-4" />, label: "Home" },
@@ -127,8 +106,19 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
           ))}
         </nav>
 
-        {/* Right: Notification Bell (and optional search icon) */}
-        <div className="flex items-center gap-2">
+        {/* Right: Theme, Search, Notifications */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Theme Toggle - Logic corrected for mounted state */}
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className={headerIconStyles}
+              aria-label="Toggle Theme"
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+          )}
+
           {showSearchIcon && (
             <button 
               onClick={() => onSearchClick ? onSearchClick() : navigate('/')}
@@ -141,16 +131,13 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, hideIc
           
           <NotificationBell />
 
-          {/* Desktop only: Login/Profile button */}
-          <div className="hidden md:flex items-center gap-3">
-            <button 
-              onClick={() => user ? navigate('/account') : navigate('/auth')}
-              className="h-10 px-5 rounded-xl flex items-center gap-2 transition-all font-semibold text-xs text-primary-foreground hover:brightness-110 active:scale-95 bg-primary"
-            >
-              <User className="h-4 w-4" />
-              {user ? "Profile" : "Login"}
-            </button>
-          </div>
+          <button 
+            onClick={() => user ? navigate('/account') : navigate('/auth')}
+            className="hidden sm:flex h-10 px-4 rounded-xl items-center gap-2 transition-all font-semibold text-xs text-primary-foreground bg-primary hover:brightness-110"
+          >
+            <User className="h-4 w-4" />
+            <span>{user ? "Profile" : "Login"}</span>
+          </button>
         </div>
       </div>
     </header>
