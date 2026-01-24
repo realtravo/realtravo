@@ -21,7 +21,17 @@ interface SearchResult {
   image_url?: string;
 }
 
-export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: { value: string; onChange: (v: string) => void; onSubmit: () => void }) => {
+interface SearchBarWithSuggestionsProps {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onBack?: () => void;
+  showBackButton?: boolean;
+}
+
+export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, onBlur, onBack, showBackButton }: SearchBarWithSuggestionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dbResults, setDbResults] = useState<SearchResult[]>([]);
   const [trendingSearches, setTrendingSearches] = useState<{query: string, search_count: number}[]>([]);

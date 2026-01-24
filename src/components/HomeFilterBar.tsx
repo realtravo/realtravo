@@ -15,12 +15,14 @@ interface LocationSuggestion {
   type?: string;
 }
 
+export interface HomeFilterValues {
+  location: string;
+  checkIn?: Date;
+  checkOut?: Date;
+}
+
 interface HomeFilterBarProps {
-  onApplyFilters: (filters: { 
-    location: string; 
-    checkIn?: Date; 
-    checkOut?: Date 
-  }) => void;
+  onApplyFilters: (filters: HomeFilterValues) => void;
   onClear: () => void;
 }
 
@@ -42,9 +44,10 @@ export const HomeFilterBar = ({ onApplyFilters, onClear }: HomeFilterBarProps) =
     try {
       const searchTerm = query.toLowerCase();
       
+      // Use public views to avoid exposing contact details
       const [hotels, adventures] = await Promise.all([
-        supabase.from("hotels").select("location, place, country").eq("approval_status", "approved").limit(5),
-        supabase.from("adventure_places").select("location, place, country").eq("approval_status", "approved").limit(5)
+        supabase.from("public_hotels").select("location, place, country").limit(5),
+        supabase.from("public_adventure_places").select("location, place, country").limit(5)
       ]);
 
       let allResults = [...(hotels.data || []), ...(adventures.data || [])];
