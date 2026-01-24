@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -98,9 +99,13 @@ const AdventurePlaceDetail = () => {
 
   const allImages = [place.image_url, ...(place.gallery_images || []), ...(place.images || [])].filter(Boolean);
   const amenitiesList = Array.isArray(place.amenities) ? place.amenities : place.amenities?.split(',').filter(Boolean) || [];
+  const activitiesList = Array.isArray(place.activities) ? place.activities : [];
+  const workingDays = Array.isArray(place.days_opened) ? place.days_opened : place.days_opened?.split(',').filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* Site Header */}
+      <Header showSearchIcon={false} />
       
       {/* 1. SCROLL FIXED BAR */}
       <div 
@@ -124,7 +129,7 @@ const AdventurePlaceDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto">
+      <main className="container px-4 max-w-6xl mx-auto pt-6">
         
         {/* 2. IMAGE GALLERY */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
@@ -185,8 +190,59 @@ const AdventurePlaceDetail = () => {
 
             {/* Price Card for Mobile (Visible only on small screens) */}
             <div className="lg:hidden">
-                <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
+                <PriceCard place={place} liveRating={liveRating} navigate={navigate} workingDays={workingDays} />
             </div>
+
+            {/* Operating Hours & Days Section */}
+            {(place.opening_hours || place.closing_hours || workingDays.length > 0) && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Clock className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Operating Hours</h2>
+                </div>
+                <div className="space-y-4">
+                  {(place.opening_hours || place.closing_hours) && (
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Working Hours</span>
+                      <span className="text-sm font-black text-slate-700">
+                        {place.opening_hours || "08:00 AM"} — {place.closing_hours || "06:00 PM"}
+                      </span>
+                    </div>
+                  )}
+                  {workingDays.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {workingDays.map((day: string, i: number) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                          {day.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Activities Section */}
+            {activitiesList.length > 0 && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Zap className="h-5 w-5 text-[#FF9800]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Activities</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {activitiesList.map((activity: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-orange-50/50 border border-orange-100">
+                      <span className="text-[11px] font-medium text-slate-700 lowercase">{activity.name || activity}</span>
+                      {activity.price !== undefined && (
+                        <Badge className="bg-white text-[#FF9800] text-[10px] font-black border border-orange-100">
+                          {activity.price > 0 ? `KSH ${activity.price}` : "FREE"}
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
             
             {/* Amenities */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -209,7 +265,7 @@ const AdventurePlaceDetail = () => {
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <Tent className="h-5 w-5 text-[#008080]" />
-                <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities & Activities</h2>
+                <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities</h2>
               </div>
               {place.facilities?.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,7 +284,7 @@ const AdventurePlaceDetail = () => {
 
           {/* Sidebar Price Card for Desktop (Sticky) */}
           <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
-            <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
+            <PriceCard place={place} liveRating={liveRating} navigate={navigate} workingDays={workingDays} />
           </div>
         </div>
 
@@ -244,12 +300,7 @@ const AdventurePlaceDetail = () => {
   );
 };
 
-const PriceCard = ({ place, liveRating, navigate }: any) => {
-  // Ensure working days are handled whether they are an array or a string
-  const workingDays = Array.isArray(place.working_days) 
-    ? place.working_days 
-    : place.working_days?.split(',').filter(Boolean) || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
+const PriceCard = ({ place, liveRating, navigate, workingDays }: any) => {
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
       <div className="flex justify-between items-end mb-6">
@@ -275,19 +326,21 @@ const PriceCard = ({ place, liveRating, navigate }: any) => {
             </div>
         </div>
 
-        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <CalendarDays className="h-5 w-5 text-red-500" />
-            <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Working Days</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                    {workingDays.map((day: string, idx: number) => (
-                        <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
-                            {day.trim().substring(0, 3)}
-                        </span>
-                    ))}
-                </div>
-            </div>
-        </div>
+        {workingDays.length > 0 && (
+          <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <CalendarDays className="h-5 w-5 text-red-500" />
+              <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Working Days</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                      {workingDays.map((day: string, idx: number) => (
+                          <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
+                              {day.trim().substring(0, 3)}
+                          </span>
+                      ))}
+                  </div>
+              </div>
+          </div>
+        )}
       </div>
 
       <Button 

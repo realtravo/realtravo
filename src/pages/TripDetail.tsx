@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, Clock
+  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, Clock, CalendarDays
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -91,9 +92,12 @@ const TripDetail = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const isExpired = !trip.is_custom_date && trip.date && new Date(trip.date) < today;
+  const workingDays = Array.isArray(trip.days_opened) ? trip.days_opened : trip.days_opened?.split(',').filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* Site Header */}
+      <Header showSearchIcon={false} />
       
       {/* 1. SCROLL FIXED BAR - Only appears when scrolled */}
       <div 
@@ -117,7 +121,7 @@ const TripDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto">
+      <main className="container px-4 max-w-6xl mx-auto pt-6">
         
         {/* 2. IMAGE GALLERY CONTAINER */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
@@ -175,6 +179,35 @@ const TripDetail = () => {
               <p className="text-slate-500 text-sm leading-relaxed lowercase">{trip.description || "none"}</p>
             </section>
 
+            {/* Operating Hours & Days Section */}
+            {(trip.opening_hours || trip.closing_hours || workingDays.length > 0) && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Clock className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Trip Schedule</h2>
+                </div>
+                <div className="space-y-4">
+                  {(trip.opening_hours || trip.closing_hours) && (
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Trip Hours</span>
+                      <span className="text-sm font-black text-slate-700">
+                        {trip.opening_hours || "08:00"} — {trip.closing_hours || "18:00"}
+                      </span>
+                    </div>
+                  )}
+                  {workingDays.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {workingDays.map((day: string, i: number) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                          {day.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="h-5 w-5 text-[#FF9800]" />
@@ -193,7 +226,7 @@ const TripDetail = () => {
             </section>
 
             <div className="lg:hidden">
-              <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} />
+              <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} workingDays={workingDays} />
             </div>
 
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -202,7 +235,7 @@ const TripDetail = () => {
           </div>
 
           <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
-            <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} />
+            <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} workingDays={workingDays} />
           </div>
         </div>
       </main>
@@ -211,7 +244,7 @@ const TripDetail = () => {
   );
 };
 
-const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate }: any) => (
+const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate, workingDays }: any) => (
   <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
     <div className="flex justify-between items-end mb-8">
       <div>
@@ -222,6 +255,37 @@ const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate }: a
         {isSoldOut ? "full" : `${remainingSlots} spots left`}
       </Badge>
     </div>
+
+    {/* Operating Hours in Booking Card */}
+    <div className="space-y-4 mb-6">
+      {(trip.opening_hours || trip.closing_hours) && (
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <Clock className="h-5 w-5 text-[#008080]" />
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Trip Hours</p>
+            <p className="text-xs font-bold text-slate-700">
+              {trip.opening_hours || "08:00"} — {trip.closing_hours || "18:00"}
+            </p>
+          </div>
+        </div>
+      )}
+      {workingDays.length > 0 && (
+        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <CalendarDays className="h-5 w-5 text-red-500" />
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Available Days</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {workingDays.map((day: string, idx: number) => (
+                <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
+                  {day.trim().substring(0, 3)}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
     <Button 
       onClick={() => navigate(`/booking/trip/${trip.id}`)}
       disabled={isSoldOut || isExpired}

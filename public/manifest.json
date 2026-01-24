@@ -2,7 +2,7 @@
   "id": "/?source=pwa",
   "short_name": "RealTravo",
   "name": "RealTravo",
-  "description": "Professional adventure and travel solutions.",
+  "description": "Professional adventure and travel booking platform.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,22 +10,22 @@
       "type": "image/x-icon"
     },
     {
+      "src": "pwa-icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "pwa-icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
       "src": "fulllogo.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any"
-    },
-    {
-      "src": "fulllogo.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any"
-    },
-    {
-      "src": "fulllogo.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "maskable"
     }
   ],
   "start_url": "/",
