@@ -130,15 +130,36 @@ const CreateAdventure = () => {
         }
         return true;
       case 3:
+        if (!formData.email.trim()) {
+          toast({ title: "Required", description: "Business email is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.phoneNumber.trim()) {
+          toast({ title: "Required", description: "Phone number is required", variant: "destructive" });
+          return false;
+        }
         if (!formData.description.trim()) {
           toast({ title: "Required", description: "Description is required", variant: "destructive" });
           return false;
         }
         return true;
       case 4:
-        return true; // Operating hours optional
+        if (!formData.openingHours) {
+          toast({ title: "Required", description: "Opening time is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.closingHours) {
+          toast({ title: "Required", description: "Closing time is required", variant: "destructive" });
+          return false;
+        }
+        const hasSelectedDay = Object.values(workingDays).some(day => day === true);
+        if (!hasSelectedDay) {
+          toast({ title: "Required", description: "Please select at least one operating day", variant: "destructive" });
+          return false;
+        }
+        return true;
       case 5:
-        return true; // Amenities/facilities/activities optional
+        return true;
       case 6:
         if (galleryImages.length === 0) {
           toast({ title: "Required", description: "At least one photo is required", variant: "destructive" });
@@ -236,7 +257,6 @@ const CreateAdventure = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
       
-      {/* Hero Header */}
       <div className="relative h-[30vh] w-full overflow-hidden bg-slate-900">
         <img src="/images/category-campsite.webp" 
           className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Header"
@@ -367,7 +387,7 @@ const CreateAdventure = () => {
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email *</Label>
                   <Input type="email" value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     placeholder="contact@business.com"
@@ -376,7 +396,7 @@ const CreateAdventure = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp / Phone</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp / Phone *</Label>
                   <PhoneInput value={formData.phoneNumber}
                     onChange={(value) => setFormData({...formData, phoneNumber: value})}
                     country={formData.country}
@@ -405,19 +425,22 @@ const CreateAdventure = () => {
               <div className="p-2 rounded-xl bg-[#FF7F50]/10 text-[#FF7F50]">
                 <Clock className="h-5 w-5" />
               </div>
-              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Access & Pricing</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Access & Operating Hours</h2>
             </div>
 
             <div className="grid gap-8">
-              <OperatingHoursSection
-                openingHours={formData.openingHours}
-                closingHours={formData.closingHours}
-                workingDays={workingDays}
-                onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
-                onClosingChange={(v) => setFormData({...formData, closingHours: v})}
-                onDaysChange={setWorkingDays}
-                accentColor={COLORS.TEAL}
-              />
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operating Schedule *</Label>
+                <OperatingHoursSection
+                  openingHours={formData.openingHours}
+                  closingHours={formData.closingHours}
+                  workingDays={workingDays}
+                  onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
+                  onClosingChange={(v) => setFormData({...formData, closingHours: v})}
+                  onDaysChange={setWorkingDays}
+                  accentColor={COLORS.TEAL}
+                />
+              </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -521,7 +544,6 @@ const CreateAdventure = () => {
           </Card>
         )}
 
-        {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8">
           {currentStep > 1 && (
             <Button type="button" onClick={handlePrevious} variant="outline"
