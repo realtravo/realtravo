@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -81,9 +82,13 @@ const HotelDetail = () => {
 
   const allImages = [hotel.image_url, ...(hotel.gallery_images || []), ...(hotel.images || [])].filter(Boolean);
   const amenitiesList = Array.isArray(hotel.amenities) ? hotel.amenities : hotel.amenities?.split(',').filter(Boolean) || [];
+  const activitiesList = Array.isArray(hotel.activities) ? hotel.activities : [];
+  const workingDays = Array.isArray(hotel.days_opened) ? hotel.days_opened : hotel.days_opened?.split(',').filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* Site Header */}
+      <Header showSearchIcon={false} />
       
       {/* 1. SCROLL FIXED BAR */}
       <div 
@@ -107,7 +112,7 @@ const HotelDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto">
+      <main className="container px-4 max-w-6xl mx-auto pt-6">
         
         {/* 2. IMAGE GALLERY */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
@@ -149,7 +154,7 @@ const HotelDetail = () => {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-white/80" />
                 <span className="text-xs font-bold text-white/90 uppercase tracking-wide">
-                   {[hotel.location, hotel.city].filter(Boolean).join(', ')}
+                   {[hotel.location, hotel.place, hotel.country].filter(Boolean).join(', ')}
                 </span>
               </div>
             </div>
@@ -169,8 +174,59 @@ const HotelDetail = () => {
 
             {/* MOBILE ONLY PRICE CARD - Positioned below description */}
             <div className="lg:hidden">
-              <PriceCard hotel={hotel} navigate={navigate} />
+              <PriceCard hotel={hotel} navigate={navigate} workingDays={workingDays} />
             </div>
+
+            {/* Operating Hours & Days Section */}
+            {(hotel.opening_hours || hotel.closing_hours || workingDays.length > 0) && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Clock className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Operating Hours</h2>
+                </div>
+                <div className="space-y-4">
+                  {(hotel.opening_hours || hotel.closing_hours) && (
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Working Hours</span>
+                      <span className="text-sm font-black text-slate-700">
+                        {hotel.opening_hours || "08:00"} — {hotel.closing_hours || "22:00"}
+                      </span>
+                    </div>
+                  )}
+                  {workingDays.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {workingDays.map((day: string, i: number) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                          {day.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Activities Section */}
+            {activitiesList.length > 0 && (
+              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Zap className="h-5 w-5 text-[#FF9800]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Activities</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {activitiesList.map((activity: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-orange-50/50 border border-orange-100">
+                      <span className="text-[11px] font-medium text-slate-700 lowercase">{activity.name || activity}</span>
+                      {activity.price !== undefined && (
+                        <Badge className="bg-white text-[#FF9800] text-[10px] font-black border border-orange-100">
+                          {activity.price > 0 ? `KSH ${activity.price}` : "FREE"}
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Amenities Section - Ensures all items are visible */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -197,12 +253,12 @@ const HotelDetail = () => {
 
           {/* Sticky Sidebar for Desktop */}
           <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
-            <PriceCard hotel={hotel} navigate={navigate} />
+            <PriceCard hotel={hotel} navigate={navigate} workingDays={workingDays} />
           </div>
         </div>
 
         <div className="mt-16">
-          <SimilarItems currentItemId={hotel.id} itemType="hotel" city={hotel.city} />
+          <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />
         </div>
       </main>
       <MobileBottomBar />
@@ -210,18 +266,13 @@ const HotelDetail = () => {
   );
 };
 
-const PriceCard = ({ hotel, navigate }: any) => {
-  // Logic for working days (defaulting to full week if not provided)
-  const workingDays = Array.isArray(hotel.working_days) 
-    ? hotel.working_days 
-    : hotel.working_days?.split(',').filter(Boolean) || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
+const PriceCard = ({ hotel, navigate, workingDays }: any) => {
   return (
     <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
       <div className="flex justify-between items-end mb-8">
         <div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Price Per Night</p>
-          <span className="text-4xl font-black text-red-600">KSh {hotel.price_per_night}</span>
+          <span className="text-4xl font-black text-red-600">KSh {hotel.available_rooms || "N/A"}</span>
         </div>
         <div className="text-right">
           <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Avg Rating</span>
@@ -238,24 +289,26 @@ const PriceCard = ({ hotel, navigate }: any) => {
             <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Check-in / Check-out</p>
                 <p className="text-xs font-bold text-slate-700">
-                    {hotel.check_in_time || "11:00 AM"} — {hotel.check_out_time || "10:00 AM"}
+                    {hotel.opening_hours || "11:00 AM"} — {hotel.closing_hours || "10:00 AM"}
                 </p>
             </div>
         </div>
 
-        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <CalendarDays className="h-5 w-5 text-red-500" />
-            <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Available Days</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                    {workingDays.map((day: string, idx: number) => (
-                        <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
-                            {day.trim().substring(0, 3)}
-                        </span>
-                    ))}
-                </div>
-            </div>
-        </div>
+        {workingDays.length > 0 && (
+          <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <CalendarDays className="h-5 w-5 text-red-500" />
+              <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Available Days</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                      {workingDays.map((day: string, idx: number) => (
+                          <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
+                              {day.trim().substring(0, 3)}
+                          </span>
+                      ))}
+                  </div>
+              </div>
+          </div>
+        )}
       </div>
       
       <Button 

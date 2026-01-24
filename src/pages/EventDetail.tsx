@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail, Clock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,6 +163,9 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* Site Header */}
+      <Header showSearchIcon={false} />
+      
       {/* 1. STICKY TOP ACTION BAR */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
