@@ -36,7 +36,7 @@ const AdventurePlaceDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { position, requestLocation } = useGeolocation();
-  
+   
   const [place, setPlace] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -75,7 +75,7 @@ const AdventurePlaceDetail = () => {
       const now = new Date();
       const currentDay = now.toLocaleString('en-us', { weekday: 'long' });
       const currentTime = now.getHours() * 60 + now.getMinutes();
-      
+       
       const parseTime = (timeStr: string) => {
         if (!timeStr) return 0;
         const [time, modifier] = timeStr.split(' ');
@@ -88,7 +88,7 @@ const AdventurePlaceDetail = () => {
       const openTime = parseTime(place.opening_hours || "08:00 AM");
       const closeTime = parseTime(place.closing_hours || "06:00 PM");
       const days = Array.isArray(place.days_opened) ? place.days_opened : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      
+       
       setIsOpenNow(days.includes(currentDay) && currentTime >= openTime && currentTime <= closeTime);
     };
     checkOpenStatus();
@@ -178,68 +178,73 @@ const AdventurePlaceDetail = () => {
             : "bg-transparent"
         }`}
       >
-        <div className="flex items-center gap-4">
-          <Button 
-            onClick={() => navigate(-1)} 
-            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
-              scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
-            }`}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          
-          {scrolled && (
-            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
-              {place.name}
-            </h2>
-          )}
-        </div>
+        {/* Constrain header content on large screens to match layout if desired, otherwise remove max-w-6xl mx-auto from here */}
+        <div className="w-full flex justify-between items-center md:max-w-6xl md:mx-auto"> 
+            <div className="flex items-center gap-4">
+            <Button 
+                onClick={() => navigate(-1)} 
+                className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
+                scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
+                }`}
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            {scrolled && (
+                <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
+                {place.name}
+                </h2>
+            )}
+            </div>
 
-        <Button 
-          onClick={() => id && handleSaveItem(id, "adventure_place")} 
-          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
-            isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
-          }`}
-        >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
-        </Button>
+            <Button 
+            onClick={() => id && handleSaveItem(id, "adventure_place")} 
+            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
+                isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
+            }`}
+            >
+            <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
+            </Button>
+        </div>
       </div>
 
-      {/* HERO SECTION - Starts from the very top */}
-      <div className="relative w-full h-[55vh] md:h-[70vh] bg-slate-900 overflow-hidden">
-        <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
-          <CarouselContent className="h-full ml-0">
-            {allImages.map((img, idx) => (
-              <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                <div className="relative h-full w-full">
-                  <img src={img} alt={place.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10" />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+      {/* HERO SECTION - Modified for Large Screen Constraints */}
+      <div className="w-full md:px-4"> {/* Wrapper to handle side padding on big screens */}
+          <div className="relative w-full h-[55vh] md:h-[70vh] bg-slate-900 overflow-hidden md:max-w-6xl md:mx-auto md:mt-6 md:rounded-[32px]">
+            <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
+            <CarouselContent className="h-full ml-0">
+                {allImages.map((img, idx) => (
+                <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                    <div className="relative h-full w-full">
+                    <img src={img} alt={place.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10" />
+                    </div>
+                </CarouselItem>
+                ))}
+            </CarouselContent>
+            </Carousel>
 
-        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
-          <div className="space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
-            <div className="flex flex-wrap gap-2">
-              <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
-                <Star className="h-3 w-3 fill-current" />
-                {liveRating.avg > 0 ? liveRating.avg : "New"}
-              </Badge>
-              <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}>
-                <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
-                {isOpenNow ? "open" : "closed"}
-              </Badge>
+            <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
+            <div className="space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
+                <div className="flex flex-wrap gap-2">
+                <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
+                    <Star className="h-3 w-3 fill-current" />
+                    {liveRating.avg > 0 ? liveRating.avg : "New"}
+                </Badge>
+                <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}>
+                    <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
+                    {isOpenNow ? "open" : "closed"}
+                </Badge>
+                </div>
+                <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-none">{place.name}</h1>
+                <div className="flex items-center gap-2" onClick={openInMaps}>
+                <MapPin className="h-4 w-4 text-white" />
+                <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer">
+                    {[place.place, place.location, place.country].filter(Boolean).join(', ')}
+                </span>
+                </div>
             </div>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-none">{place.name}</h1>
-            <div className="flex items-center gap-2" onClick={openInMaps}>
-              <MapPin className="h-4 w-4 text-white" />
-              <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer">
-                {[place.place, place.location, place.country].filter(Boolean).join(', ')}
-              </span>
             </div>
-          </div>
         </div>
       </div>
 
