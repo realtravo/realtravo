@@ -205,16 +205,18 @@ const AdventurePlaceDetail = () => {
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto pt-20 md:pt-24 relative z-50">
+      <main className="container px-4 max-w-6xl mx-auto pt-0 relative z-50">
         
-        {/* HERO GALLERY - Now inside the container to match width of body content */}
-        <div className="relative w-full h-[45vh] md:h-[65vh] bg-slate-900 overflow-hidden rounded-[32px] mb-8 shadow-xl">
+        {/* HERO GALLERY - Top corners sharp, Bottom rounded */}
+        <div className="relative w-full h-[50vh] md:h-[65vh] bg-slate-900 overflow-hidden rounded-b-[32px] rounded-t-none mb-8 shadow-xl">
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.map((img, idx) => (
                 <CarouselItem key={idx} className="h-full pl-0 basis-full">
                   <div className="relative h-full w-full">
-                    <img src={img} alt={place.name} className="w-full h-full object-cover" />
+                    {/* object-center ensures the crop starts from the middle */}
+                    <img src={img} alt={place.name} className="w-full h-full object-cover object-center" />
+                    {/* Restored the stronger original gradient for visibility */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10" />
                   </div>
                 </CarouselItem>
@@ -222,8 +224,9 @@ const AdventurePlaceDetail = () => {
             </CarouselContent>
           </Carousel>
 
-          <div className="absolute bottom-6 left-6 z-40 w-full pr-12 pointer-events-none">
-            <div className="space-y-2 pointer-events-auto bg-black/40 backdrop-blur-sm p-5 rounded-2xl max-w-xl inline-block border border-white/10">
+          <div className="absolute bottom-6 left-0 z-40 w-full px-6 pointer-events-none">
+            {/* Restored previous name overlay style */}
+            <div className="space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
                   <Star className="h-3 w-3 fill-current" />
@@ -237,7 +240,7 @@ const AdventurePlaceDetail = () => {
               <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-none">{place.name}</h1>
               <div className="flex items-center gap-2" onClick={openInMaps}>
                 <MapPin className="h-4 w-4 text-white" />
-                <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer hover:underline">
+                <span className="text-xs font-bold text-white uppercase tracking-wide cursor-pointer">
                   {[place.place, place.location, place.country].filter(Boolean).join(', ')}
                 </span>
               </div>
