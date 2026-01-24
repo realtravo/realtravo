@@ -102,67 +102,57 @@ const CreateAdventure = () => {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!formData.registrationName.trim()) {
-          toast({ title: "Required", description: "Registration name is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.registrationNumber.trim()) {
-          toast({ title: "Required", description: "Registration number is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.country) {
-          toast({ title: "Required", description: "Country is required", variant: "destructive" });
+        if (!formData.registrationName.trim() || !formData.registrationNumber.trim() || !formData.country) {
+          toast({ title: "Required Fields", description: "Please fill in all registration details.", variant: "destructive" });
           return false;
         }
         return true;
       case 2:
-        if (!formData.locationName.trim()) {
-          toast({ title: "Required", description: "Location name is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.place.trim()) {
-          toast({ title: "Required", description: "Place/City is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.latitude) {
-          toast({ title: "Required", description: "GPS coordinates are required", variant: "destructive" });
+        if (!formData.locationName.trim() || !formData.place.trim() || !formData.latitude) {
+          toast({ title: "Required Fields", description: "Location details and GPS coordinates are required.", variant: "destructive" });
           return false;
         }
         return true;
       case 3:
+        // Validate Business Email
         if (!formData.email.trim()) {
-          toast({ title: "Required", description: "Business email is required", variant: "destructive" });
+          toast({ title: "Required", description: "Business email is required to proceed.", variant: "destructive" });
           return false;
         }
-        if (!formData.phoneNumber.trim()) {
-          toast({ title: "Required", description: "Phone number is required", variant: "destructive" });
+        // Validate Phone Number
+        if (!formData.phoneNumber || formData.phoneNumber.trim().length < 5) {
+          toast({ title: "Required", description: "A valid WhatsApp or Phone number is required.", variant: "destructive" });
           return false;
         }
+        // Validate Description
         if (!formData.description.trim()) {
-          toast({ title: "Required", description: "Description is required", variant: "destructive" });
+          toast({ title: "Required", description: "Please provide a description.", variant: "destructive" });
           return false;
         }
         return true;
       case 4:
+        // Validate Opening Hours
         if (!formData.openingHours) {
-          toast({ title: "Required", description: "Opening time is required", variant: "destructive" });
+          toast({ title: "Required", description: "Please set the opening time.", variant: "destructive" });
           return false;
         }
+        // Validate Closing Hours
         if (!formData.closingHours) {
-          toast({ title: "Required", description: "Closing time is required", variant: "destructive" });
+          toast({ title: "Required", description: "Please set the closing time.", variant: "destructive" });
           return false;
         }
+        // Validate at least one working day is selected
         const hasSelectedDay = Object.values(workingDays).some(day => day === true);
         if (!hasSelectedDay) {
-          toast({ title: "Required", description: "Please select at least one operating day", variant: "destructive" });
+          toast({ title: "Required", description: "Select at least one day that you are open.", variant: "destructive" });
           return false;
         }
         return true;
       case 5:
-        return true;
+        return true; // Optional step
       case 6:
         if (galleryImages.length === 0) {
-          toast({ title: "Required", description: "At least one photo is required", variant: "destructive" });
+          toast({ title: "Required", description: "At least one photo is required.", variant: "destructive" });
           return false;
         }
         return true;
@@ -216,7 +206,7 @@ const CreateAdventure = () => {
         description: formData.description,
         email: formData.email,
         phone_numbers: formData.phoneNumber ? [formData.phoneNumber] : [],
-        map_link: formData.latitude ? `https://www.google.com/maps?q=${formData.latitude},${formData.longitude}` : "",
+        map_link: formData.latitude ? `https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}` : "",
         latitude: formData.latitude,
         longitude: formData.longitude,
         opening_hours: formData.openingHours,
@@ -257,6 +247,7 @@ const CreateAdventure = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
       
+      {/* Hero Header */}
       <div className="relative h-[30vh] w-full overflow-hidden bg-slate-900">
         <img src="/images/category-campsite.webp" 
           className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Header"
@@ -425,11 +416,11 @@ const CreateAdventure = () => {
               <div className="p-2 rounded-xl bg-[#FF7F50]/10 text-[#FF7F50]">
                 <Clock className="h-5 w-5" />
               </div>
-              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Access & Operating Hours</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Access & Pricing</h2>
             </div>
 
             <div className="grid gap-8">
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operating Schedule *</Label>
                 <OperatingHoursSection
                   openingHours={formData.openingHours}
@@ -440,6 +431,7 @@ const CreateAdventure = () => {
                   onDaysChange={setWorkingDays}
                   accentColor={COLORS.TEAL}
                 />
+                <p className="text-[10px] text-slate-400 italic">Select open/close times and at least one day.</p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -544,6 +536,7 @@ const CreateAdventure = () => {
           </Card>
         )}
 
+        {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8">
           {currentStep > 1 && (
             <Button type="button" onClick={handlePrevious} variant="outline"
