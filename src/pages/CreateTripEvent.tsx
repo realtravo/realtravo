@@ -87,15 +87,24 @@ const CreateTripEvent = () => {
 
   const getCurrentLocation = () => {
     if ("geolocation" in navigator) {
+      toast({ title: "Locating...", description: "Fetching GPS coordinates." });
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          // Updated to standard Google Maps format
           const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
           setFormData(prev => ({ ...prev, map_link: mapUrl, latitude, longitude }));
-          toast({ title: "Location Added", description: "Current location pinned." });
+          toast({ title: "Location Added", description: "Current location pinned successfully." });
         },
-        () => toast({ title: "Error", description: "Unable to get location.", variant: "destructive" })
+        (error) => {
+          let errorMsg = "Unable to get location.";
+          if (error.code === 1) errorMsg = "Please enable location permissions in your browser.";
+          toast({ title: "Error", description: errorMsg, variant: "destructive" });
+        },
+        { enableHighAccuracy: true }
       );
+    } else {
+      toast({ title: "Error", description: "Geolocation is not supported by your browser.", variant: "destructive" });
     }
   };
 
@@ -115,64 +124,35 @@ const CreateTripEvent = () => {
     setGalleryImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Step validation
   const validateStep = (step: number): boolean => {
     switch (step) {
-      case 1:
-        // Type selection - always valid
-        return true;
+      case 1: return true;
       case 2:
-        if (!formData.name.trim()) {
-          toast({ title: "Required", description: "Experience name is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.country) {
-          toast({ title: "Required", description: "Country is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.place.trim()) {
-          toast({ title: "Required", description: "Region/Place is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.location.trim()) {
-          toast({ title: "Required", description: "Specific location is required", variant: "destructive" });
+        if (!formData.name.trim() || !formData.country || !formData.place.trim() || !formData.location.trim()) {
+          toast({ title: "Required", description: "Please fill in all experience details", variant: "destructive" });
           return false;
         }
         if (!formData.is_custom_date && !formData.date) {
-          toast({ title: "Required", description: "Date is required (or select custom tour)", variant: "destructive" });
+          toast({ title: "Required", description: "Date is required", variant: "destructive" });
           return false;
         }
         return true;
       case 3:
-        if (!formData.price || parseFloat(formData.price) < 0) {
-          toast({ title: "Required", description: "Adult price is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.available_tickets || parseInt(formData.available_tickets) <= 0) {
-          toast({ title: "Required", description: "Max slots must be greater than 0", variant: "destructive" });
+        if (!formData.price || parseFloat(formData.price) < 0 || parseInt(formData.available_tickets) <= 0) {
+          toast({ title: "Required", description: "Check price and available slots", variant: "destructive" });
           return false;
         }
         return true;
       case 4:
-        if (!formData.phone_number) {
-          toast({ title: "Required", description: "Phone number is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.map_link) {
-          toast({ title: "Required", description: "GPS location is required", variant: "destructive" });
+        if (!formData.phone_number || !formData.map_link) {
+          toast({ title: "Required", description: "Phone and GPS location are required", variant: "destructive" });
           return false;
         }
         return true;
       case 5:
-        // Operating hours validation - only for custom date trips or events
         if (formData.is_custom_date || formData.type === 'event') {
           if (!formData.opening_hours || !formData.closing_hours) {
             toast({ title: "Required", description: "Operating hours are required", variant: "destructive" });
-            return false;
-          }
-          const hasWorkingDays = Object.values(workingDays).some(Boolean);
-          if (!hasWorkingDays) {
-            toast({ title: "Required", description: "Select at least one operating day", variant: "destructive" });
             return false;
           }
         }
@@ -183,25 +163,18 @@ const CreateTripEvent = () => {
           return false;
         }
         return true;
-      default:
-        return true;
+      default: return true;
     }
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
-    }
+    if (validateStep(currentStep)) setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
   };
 
-  const handlePrevious = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
+  const handlePrevious = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleSubmit = async () => {
     if (!user) { navigate("/auth"); return; }
-    if (!validateStep(currentStep)) return;
-
     setLoading(true);
     try {
       const uploadedUrls: string[] = [];
@@ -213,9 +186,7 @@ const CreateTripEvent = () => {
         uploadedUrls.push(publicUrl);
       }
 
-      // Convert working days to array of day names
-      const daysOpened = (Object.keys(workingDays) as (keyof WorkingDays)[])
-        .filter(day => workingDays[day]);
+      const daysOpened = (Object.keys(workingDays) as (keyof WorkingDays)[]).filter(day => workingDays[day]);
 
       const { error } = await supabase.from("trips").insert([{
         name: formData.name,
@@ -235,6 +206,8 @@ const CreateTripEvent = () => {
         email: formData.email,
         phone_number: formData.phone_number,
         map_link: formData.map_link,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         opening_hours: formData.opening_hours || null,
         closing_hours: formData.closing_hours || null,
         days_opened: daysOpened.length > 0 ? daysOpened : null,
@@ -243,7 +216,7 @@ const CreateTripEvent = () => {
       }]);
 
       if (error) throw error;
-      toast({ title: "Success!", description: "Submitted for approval." });
+      toast({ title: "Success!", description: "Experience submitted for approval." });
       navigate("/become-host");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -269,7 +242,6 @@ const CreateTripEvent = () => {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
-      
       <main className="container px-4 py-8 max-w-4xl mx-auto">
         <div className="relative rounded-[40px] overflow-hidden mb-8 shadow-2xl h-[200px] md:h-[280px]">
           <img src="/images/category-trips.webp" className="w-full h-full object-cover" alt="Header" />
@@ -286,29 +258,19 @@ const CreateTripEvent = () => {
         
         <StepIndicator />
 
-        {/* Step 1: Type Selection */}
         {currentStep === 1 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>Select Listing Type</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 { id: 'trip', label: 'Trip / Tour', sub: 'Flexible or fixed multi-day adventures' },
-                { id: 'event', label: 'Event / Sport', sub: 'Fixed date single sessions or matches' }
+                { id: 'event', label: 'Event / Sport', sub: 'Fixed date single sessions' }
               ].map((type) => (
-                <label 
-                  key={type.id}
-                  className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${
-                    formData.type === type.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50 hover:bg-white'
-                  }`}
-                >
-                  <input type="radio" name="type" value={type.id} className="hidden"
-                    onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-                  />
+                <label key={type.id} className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${formData.type === type.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50 hover:bg-white'}`}>
+                  <input type="radio" name="type" value={type.id} className="hidden" onChange={(e) => setFormData({...formData, type: e.target.value as any})} />
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className={`block font-black uppercase tracking-tight text-sm ${formData.type === type.id ? 'text-[#008080]' : 'text-slate-600'}`}>
-                        {type.label}
-                      </span>
+                      <span className={`block font-black uppercase tracking-tight text-sm ${formData.type === type.id ? 'text-[#008080]' : 'text-slate-600'}`}>{type.label}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 block">{type.sub}</span>
                     </div>
                     {formData.type === type.id && <CheckCircle2 className="h-5 w-5 text-[#008080]" />}
@@ -319,152 +281,94 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
-        {/* Step 2: Experience Details */}
         {currentStep === 2 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.TEAL }}>Experience Details</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Experience Name *</Label>
                 <StyledInput value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g. Hiking in the Clouds" />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country *</Label>
                 <CountrySelector value={formData.country} onChange={(value) => setFormData({...formData, country: value})} />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Region / Place *</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput className="pl-11" value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} placeholder="e.g. Mt. Kenya Region" />
-                </div>
+                <StyledInput value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} placeholder="e.g. Mt. Kenya Region" />
               </div>
-
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Specific Location *</Label>
                 <StyledInput value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} placeholder="e.g. Nanyuki Main Gate" />
               </div>
             </div>
-
             <div className="space-y-4 pt-4 border-t border-slate-50">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date Settings *</Label>
               {formData.type === "trip" && (
                 <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-2xl">
-                  <Checkbox id="custom_date" checked={formData.is_custom_date}
-                    onCheckedChange={(checked) => setFormData({...formData, is_custom_date: checked as boolean})}
-                  />
-                  <label htmlFor="custom_date" className="text-[11px] font-black uppercase tracking-tight text-slate-500 cursor-pointer">
-                    Flexible dates - Open availability
-                  </label>
+                  <Checkbox id="custom_date" checked={formData.is_custom_date} onCheckedChange={(checked) => setFormData({...formData, is_custom_date: checked as boolean})} />
+                  <label htmlFor="custom_date" className="text-[11px] font-black uppercase tracking-tight text-slate-500 cursor-pointer">Flexible dates - Open availability</label>
                 </div>
               )}
-              
-              {!formData.is_custom_date && (
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="date" className="pl-11" min={new Date().toISOString().split('T')[0]}
-                    value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  />
-                </div>
-              )}
+              {!formData.is_custom_date && <StyledInput type="date" min={new Date().toISOString().split('T')[0]} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />}
             </div>
           </Card>
         )}
 
-        {/* Step 3: Pricing & Capacity */}
         {currentStep === 3 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>Pricing & Logistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Adult Price (KSh) *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  />
-                </div>
+                <StyledInput type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Child Price (KSh)</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.price_child}
-                    onChange={(e) => setFormData({...formData, price_child: e.target.value})}
-                  />
-                </div>
+                <StyledInput type="number" value={formData.price_child} onChange={(e) => setFormData({...formData, price_child: e.target.value})} />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Max Slots *</Label>
-                <div className="relative">
-                  <Users className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.available_tickets}
-                    onChange={(e) => setFormData({...formData, available_tickets: e.target.value})}
-                  />
-                </div>
+                <StyledInput type="number" value={formData.available_tickets} onChange={(e) => setFormData({...formData, available_tickets: e.target.value})} />
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 4: Contact & Location */}
         {currentStep === 4 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.TEAL }}>Contact & GPS Location</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact Email</Label>
-                <StyledInput type="email" value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="contact@example.com"
-                />
+                <StyledInput type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact Phone *</Label>
-                <PhoneInput value={formData.phone_number}
-                  onChange={(value) => setFormData({...formData, phone_number: value})}
-                  country={formData.country} placeholder="712345678"
-                />
+                <PhoneInput value={formData.phone_number} onChange={(value) => setFormData({...formData, phone_number: value})} country={formData.country} />
               </div>
             </div>
-
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">GPS Location *</Label>
               <div className="flex gap-2">
-                <StyledInput className="bg-slate-50 flex-1" readOnly value={formData.map_link} placeholder="Tap the icon to pin your location" />
-                <Button type="button" onClick={getCurrentLocation}
-                  className="h-12 w-12 rounded-2xl shadow-lg"
-                  style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}
-                >
-                  <Navigation className="h-5 w-5 text-white" />
+                <StyledInput className="bg-slate-50 flex-1 text-[11px]" readOnly value={formData.map_link} placeholder="Tap icon to pin location" />
+                <Button type="button" onClick={getCurrentLocation} className="h-12 w-12 rounded-2xl shadow-lg shrink-0" style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}>
+                  <Navigation className={`h-5 w-5 text-white ${formData.map_link ? 'fill-white' : ''}`} />
                 </Button>
               </div>
             </div>
-
-            {/* Gallery Upload */}
             <div className="pt-6 border-t border-slate-100">
               <h3 className="text-xs font-black uppercase tracking-widest mb-4" style={{ color: COLORS.TEAL }}>Gallery (Max 5)</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {galleryImages.map((file, index) => (
                   <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100">
                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
-                    <button type="button" onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                    <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
                 {galleryImages.length < 5 && (
                   <Label className="aspect-square rounded-[20px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
                     <Camera className="h-6 w-6 text-slate-400" />
-                    <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add</span>
                     <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
                   </Label>
                 )}
@@ -473,70 +377,36 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
-        {/* Step 5: Operating Hours (for custom date or events) */}
         {currentStep === 5 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>
-              Operating Hours {(formData.is_custom_date || formData.type === 'event') ? '*' : '(Optional)'}
-            </h2>
-            {!(formData.is_custom_date || formData.type === 'event') && (
-              <p className="text-xs text-slate-400 mb-4">
-                Since you have a fixed date, operating hours are optional. Skip if not applicable.
-              </p>
-            )}
+            <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>Operating Hours</h2>
             <OperatingHoursSection
-              openingHours={formData.opening_hours}
-              closingHours={formData.closing_hours}
-              workingDays={workingDays}
-              onOpeningChange={(value) => setFormData({...formData, opening_hours: value})}
+              openingHours={formData.opening_hours} closingHours={formData.closing_hours}
+              workingDays={workingDays} onOpeningChange={(value) => setFormData({...formData, opening_hours: value})}
               onClosingChange={(value) => setFormData({...formData, closing_hours: value})}
-              onDaysChange={setWorkingDays}
-              accentColor={COLORS.TEAL}
+              onDaysChange={setWorkingDays} accentColor={COLORS.TEAL}
             />
           </Card>
         )}
 
-        {/* Step 6: Description */}
         {currentStep === 6 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
-            <Label className="text-xs font-black uppercase tracking-widest mb-4 block" style={{ color: COLORS.TEAL }}>Experience Description *</Label>
-            <Textarea
-              className="rounded-[24px] border-slate-100 bg-slate-50 p-6 min-h-[200px] focus:ring-[#008080] text-sm"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Tell travelers what makes this experience special..."
-            />
+            <Label className="text-xs font-black uppercase tracking-widest mb-4 block" style={{ color: COLORS.TEAL }}>Description *</Label>
+            <Textarea className="rounded-[24px] border-slate-100 bg-slate-50 p-6 min-h-[200px]" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Experience details..." />
           </Card>
         )}
 
-        {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8">
-          {currentStep > 1 && (
-            <Button type="button" onClick={handlePrevious} variant="outline"
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" /> Previous
-            </Button>
-          )}
-          
+          {currentStep > 1 && <Button type="button" onClick={handlePrevious} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase text-sm"><ArrowLeft className="mr-2 h-4 w-4" /> Previous</Button>}
           {currentStep < TOTAL_STEPS ? (
-            <Button type="button" onClick={handleNext}
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
-              style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-            >
-              Next <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            <Button type="button" onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
           ) : (
-            <Button type="button" onClick={handleSubmit} disabled={loading}
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
-              style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}
-            >
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : "Submit for Approval"}
+            <Button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Submit"}
             </Button>
           )}
         </div>
       </main>
-      
       <MobileBottomBar />
     </div>
   );
