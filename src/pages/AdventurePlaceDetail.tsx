@@ -5,7 +5,7 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Clock, ArrowLeft, Heart, Copy, Share2, Star, Tent, Zap, ShieldCheck 
+  MapPin, Clock, ArrowLeft, Heart, Copy, Share2, Star, Tent, Zap, ShieldCheck, CalendarDays 
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -128,7 +128,6 @@ const AdventurePlaceDetail = () => {
         
         {/* 2. IMAGE GALLERY */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
-          
           <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
             <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md">
               <ArrowLeft className="h-5 w-5" />
@@ -176,14 +175,20 @@ const AdventurePlaceDetail = () => {
 
         {/* 3. CONTENT GRID */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
-          
-          {/* Main Info Column */}
-          <div className="flex flex-col gap-6 order-1">
+          <div className="flex flex-col gap-6">
+            
+            {/* Description */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Description</h2>
               <p className="text-slate-500 text-sm leading-relaxed lowercase">{place.description || "none"}</p>
             </section>
+
+            {/* Price Card for Mobile (Visible only on small screens) */}
+            <div className="lg:hidden">
+                <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
+            </div>
             
+            {/* Amenities */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <ShieldCheck className="h-5 w-5 text-red-600" />
@@ -200,17 +205,20 @@ const AdventurePlaceDetail = () => {
               ) : <p className="text-slate-400 text-sm italic">none</p>}
             </section>
 
+            {/* Facilities / Activities */}
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <Tent className="h-5 w-5 text-[#008080]" />
-                <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities</h2>
+                <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Facilities & Activities</h2>
               </div>
               {place.facilities?.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {place.facilities.map((f: any, i: number) => (
                     <div key={i} className="p-4 rounded-[22px] bg-slate-50 border border-slate-100 flex justify-between items-center">
                       <span className="text-sm font-medium lowercase text-slate-700">{f.name}</span>
-                      <Badge className="bg-white text-[#008080] text-[10px] font-black border border-slate-100">KSH {f.price}</Badge>
+                      <Badge className="bg-white text-[#008080] text-[10px] font-black border border-slate-100">
+                        {f.price > 0 ? `KSH ${f.price}` : "FREE"}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -218,8 +226,8 @@ const AdventurePlaceDetail = () => {
             </section>
           </div>
 
-          {/* Pricing Sidebar - Now following main content on mobile */}
-          <div className="lg:sticky lg:top-24 h-fit order-2 lg:order-none">
+          {/* Sidebar Price Card for Desktop (Sticky) */}
+          <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
             <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
           </div>
         </div>
@@ -236,62 +244,68 @@ const AdventurePlaceDetail = () => {
   );
 };
 
-const PriceCard = ({ place, liveRating, navigate }: any) => (
-  <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
-    <div className="flex justify-between items-end mb-6">
-      <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee</p>
-        <span className="text-4xl font-black text-red-600">
-          {place.entry_fee === 0 ? "FREE" : `KSh ${place.entry_fee}`}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
-        <Star className="h-4 w-4 fill-current" />{liveRating.avg || "0.0"}
-      </div>
-    </div>
+const PriceCard = ({ place, liveRating, navigate }: any) => {
+  // Ensure working days are handled whether they are an array or a string
+  const workingDays = Array.isArray(place.working_days) 
+    ? place.working_days 
+    : place.working_days?.split(',').filter(Boolean) || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-    {/* Schedule & Working Days */}
-    <div className="space-y-4 mb-8 pt-6 border-t border-slate-50">
-      <div className="flex items-center gap-3">
-        <div className="bg-teal-50 p-2.5 rounded-xl">
-          <Clock className="h-4 w-4 text-[#008080]" />
-        </div>
+  return (
+    <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
+      <div className="flex justify-between items-end mb-6">
         <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Opening Hours</p>
-          <p className="text-sm font-bold text-slate-700">
-            {place.opening_time || "08:00 AM"} — {place.closing_time || "06:00 PM"}
-          </p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee</p>
+          <span className="text-4xl font-black text-red-600">
+            {place.entry_fee === 0 || !place.entry_fee ? "FREE" : `KSh ${place.entry_fee}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
+          <Star className="h-4 w-4 fill-current" />{liveRating.avg || "0.0"}
         </div>
       </div>
-      
-      <div className="flex items-center gap-3">
-        <div className="bg-orange-50 p-2.5 rounded-xl">
-          <Zap className="h-4 w-4 text-orange-500" />
-        </div>
-        <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Availability</p>
-          <p className="text-sm font-bold text-slate-700">
-            {place.working_days || "Monday — Sunday"}
-          </p>
-        </div>
-      </div>
-    </div>
 
-    <Button 
-      onClick={() => navigate(`/booking/adventure_place/${place.id}`)}
-      className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-widest text-white shadow-xl border-none mb-6 transition-all active:scale-95" 
-      style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-    >
-      Book Adventure
-    </Button>
-    
-    <div className="grid grid-cols-3 gap-3">
-      <UtilityBtn icon={<MapPin className="h-5 w-5" />} label="Map" />
-      <UtilityBtn icon={<Copy className="h-5 w-5" />} label="Copy" />
-      <UtilityBtn icon={<Share2 className="h-5 w-5" />} label="Share" />
+      <div className="space-y-4 mb-8">
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <Clock className="h-5 w-5 text-[#008080]" />
+            <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Opening Hours</p>
+                <p className="text-xs font-bold text-slate-700">
+                    {place.opening_hours || "08:00 AM"} — {place.closing_hours || "06:00 PM"}
+                </p>
+            </div>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <CalendarDays className="h-5 w-5 text-red-500" />
+            <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Working Days</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                    {workingDays.map((day: string, idx: number) => (
+                        <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
+                            {day.trim().substring(0, 3)}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <Button 
+        onClick={() => navigate(`/booking/adventure_place/${place.id}`)}
+        className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-widest text-white shadow-xl border-none mb-6 transition-all active:scale-95" 
+        style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
+      >
+        Book Adventure
+      </Button>
+
+      <div className="grid grid-cols-3 gap-3">
+        <UtilityBtn icon={<MapPin className="h-5 w-5" />} label="Map" />
+        <UtilityBtn icon={<Copy className="h-5 w-5" />} label="Copy" />
+        <UtilityBtn icon={<Share2 className="h-5 w-5" />} label="Share" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const UtilityBtn = ({ icon, label }: any) => (
   <Button variant="ghost" className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl border border-slate-100 flex-1">
