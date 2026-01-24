@@ -110,7 +110,7 @@ const EventDetail = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white">
         <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Event...</p>
+        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading...</p>
       </div>
     );
   }
@@ -215,7 +215,7 @@ const EventDetail = () => {
           {/* Left Column */}
           <div className="space-y-6">
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About Event</h2>
+              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About this Event</h2>
               <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">
                 {event.description || "No description available."}
               </p>
