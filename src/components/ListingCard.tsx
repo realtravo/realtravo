@@ -69,7 +69,6 @@ const ListingCardComponent = ({
   const isTrip = useMemo(() => type === "TRIP", [type]);
   const tracksAvailability = useMemo(() => isEventOrSport || isTrip, [isEventOrSport, isTrip]);
   
-  // Logic for price visibility
   const shouldShowPriceOverlay = useMemo(() => (isTrip || isEventOrSport) && price !== undefined, [isTrip, isEventOrSport, price]);
 
   const remainingTickets = useMemo(() => availableTickets - bookedTickets, [availableTickets, bookedTickets]);
@@ -78,7 +77,6 @@ const ListingCardComponent = ({
   const isUnavailable = useMemo(() => isOutdated || isSoldOut, [isOutdated, isSoldOut]);
 
   const optimizedImageUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 400, height: 300, quality: 80 }), [imageUrl]);
-  const thumbnailUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 32, height: 24, quality: 30 }), [imageUrl]);
   const displayType = useMemo(() => isEventOrSport ? "Event & Sports" : type.replace('_', ' '), [isEventOrSport, type]);
   const locationString = useMemo(() => [place, location, country].filter(Boolean).join(', '), [place, location, country]);
 
@@ -104,7 +102,7 @@ const ListingCardComponent = ({
         compact ? "h-auto" : "h-full"
       )}
     >
-      {/* Image Section - No margins, flush with top */}
+      {/* Image Section */}
       <div 
         ref={imageContainerRef} 
         className="relative overflow-hidden w-full bg-slate-200 rounded-t-[24px]" 
@@ -126,7 +124,6 @@ const ListingCardComponent = ({
           />
         )}
 
-        {/* SOLD OUT / NOT AVAILABLE OVERLAY */}
         {isUnavailable && (
           <div className="absolute inset-0 z-20 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
             <Badge className="bg-white text-black font-black border-none px-4 py-1.5 text-[11px] uppercase">
@@ -135,7 +132,6 @@ const ListingCardComponent = ({
           </div>
         )}
         
-        {/* Category Badge */}
         <Badge 
           className="absolute top-3 left-3 z-10 px-1.5 py-0.5 border-none text-[7.5px] font-black uppercase"
           style={{ background: isUnavailable ? '#64748b' : COLORS.TEAL, color: 'white' }}
@@ -143,7 +139,6 @@ const ListingCardComponent = ({
           {displayType}
         </Badge>
 
-        {/* PRICE OVERLAY (Specific to Trip/Event) */}
         {shouldShowPriceOverlay && !isUnavailable && (
           <div className="absolute bottom-3 left-3 z-10">
             <div className="bg-[#FF0000] text-white px-3 py-1 rounded-full text-[11px] font-medium shadow-lg">
@@ -182,7 +177,6 @@ const ListingCardComponent = ({
         
         <div className="flex items-center gap-1.5 mb-3">
             <MapPin className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isUnavailable ? '#94a3b8' : COLORS.CORAL }} />
-            {/* Location: Small letters, only first letter capitalized, no bold */}
             <p className="text-[10px] md:text-xs text-slate-600 tracking-wide line-clamp-1 capitalize font-normal">
                 {locationString.toLowerCase()}
             </p>
@@ -192,7 +186,7 @@ const ListingCardComponent = ({
           <div className="flex flex-wrap gap-1 mb-4">
             {activities.slice(0, 3).map((act, i) => (
               <span key={i} className={cn(
-                "text-[10px] px-2 py-0.5 rounded-md font-normal", // No bold
+                "text-[10px] px-2 py-0.5 rounded-md font-normal",
                 isUnavailable ? "bg-slate-200 text-slate-500" : "bg-[#F0E68C]/40 text-[#5c5829]"
               )}>
                 {typeof act === 'string' ? act.toLowerCase() : act.name.toLowerCase()}
@@ -201,25 +195,31 @@ const ListingCardComponent = ({
           </div>
         )}
         
-        {/* Bottom Metadata */}
+        {/* Bottom Metadata: Flexible vs Fixed Logic */}
         <div className="mt-auto pt-4 border-t border-slate-200/60 flex items-center justify-between">
             <div className="flex flex-col">
-              {/* Distance badge removed from image and placed here for clarity if needed, or kept hidden */}
               {distance && (
                 <span className="text-[10px] text-slate-500">{distance.toFixed(1)} km away</span>
               )}
             </div>
 
             <div className="flex flex-col items-end">
-                {(date || isFlexibleDate) && (
-                  <div className="flex items-center gap-1 text-slate-700">
-                      <Calendar className="h-3 w-3" />
-                      <span className={`text-[10px] font-black uppercase ${isFlexibleDate ? 'text-emerald-700' : ''}`}>
-                          {isFlexibleDate ? 'Flexible' : new Date(date!).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                      </span>
-                  </div>
-                )}
+                {/* Date Display */}
+                <div className="flex items-center gap-1 text-slate-700">
+                    <Calendar className={cn("h-3 w-3", isFlexibleDate ? "text-emerald-600" : "text-slate-500")} />
+                    <span className={cn(
+                      "text-[10px] font-black uppercase",
+                      isFlexibleDate ? 'text-emerald-700' : 'text-slate-900'
+                    )}>
+                        {isFlexibleDate 
+                          ? 'Flexible Dates' 
+                          : date 
+                            ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) 
+                            : 'Date TBD'}
+                    </span>
+                </div>
                 
+                {/* Ticket Availability: Only show if NOT flexible and is a Trip/Event */}
                 <div className="mt-1">
                   {isSoldOut ? (
                     <span className="text-[9px] font-black text-red-600 uppercase">Sold Out</span>
@@ -228,11 +228,11 @@ const ListingCardComponent = ({
                         <Ticket className="h-2.5 w-2.5" />
                         Only {remainingTickets} left!
                     </span>
-                  ) : (tracksAvailability && availableTickets > 0) && (
+                  ) : (!isFlexibleDate && tracksAvailability && availableTickets > 0) ? (
                     <span className="text-[9px] font-black text-teal-700 uppercase">
                         {remainingTickets} Slots available
                     </span>
-                  )}
+                  ) : null}
                 </div>
             </div>
         </div>
