@@ -98,11 +98,12 @@ const Index = () => {
   const fetchScrollableRows = useCallback(async (limit: number) => {
     setLoadingScrollable(true);
     try {
+      // Use public views to avoid exposing contact details
       const [tripsData, hotelsData, campsitesData, eventsData] = await Promise.all([
-        supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "trip").limit(limit),
-        supabase.from("hotels").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(limit),
-        supabase.from("adventure_places").select("*").eq("approval_status", "approved").eq("is_hidden", false).limit(limit),
-        supabase.from("trips").select("*").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "event").limit(limit),
+        supabase.from("public_trips").select("*").eq("type", "trip").limit(limit),
+        supabase.from("public_hotels").select("*").limit(limit),
+        supabase.from("public_adventure_places").select("*").limit(limit),
+        supabase.from("public_trips").select("*").eq("type", "event").limit(limit),
       ]);
       setScrollableRows({
         trips: tripsData.data || [],
@@ -122,21 +123,36 @@ const Index = () => {
     setLoading(true);
     const searchPattern = query ? `%${query}%` : null;
     
-    const fetchTable = async (table: string, type: string) => {
-      let dbQuery = supabase.from(table).select("*").eq("approval_status", "approved").eq("is_hidden", false);
+    // Use public views to avoid exposing contact details
+    const fetchTrips = async (tripType: string, type: string) => {
+      let dbQuery = supabase.from("public_trips").select("*").eq("type", tripType);
       if (searchPattern) dbQuery = dbQuery.or(`name.ilike.${searchPattern},location.ilike.${searchPattern}`);
       const { data } = await dbQuery.range(offset, offset + limit - 1);
-      return (data || []).map(item => ({ ...item, type }));
+      return (data || []).map((item: any) => ({ ...item, type }));
+    };
+
+    const fetchHotels = async () => {
+      let dbQuery = supabase.from("public_hotels").select("*");
+      if (searchPattern) dbQuery = dbQuery.or(`name.ilike.${searchPattern},location.ilike.${searchPattern}`);
+      const { data } = await dbQuery.range(offset, offset + limit - 1);
+      return (data || []).map((item: any) => ({ ...item, type: "HOTEL" }));
+    };
+
+    const fetchAdventures = async () => {
+      let dbQuery = supabase.from("public_adventure_places").select("*");
+      if (searchPattern) dbQuery = dbQuery.or(`name.ilike.${searchPattern},location.ilike.${searchPattern}`);
+      const { data } = await dbQuery.range(offset, offset + limit - 1);
+      return (data || []).map((item: any) => ({ ...item, type: "ADVENTURE PLACE" }));
     };
 
     const [events, trips, hotels, adventures] = await Promise.all([
-      fetchTable("trips", "EVENT"),
-      fetchTable("trips", "TRIP"),
-      fetchTable("hotels", "HOTEL"),
-      fetchTable("adventure_places", "ADVENTURE PLACE")
+      fetchTrips("event", "EVENT"),
+      fetchTrips("trip", "TRIP"),
+      fetchHotels(),
+      fetchAdventures()
     ]);
 
-    const combined = [...events, ...trips, ...hotels, ...adventures].sort((a, b) => 
+    const combined = [...events, ...trips, ...hotels, ...adventures].sort((a: any, b: any) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -242,6 +258,7 @@ const Index = () => {
                   type={listing.type}
                   name={listing.name}
                   location={listing.location}
+                  country={listing.country || ""}
                   imageUrl={listing.image_url}
                   price={listing.price || listing.entry_fee || 0}
                   isSaved={savedItems.has(listing.id)}

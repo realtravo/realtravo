@@ -83,9 +83,18 @@ const CategoryDetail = () => {
     const allData: any[] = [];
     const today = new Date().toISOString().split('T')[0];
     
+    // Map tables to their public views for security (avoiding contact data exposure)
+    const tableViewMap: { [key: string]: string } = {
+      "trips": "public_trips",
+      "hotels": "public_hotels",
+      "adventure_places": "public_adventure_places"
+    };
+    
     for (const table of config.tables) {
+      const viewName = tableViewMap[table] || table;
+      
       let query = supabase
-        .from(table as any)
+        .from(viewName as any)
         .select(
           table === "trips"
             ? "id,name,location,place,country,image_url,date,is_custom_date,is_flexible_date,available_tickets,activities,type,created_at,price,price_child"
@@ -94,9 +103,7 @@ const CategoryDetail = () => {
               : table === "adventure_places"
                 ? "id,name,location,place,country,image_url,entry_fee,available_slots,activities,latitude,longitude,created_at"
                 : "*"
-        )
-        .eq("approval_status", "approved")
-        .eq("is_hidden", false);
+        );
       
       // Filter by trip type (trip or event)
       if (config.tripType) {
@@ -240,14 +247,7 @@ const CategoryDetail = () => {
           <SearchBarWithSuggestions 
             value={searchQuery} 
             onChange={setSearchQuery} 
-            onSubmit={handleSearch} 
-            onFocus={() => setIsSearchFocused(true)} 
-            onBlur={() => setIsSearchFocused(false)} 
-            onBack={() => {
-              setIsSearchFocused(false);
-              setSearchQuery("");
-            }} 
-            showBackButton={isSearchFocused} 
+            onSubmit={handleSearch}
           />
         </div>
       </div>
