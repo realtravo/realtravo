@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
 import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Info } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Info, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const COLORS = {
@@ -13,8 +13,6 @@ const COLORS = {
   CORAL: "#FF7F50",
   CORAL_LIGHT: "#FF9E7A",
 };
-
-type BookingType = 'trip' | 'event' | 'hotel' | 'adventure_place' | 'attraction';
 
 const BookingPage = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -35,23 +33,11 @@ const BookingPage = () => {
 
   const fetchItem = async () => {
     if (!id || !type) return;
-    
     try {
-      let data = null;
-      let error = null;
-      
       const table = (type === "trip" || type === "event") ? "trips" : 
                     (type === "hotel") ? "hotels" : "adventure_places";
 
-      const result = await supabase
-        .from(table)
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      data = result.data;
-      error = result.error;
-      
+      const { data, error } = await supabase.from(table).select("*").eq("id", id).single();
       if (error) throw error;
       setItem(data);
     } catch (error) {
@@ -62,33 +48,16 @@ const BookingPage = () => {
     }
   };
 
-  const getBookingType = (): BookingType => {
-    if (type === "trip") return "trip";
-    if (type === "event") return "event";
-    if (type === "hotel") return "hotel";
-    return "adventure_place";
-  };
-
   const handleBookingSubmit = async (formData: BookingFormData) => {
-    if (!item || !type) return;
+    if (!item) return;
     setIsProcessing(true);
-    
     try {
-      let totalAmount = 0;
-      const bookingType = getBookingType();
-      
-      if (type === "trip" || type === "event") {
-        totalAmount = (formData.num_adults * (item.price || 0)) + (formData.num_children * (item.price_child || 0));
-      } else {
-        // Calculation logic for hotels/adventure places remains the same
-        totalAmount = (formData.num_adults + formData.num_children) * (item.entry_fee || item.price || 0);
-        formData.selectedActivities?.forEach(a => totalAmount += a.price * a.numberOfPeople);
-      }
+      const totalAmount = (formData.num_adults * (item.price || 0)) + (formData.num_children * (item.price_child || 0));
       
       await submitBooking({
         itemId: item.id,
         itemName: item.name,
-        bookingType,
+        bookingType: type as any,
         totalAmount,
         slotsBooked: formData.num_adults + formData.num_children,
         visitDate: formData.visit_date || item.date,
@@ -109,148 +78,133 @@ const BookingPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <Loader2 className="h-10 w-10 animate-spin text-[#008080] mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Initializing Checkout...</p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      <Loader2 className="h-10 w-10 animate-spin text-[#008080] mb-4" />
+      <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Setting up your session...</p>
+    </div>
+  );
 
   if (!item) return null;
 
-  const getMultiStepProps = () => {
-    const baseProps = {
-      onSubmit: handleBookingSubmit,
-      isProcessing,
-      isCompleted,
-      itemName: item.name,
-      itemId: item.id,
-      hostId: item.created_by || "",
-      onPaymentSuccess: () => {
-        setIsCompleted(true);
-        setTimeout(() => navigate(-1), 2000);
-      },
-      primaryColor: COLORS.TEAL,
-      accentColor: COLORS.CORAL,
-    };
-    
-    // For Events/Trips, we explicitly pass prices to trigger the "Number of Users" input
-    if (type === "trip" || type === "event") {
-      return {
-        ...baseProps,
-        bookingType: type,
-        priceAdult: item.price || 0,
-        priceChild: item.price_child || 0,
-        activities: item.activities || [],
-        skipFacilitiesAndActivities: true,
-        skipDateSelection: !item.is_custom_date && !item.is_flexible_date,
-        fixedDate: item.date,
-        totalCapacity: item.available_tickets || 50,
-        slotLimitType: item.slot_limit_type || 'inventory',
-      };
-    }
-    
-    return {
-        ...baseProps,
-        bookingType: getBookingType(),
-        priceAdult: item.price || item.entry_fee || 0,
-        priceChild: item.price_child || item.entry_fee || 0,
-        facilities: item.facilities || [],
-        activities: item.activities || [],
-        totalCapacity: item.available_slots || item.available_rooms || 10,
-    };
-  };
-
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-12">
-      {/* Header */}
-      <div className="sticky top-0 z-[100] bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <div className="container max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-white pb-24">
+      {/* 1. STICKY HEADER */}
+      <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-4">
+        <div className="container max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="rounded-full bg-slate-100 hover:bg-slate-200"
-            >
-              <ArrowLeft className="h-5 w-5" />
+            <Button onClick={() => navigate(-1)} variant="ghost" size="icon" className="rounded-full bg-slate-50 hover:bg-slate-100">
+              <ArrowLeft className="h-5 w-5 text-slate-700" />
             </Button>
             <div>
-              <h1 className="text-sm font-black uppercase tracking-tight text-slate-900">
-                Confirm Booking
-              </h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Step 1 of 3: Details</p>
+              <h1 className="text-sm font-black uppercase tracking-tighter text-slate-900 leading-none">Complete Your Booking</h1>
+              <p className="text-[10px] font-bold text-[#008080] uppercase tracking-widest mt-1">Safe & Secure Checkout</p>
             </div>
           </div>
-          <Badge variant="outline" className="border-teal-100 text-[#008080] bg-teal-50 uppercase text-[9px] font-black">
-            Secure Checkout
-          </Badge>
+          <div className="hidden md:flex items-center gap-2 text-slate-400">
+             <ShieldCheck className="h-4 w-4" />
+             <span className="text-[10px] font-black uppercase">Encrypted</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* 2. HERO SECTION */}
+      <div className="relative w-full h-[30vh] md:h-[40vh] bg-slate-900">
+        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+        <div className="absolute bottom-8 left-0 w-full px-4">
+          <div className="container max-w-4xl mx-auto">
+            <Badge className="bg-[#FF7F50] mb-3 uppercase text-[9px] font-black tracking-widest px-3 py-1">
+              Confirming {type}
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter leading-none mb-2">
+              {item.name}
+            </h2>
+            <div className="flex items-center gap-2 text-slate-600">
+              <MapPin className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wide">{item.location}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <main className="container max-w-2xl mx-auto px-4 pt-8">
-        <div className="bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden">
+      {/* 3. BOOKING FLOW (FULL PAGE STYLE) */}
+      <main className="container max-w-4xl mx-auto px-4 mt-8">
+        <div className="grid lg:grid-cols-[1fr,350px] gap-12">
           
-          {/* Item Preview Section */}
-          <div className="relative h-48 w-full">
-            <img 
-              src={item.image_url} 
-              alt={item.name} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-4 left-6 right-6">
-              <Badge className="bg-[#FF7F50] mb-2 uppercase text-[9px] font-black tracking-widest border-none">
-                {type}
-              </Badge>
-              <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-tight">
-                {item.name}
-              </h2>
-              <div className="flex items-center gap-2 mt-1 text-white/80">
-                <MapPin className="h-3 w-3" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">
-                  {item.location}, {item.country}
-                </span>
+          {/* Left Column: The Interactive Form */}
+          <div className="space-y-12">
+            <section>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="h-8 w-8 rounded-full bg-[#008080] text-white flex items-center justify-center font-black text-sm">1</div>
+                <h3 className="text-xl font-black uppercase tracking-tight text-slate-800">Reservation Details</h3>
+              </div>
+              
+              <div className="bg-slate-50 rounded-[24px] p-1 border border-slate-100">
+                <MultiStepBooking 
+                  onSubmit={handleBookingSubmit}
+                  isProcessing={isProcessing}
+                  isCompleted={isCompleted}
+                  itemName={item.name}
+                  itemId={item.id}
+                  hostId={item.created_by || ""}
+                  primaryColor={COLORS.TEAL}
+                  accentColor={COLORS.CORAL}
+                  bookingType={type as any}
+                  // Explicitly providing prices forces the guest count step
+                  priceAdult={item.price || 0}
+                  priceChild={item.price_child || 0}
+                  skipFacilitiesAndActivities={type === "trip" || type === "event"}
+                  fixedDate={item.date}
+                  skipDateSelection={!item.is_custom_date && !item.is_flexible_date}
+                  onPaymentSuccess={() => {
+                    setIsCompleted(true);
+                    setTimeout(() => navigate(-1), 2000);
+                  }}
+                />
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column: Order Summary (Sticky) */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-28 space-y-6">
+              <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100">
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Booking Summary</h4>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Rate (Adult)</span>
+                    <span className="text-sm font-black text-slate-800">KSh {item.price || 0}</span>
+                  </div>
+                  {item.price_child > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Rate (Child)</span>
+                      <span className="text-sm font-black text-slate-800">KSh {item.price_child}</span>
+                    </div>
+                  )}
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="flex items-center gap-3 text-slate-600 mb-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase">
+                        {item.date ? new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Flexible Date'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <Info className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase">Instant Confirmation</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border border-dashed border-slate-200 rounded-[24px]">
+                 <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
+                    By proceeding, you agree to the host's cancellation policy and terms of service.
+                 </p>
               </div>
             </div>
-          </div>
-
-          {/* Booking Summary Mini-Info */}
-          <div className="px-8 py-4 bg-slate-50/50 border-b border-slate-100 flex gap-6 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="p-1.5 rounded-lg bg-teal-50"><Calendar className="h-3 w-3 text-[#008080]" /></div>
-                <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Date</p>
-                    <p className="text-[10px] font-bold text-slate-700 uppercase">
-                        {item.date ? new Date(item.date).toLocaleDateString() : 'Flexible'}
-                    </p>
-                </div>
-            </div>
-            <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="p-1.5 rounded-lg bg-coral-50"><Info className="h-3 w-3 text-[#FF7F50]" /></div>
-                <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Starting Price</p>
-                    <p className="text-[10px] font-bold text-slate-700 uppercase">KSh {item.price || item.entry_fee || 0}</p>
-                </div>
-            </div>
-          </div>
-
-          {/* The Multi-Step Form */}
-          <div className="p-2 md:p-4">
-            <MultiStepBooking {...getMultiStepProps()} />
-          </div>
-        </div>
-
-        {/* Support Footer */}
-        <div className="mt-8 text-center space-y-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Need help with your booking?</p>
-            <div className="flex justify-center gap-4 text-xs font-black text-[#008080] uppercase tracking-tighter">
-                <a href={`tel:${item.phone_number || ''}`}>Call Host</a>
-                <span className="text-slate-200">|</span>
-                <a href={`mailto:${item.email || ''}`}>Email Support</a>
-            </div>
+          </aside>
         </div>
       </main>
     </div>
