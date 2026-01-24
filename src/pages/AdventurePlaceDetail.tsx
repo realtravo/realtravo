@@ -5,7 +5,7 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Clock, ArrowLeft, Heart, Copy, Share2, Star, Tent, Zap, ShieldCheck, Calendar
+  MapPin, Clock, ArrowLeft, Heart, Copy, Share2, Star, Tent, Zap, ShieldCheck 
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -74,19 +74,39 @@ const AdventurePlaceDetail = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!place) return <div className="min-h-screen flex items-center justify-center">Not found</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground">Loading adventure details...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!place) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-lg font-bold text-foreground mb-2">Adventure place not found</p>
+          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   const allImages = [place.image_url, ...(place.gallery_images || []), ...(place.images || [])].filter(Boolean);
   const amenitiesList = Array.isArray(place.amenities) ? place.amenities : place.amenities?.split(',').filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-16">
+    <div className="min-h-screen bg-[#F8F9FA] pb-24 pt-6">
       
-      {/* 1. HEADER BAR - Always visible on mobile, scroll-triggered on desktop */}
+      {/* 1. SCROLL FIXED BAR */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 
-        ${scrolled ? "translate-y-0 opacity-100" : "max-md:translate-y-0 max-md:opacity-100 -translate-y-full opacity-0"}`}
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${
+          scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+        }`}
       >
         <div className="flex items-center gap-4">
           <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 bg-slate-100 text-slate-900 border-none">
@@ -107,7 +127,20 @@ const AdventurePlaceDetail = () => {
       <main className="container px-4 max-w-6xl mx-auto">
         
         {/* 2. IMAGE GALLERY */}
-        <div className="relative w-full h-[40vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
+        <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
+          
+          <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
+            <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button 
+              onClick={() => id && handleSaveItem(id, "adventure_place")} 
+              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-md ${isSaved ? "bg-red-500 text-white" : "bg-black/40 text-white"}`}
+            >
+              <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
+            </Button>
+          </div>
+
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.map((img, idx) => (
@@ -141,22 +174,16 @@ const AdventurePlaceDetail = () => {
           </div>
         </div>
 
-        {/* 3. CONTENT GRID - Responsive layout order */}
+        {/* 3. CONTENT GRID */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
+          {/* Main Info Column */}
           <div className="flex flex-col gap-6 order-1">
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Description</h2>
               <p className="text-slate-500 text-sm leading-relaxed lowercase">{place.description || "none"}</p>
             </section>
-          </div>
-
-          {/* Price Card moves under description on mobile via order-2 */}
-          <div className="lg:sticky lg:top-24 h-fit order-2 lg:order-2">
-            <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
-          </div>
-
-          <div className="flex flex-col gap-6 order-3">
+            
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <ShieldCheck className="h-5 w-5 text-red-600" />
@@ -190,10 +217,18 @@ const AdventurePlaceDetail = () => {
               ) : <p className="text-slate-400 text-sm italic">none</p>}
             </section>
           </div>
+
+          {/* Pricing Sidebar - Now following main content on mobile */}
+          <div className="lg:sticky lg:top-24 h-fit order-2 lg:order-none">
+            <PriceCard place={place} liveRating={liveRating} navigate={navigate} />
+          </div>
         </div>
 
         <div className="mt-12 bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
           <ReviewSection itemId={place.id} itemType="adventure_place" />
+        </div>
+        <div className="mt-16">
+          <SimilarItems currentItemId={place.id} itemType="adventure" country={place.country} />
         </div>
       </main>
       <MobileBottomBar />
@@ -211,24 +246,33 @@ const PriceCard = ({ place, liveRating, navigate }: any) => (
         </span>
       </div>
       <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
-        <Star className="h-4 w-4 fill-current" />{liveRating.avg}
+        <Star className="h-4 w-4 fill-current" />{liveRating.avg || "0.0"}
       </div>
     </div>
 
-    {/* Schedule Information Section */}
-    <div className="space-y-3 mb-8 pt-4 border-t border-slate-50">
-      <div className="flex items-center gap-3 text-slate-600">
-        <Calendar className="h-4 w-4 text-[#008080]" />
+    {/* Schedule & Working Days */}
+    <div className="space-y-4 mb-8 pt-6 border-t border-slate-50">
+      <div className="flex items-center gap-3">
+        <div className="bg-teal-50 p-2.5 rounded-xl">
+          <Clock className="h-4 w-4 text-[#008080]" />
+        </div>
         <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Working Days</p>
-          <p className="text-xs font-bold uppercase">{place.working_days || "Mon - Sun"}</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Opening Hours</p>
+          <p className="text-sm font-bold text-slate-700">
+            {place.opening_time || "08:00 AM"} — {place.closing_time || "06:00 PM"}
+          </p>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-slate-600">
-        <Clock className="h-4 w-4 text-[#008080]" />
+      
+      <div className="flex items-center gap-3">
+        <div className="bg-orange-50 p-2.5 rounded-xl">
+          <Zap className="h-4 w-4 text-orange-500" />
+        </div>
         <div>
-          <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Opening Hours</p>
-          <p className="text-xs font-bold uppercase">{place.opening_hours || "08:00 AM - 06:00 PM"}</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Availability</p>
+          <p className="text-sm font-bold text-slate-700">
+            {place.working_days || "Monday — Sunday"}
+          </p>
         </div>
       </div>
     </div>
