@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { MapPin, Navigation, X, CheckCircle2, Plus, Camera, ArrowLeft, ArrowRight, Loader2, Clock, DollarSign, Info } from "lucide-react";
+import { MapPin, Navigation, X, CheckCircle2, Plus, Camera, ArrowLeft, Loader2, Clock, DollarSign, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CountrySelector } from "@/components/creation/CountrySelector";
 import { PhoneInput } from "@/components/creation/PhoneInput";
@@ -59,7 +59,26 @@ const CreateHotel = () => {
   const [activities, setActivities] = useState<DynamicItem[]>([]);
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
 
-  // Helper to clear error when user interacts
+  // Cleanup image URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      galleryImages.forEach(file => {
+        const url = URL.createObjectURL(file);
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [galleryImages]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('country').eq('id', user.id).single();
+        if (profile?.country) setFormData(prev => ({ ...prev, country: profile.country }));
+      }
+    };
+    fetchUserProfile();
+  }, [user]);
+
   const clearError = (field: string) => {
     if (errors[field]) {
       setErrors(prev => {
@@ -73,24 +92,12 @@ const CreateHotel = () => {
   const inputErrorStyle = (field: string) => 
     errors[field] ? "border-red-500 ring-1 ring-red-500 bg-red-50/30" : "border-slate-100 bg-slate-50/50";
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        const { data: profile } = await supabase.from('profiles').select('country').eq('id', user.id).single();
-        if (profile?.country) setFormData(prev => ({ ...prev, country: profile.country }));
-      }
-    };
-    fetchUserProfile();
-  }, [user]);
-
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (step === 1) {
       if (!formData.registrationName.trim()) newErrors.registrationName = "Business name is required";
       if (!formData.registrationNumber.trim()) newErrors.registrationNumber = "Registration number is required";
     }
-
     if (step === 2) {
       if (!formData.country) newErrors.country = "Country is required";
       if (!formData.place.trim()) newErrors.place = "City/Place is required";
@@ -99,30 +106,16 @@ const CreateHotel = () => {
       else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
       if (!formData.phoneNumber || formData.phoneNumber.trim().length < 7) newErrors.phoneNumber = "Valid phone is required";
     }
-
     if (step === 3) {
       if (!formData.openingHours) newErrors.openingHours = "Opening time required";
       if (!formData.closingHours) newErrors.closingHours = "Closing time required";
-      const hasSelectedDay = Object.values(workingDays).some(day => day === true);
-      if (!hasSelectedDay) newErrors.workingDays = "Select at least one operating day";
+      if (!Object.values(workingDays).some(Boolean)) newErrors.workingDays = "Select at least one day";
     }
-
-    // Step 4 (Amenities/Facilities/Activities) is skippable per user instructions
-
-    if (step === 5) {
-      if (galleryImages.length === 0) newErrors.gallery = "At least one photo is required";
-    }
-
-    if (step === 6) {
-      if (!formData.description.trim()) newErrors.description = "Description is required";
-    }
+    if (step === 5 && galleryImages.length === 0) newErrors.gallery = "At least one photo is required";
+    if (step === 6 && !formData.description.trim()) newErrors.description = "Description is required";
 
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) {
-      toast({ title: "Check required fields", description: "Please fill in all details highlighted in red.", variant: "destructive" });
-      return false;
-    }
-    return true;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
@@ -142,8 +135,7 @@ const CreateHotel = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          setFormData(prev => ({ ...prev, latitude, longitude }));
+          setFormData(prev => ({ ...prev, latitude: position.coords.latitude, longitude: position.coords.longitude }));
           clearError("gps");
           toast({ title: "Location Captured" });
         },
@@ -167,15 +159,55 @@ const CreateHotel = () => {
   const handleSubmit = async () => {
     if (!user) return navigate("/auth");
     if (!validateStep(currentStep)) return;
+    
     setLoading(true);
-    // ... (rest of your handleSubmit logic remains the same)
+    try {
+      // 1. Upload Images
+      const imageUrls = await Promise.all(
+        galleryImages.map(async (file) => {
+          const filePath = `${user.id}/${Date.now()}-${file.name}`;
+          const { error: uploadError } = await supabase.storage.from('establishment-images').upload(filePath, file);
+          if (uploadError) throw uploadError;
+          return supabase.storage.from('establishment-images').getPublicUrl(filePath).data.publicUrl;
+        })
+      );
+
+      // 2. Save Record
+      const { error: insertError } = await supabase.from('establishments').insert({
+        user_id: user.id,
+        name: formData.registrationName,
+        registration_number: formData.registrationNumber,
+        establishment_type: formData.establishmentType,
+        country: formData.country,
+        place: formData.place,
+        email: formData.email,
+        phone_number: formData.phoneNumber,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        opening_hours: formData.openingHours,
+        closing_hours: formData.closingHours,
+        working_days: workingDays,
+        description: formData.description,
+        images: imageUrls,
+        amenities, facilities, activities,
+        status: 'pending'
+      });
+
+      if (insertError) throw insertError;
+
+      toast({ title: "Property Listed!", description: "Your establishment is under review." });
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header className="hidden md:block" />
-
-      {/* Hero Header */}
+      
       <div className="relative w-full h-[25vh] md:h-[35vh] bg-slate-900 overflow-hidden">
         <img src="/images/category-hotels.webp" className="w-full h-full object-cover opacity-50" alt="" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] via-transparent to-transparent" />
@@ -197,7 +229,6 @@ const CreateHotel = () => {
           ))}
         </div>
 
-        {/* Step 1: Registration */}
         {currentStep === 1 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
@@ -206,23 +237,13 @@ const CreateHotel = () => {
             <div className="grid gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Name *</Label>
-                <Input 
-                  className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationName")}`}
-                  value={formData.registrationName} 
-                  onChange={(e) => { setFormData({...formData, registrationName: e.target.value}); clearError("registrationName"); }}
-                  placeholder="Official Name"
-                />
+                <Input className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationName")}`} value={formData.registrationName} onChange={(e) => { setFormData({...formData, registrationName: e.target.value}); clearError("registrationName"); }} placeholder="Official Name" />
                 {errors.registrationName && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationName}</p>}
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
-                  <Input 
-                    className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationNumber")}`}
-                    value={formData.registrationNumber} 
-                    onChange={(e) => { setFormData({...formData, registrationNumber: e.target.value}); clearError("registrationNumber"); }}
-                    placeholder="e.g. BN-12345"
-                  />
+                  <Input className={`rounded-xl h-12 font-bold ${inputErrorStyle("registrationNumber")}`} value={formData.registrationNumber} onChange={(e) => { setFormData({...formData, registrationNumber: e.target.value}); clearError("registrationNumber"); }} placeholder="e.g. BN-12345" />
                   {errors.registrationNumber && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.registrationNumber}</p>}
                 </div>
                 <div className="space-y-2">
@@ -241,7 +262,6 @@ const CreateHotel = () => {
           </Card>
         )}
 
-        {/* Step 2: Location & Contact */}
         {currentStep === 2 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
@@ -260,19 +280,14 @@ const CreateHotel = () => {
                   {errors.place && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.place}</p>}
                 </div>
               </div>
-
               <div className={`p-6 rounded-[24px] border border-dashed transition-colors flex flex-col items-center text-center gap-4 ${errors.gps ? "border-red-400 bg-red-50" : "border-slate-200 bg-slate-50/50"}`}>
                 <div className="p-4 rounded-full bg-white shadow-sm"><Navigation className="h-6 w-6" style={{ color: COLORS.CORAL }} /></div>
-                <div>
-                  <h4 className="font-black uppercase tracking-tighter text-sm">GPS Location *</h4>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Stand at the entrance</p>
-                </div>
+                <h4 className="font-black uppercase tracking-tighter text-sm">GPS Location *</h4>
                 <Button type="button" onClick={getCurrentLocation} className="rounded-full px-8 font-black uppercase text-[10px] h-11" style={{ background: formData.latitude ? COLORS.TEAL : COLORS.CORAL }}>
                   {formData.latitude ? "✓ Captured" : "Capture Location"}
                 </Button>
                 {errors.gps && <p className="text-red-500 text-[10px] font-bold uppercase">{errors.gps}</p>}
               </div>
-
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email *</Label>
@@ -289,33 +304,24 @@ const CreateHotel = () => {
           </Card>
         )}
 
-        {/* Step 3: Operating Hours */}
         {currentStep === 3 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
               <Clock className="h-5 w-5" /> Operating Hours *
             </h2>
-            <div className={`p-4 rounded-2xl border transition-all ${errors.workingDays || errors.openingHours ? "border-red-200 bg-red-50/30" : "border-slate-50"}`}>
-              <OperatingHoursSection
-                openingHours={formData.openingHours}
-                closingHours={formData.closingHours}
-                workingDays={workingDays}
-                onOpeningChange={(v) => { setFormData({...formData, openingHours: v}); clearError("openingHours"); }}
-                onClosingChange={(v) => { setFormData({...formData, closingHours: v}); clearError("closingHours"); }}
-                onDaysChange={(v) => { setWorkingDays(v); clearError("workingDays"); }}
-                accentColor={COLORS.TEAL}
-              />
-              {(errors.workingDays || errors.openingHours) && (
-                <div className="mt-4 flex items-center gap-2 text-red-600">
-                  <Info className="h-3 w-3" />
-                  <p className="text-[10px] font-black uppercase">{errors.workingDays || errors.openingHours}</p>
-                </div>
-              )}
-            </div>
+            <OperatingHoursSection
+              openingHours={formData.openingHours}
+              closingHours={formData.closingHours}
+              workingDays={workingDays}
+              onOpeningChange={(v) => { setFormData({...formData, openingHours: v}); clearError("openingHours"); }}
+              onClosingChange={(v) => { setFormData({...formData, closingHours: v}); clearError("closingHours"); }}
+              onDaysChange={(v) => { setWorkingDays(v); clearError("workingDays"); }}
+              accentColor={COLORS.TEAL}
+            />
+            {(errors.workingDays || errors.openingHours) && <p className="text-red-500 text-[10px] font-bold uppercase mt-4">{errors.workingDays || errors.openingHours}</p>}
           </Card>
         )}
 
-        {/* Step 4: Offerings (SKIPPABLE) */}
         {currentStep === 4 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
@@ -329,13 +335,12 @@ const CreateHotel = () => {
           </Card>
         )}
 
-        {/* Step 5: Photos */}
         {currentStep === 5 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
               <Camera className="h-5 w-5" /> Gallery (Max 5) *
             </h2>
-            <div className={`grid grid-cols-2 md:grid-cols-5 gap-3 p-4 rounded-2xl ${errors.gallery ? "border-2 border-red-500 bg-red-50" : ""}`}>
+            <div className={`grid grid-cols-2 md:grid-cols-5 gap-3 p-4 rounded-2xl ${errors.gallery ? "border-2 border-red-500" : ""}`}>
               {galleryImages.map((file, i) => (
                 <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-slate-100">
                   <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="" />
@@ -343,7 +348,7 @@ const CreateHotel = () => {
                 </div>
               ))}
               {galleryImages.length < 5 && (
-                <Label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
+                <Label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
                   <Plus className="h-6 w-6 text-slate-400" />
                   <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
                 </Label>
@@ -353,16 +358,10 @@ const CreateHotel = () => {
           </Card>
         )}
 
-        {/* Step 6: Description */}
         {currentStep === 6 && (
           <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>The Experience *</h2>
-            <Textarea 
-              className={`rounded-[20px] min-h-[200px] p-4 font-medium ${inputErrorStyle("description")}`}
-              placeholder="Unique selling points..."
-              value={formData.description}
-              onChange={(e) => { setFormData({...formData, description: e.target.value}); clearError("description"); }}
-            />
+            <Textarea className={`rounded-[20px] min-h-[200px] p-4 font-medium ${inputErrorStyle("description")}`} placeholder="Unique selling points..." value={formData.description} onChange={(e) => { setFormData({...formData, description: e.target.value}); clearError("description"); }} />
             {errors.description && <p className="text-red-500 text-[10px] font-bold uppercase mt-2">{errors.description}</p>}
           </Card>
         )}
