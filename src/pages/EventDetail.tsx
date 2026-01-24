@@ -3,19 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { MapPin, Share2, Heart, Calendar, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail, Clock, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Share2, Heart, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail, Clock, Users, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
-import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
 import { generateReferralLink, trackReferralClick } from "@/lib/referralUtils";
-import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 
@@ -29,40 +27,21 @@ const COLORS = {
   SOFT_GRAY: "#F8F9FA"
 };
 
-const ReviewHeader = ({ event }: { event: any }) => (
-  <div className="flex justify-between items-center mb-8">
-    <div>
-      <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Guest Ratings</h2>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Community Feedback</p>
-    </div>
-    {event.average_rating > 0 && (
-      <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-        <Star className="h-4 w-4 fill-[#FF7F50] text-[#FF7F50]" />
-        <span className="text-lg font-black" style={{ color: COLORS.TEAL }}>{event.average_rating.toFixed(1)}</span>
-      </div>
-    )}
-  </div>
-);
-
 const EventDetail = () => {
   const { slug } = useParams();
   const id = slug ? extractIdFromSlug(slug) : null;
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   
   const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showBooking, setShowBooking] = useState(false);
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 60);
+      setScrolled(window.scrollY > 80);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -81,14 +60,16 @@ const EventDetail = () => {
     try {
       let { data, error } = await supabase
         .from("trips")
-        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type,opening_hours,closing_hours,days_opened")
+        .select("*")
         .eq("id", id)
         .eq("type", "event")
         .single();
+      
+      // Fallback for old IDs if necessary
       if (error && id.length === 8) {
         const { data: prefixData, error: prefixError } = await supabase
           .from("trips")
-          .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,type,opening_hours,closing_hours,days_opened")
+          .select("*")
           .ilike("id", `${id}%`)
           .eq("type", "event")
           .single();
@@ -102,6 +83,7 @@ const EventDetail = () => {
   };
 
   const handleSave = () => id && handleSaveItem(id, "event");
+  
   const handleCopyLink = async () => {
     if (!event) return;
     const refLink = await generateReferralLink(event.id, "event", event.id);
@@ -122,33 +104,13 @@ const EventDetail = () => {
     window.open(event?.map_link || `https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
   };
 
-  const { submitBooking } = useBookingSubmit();
-
-  const handleBookingSubmit = async (data: BookingFormData) => {
-    if (!event) return;
-    setIsProcessing(true);
-    try {
-      const totalAmount = (data.num_adults * event.price) + (data.num_children * (event.price_child || 0));
-      await submitBooking({
-        itemId: event.id, itemName: event.name, bookingType: 'event', totalAmount,
-        slotsBooked: data.num_adults + data.num_children, visitDate: event.date,
-        guestName: data.guest_name, guestEmail: data.guest_email, guestPhone: data.guest_phone,
-        hostId: event.created_by, bookingDetails: { ...data, event_name: event.name }
-      });
-      setIsCompleted(true);
-      setShowBooking(false);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally { setIsProcessing(false); }
-  };
-
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, event?.available_tickets || 0);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white">
         <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
+        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Event...</p>
       </div>
     );
   }
@@ -159,101 +121,118 @@ const EventDetail = () => {
   const eventDate = event.date ? new Date(event.date) : null;
   const isExpired = !event.is_custom_date && eventDate && eventDate < today;
   const canBook = !isExpired && !isSoldOut;
-  const allImages = [event?.image_url, ...(event?.images || [])].filter(Boolean);
+  const allImages = [event?.image_url, ...(event?.gallery_images || []), ...(event?.images || [])].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       {/* Site Header */}
       <Header showSearchIcon={false} />
       
-      {/* 1. STICKY TOP ACTION BAR */}
+      {/* 1. SCROLL FIXED BAR (Slide Down Effect) */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
-          scrolled 
-            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
-            : "bg-transparent"
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${
+          scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
         }`}
       >
         <div className="flex items-center gap-4">
-          <Button 
-            onClick={() => navigate(-1)} 
-            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
-              scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
-            }`}
-          >
+          <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 bg-slate-100 text-slate-900 border-none shadow-sm hover:bg-slate-200">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          
-          {scrolled && (
-            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
-              {event.name}
-            </h2>
-          )}
+          <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[200px]">
+            {event.name}
+          </h2>
         </div>
-
         <Button 
           onClick={handleSave} 
-          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
-            isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
-          }`}
+          className={`rounded-full w-10 h-10 p-0 border-none shadow-md transition-colors ${isSaved ? "bg-red-500 text-white" : "bg-slate-100 text-slate-900"}`}
         >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
+          <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
         </Button>
       </div>
 
-      {/* 2. HERO SECTION (Main site header removed) */}
-      <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900">
-        <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
-          <CarouselContent className="h-full ml-0">
-            {allImages.map((img, idx) => (
-              <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                <div className="relative h-full w-full">
-                  <img src={img} alt={event.name} className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10" />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+      <main className="container px-4 max-w-6xl mx-auto pt-6">
+        
+        {/* 2. IMAGE GALLERY (Rounded & Contained) */}
+        <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8 group">
+          {/* Top Buttons (Visible when not scrolled) */}
+          <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md hover:bg-black/60">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-md transition-all ${isSaved ? "bg-red-500 text-white" : "bg-black/40 text-white hover:bg-black/60"}`}
+            >
+              <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
+            </Button>
+          </div>
 
-        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
-          <div className="relative z-10 space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
-            <Button className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-3 py-1 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg">Experience</Button>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">{event.name}</h1>
-            <div className="flex items-center gap-2 cursor-pointer group w-fit" onClick={openInMaps}>
-                <MapPin className="h-4 w-4 text-white" />
-                <span className="text-xs font-bold text-white uppercase tracking-wide">
-                  {[event.place, event.location, event.country].filter(Boolean).join(', ')}
+          <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
+            <CarouselContent className="h-full ml-0">
+              {allImages.map((img, idx) => (
+                <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                  <div className="relative h-full w-full">
+                    <img src={img} alt={event.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+
+          {/* Overlay Content */}
+          <div className="absolute bottom-0 left-0 z-40 w-full p-6 pb-8">
+            <div className="max-w-xl bg-gradient-to-r from-black/70 via-black/40 to-transparent rounded-2xl p-5 backdrop-blur-[2px]">
+              <div className="flex gap-2 mb-2">
+                <Badge className="bg-[#FF7F50] text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full tracking-widest">
+                  Experience
+                </Badge>
+                {event.average_rating > 0 && (
+                   <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full">
+                      <Star className="h-3 w-3 fill-current mr-1" /> {event.average_rating.toFixed(1)}
+                   </Badge>
+                )}
+              </div>
+              <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-2">
+                {event.name}
+              </h1>
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-fit" 
+                onClick={openInMaps}
+              >
+                <MapPin className="h-4 w-4 text-white/90" />
+                <span className="text-xs font-bold text-white/90 uppercase tracking-wide">
+                   {[event.location, event.place, event.country].filter(Boolean).join(', ')}
                 </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
+        {/* 3. CONTENT GRID */}
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
+          {/* Left Column */}
           <div className="space-y-6">
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About</h2>
-              <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{event.description}</p>
+              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>About Event</h2>
+              <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">
+                {event.description || "No description available."}
+              </p>
             </div>
 
             {(event.opening_hours || event.days_opened?.length > 0) && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-xl bg-teal-50"><Clock className="h-5 w-5 text-[#008080]" /></div>
-                  <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Event Hours</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">When this event runs</p>
-                  </div>
+                  <Clock className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Schedule</h2>
                 </div>
                 <div className="space-y-4">
                   {(event.opening_hours || event.closing_hours) && (
-                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
-                      <span className="text-[10px] font-black uppercase text-slate-400">Operating Hours</span>
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Hours</span>
                       <span className="text-sm font-black text-slate-700">
-                        {event.opening_hours || "08:00"} - {event.closing_hours || "18:00"}
+                        {event.opening_hours || "08:00"} — {event.closing_hours || "18:00"}
                       </span>
                     </div>
                   )}
@@ -272,24 +251,37 @@ const EventDetail = () => {
 
             {event.activities?.length > 0 && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Highlights</h2>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-3 mb-6">
+                   <CheckCircle2 className="h-5 w-5 text-[#857F3E]" />
+                   <h2 className="text-xl font-black uppercase tracking-tight text-[#857F3E]">Highlights</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {event.activities.map((act: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2 bg-[#F0E68C]/20 px-4 py-2.5 rounded-2xl border border-[#F0E68C]/50">
-                      <CheckCircle2 className="h-4 w-4 text-[#857F3E]" />
-                      <span className="text-[11px] font-black text-[#857F3E] uppercase tracking-wide">{act.name}</span>
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-[#F0E68C]/20 border border-[#F0E68C]/50">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#857F3E]" />
+                      <span className="text-[11px] font-bold text-[#857F3E] uppercase tracking-wide">
+                        {typeof act === 'string' ? act : act.name}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="hidden lg:block bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <ReviewHeader event={event} />
+            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+               <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Reviews</h2>
+                  {event.average_rating > 0 && (
+                    <Badge className="bg-teal-50 text-[#008080] border border-teal-100 px-3 py-1 text-xs font-black">
+                      {event.average_rating.toFixed(1)} / 5.0
+                    </Badge>
+                  )}
+               </div>
               <ReviewSection itemId={event.id} itemType="event" />
             </div>
           </div>
 
+          {/* Right Column (Booking Card) */}
           <div className="space-y-6">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               <div className="flex justify-between items-end mb-8">
@@ -300,24 +292,21 @@ const EventDetail = () => {
                     <span className="text-slate-400 text-[10px] font-bold uppercase tracking-tighter">/ adult</span>
                   </div>
                 </div>
-                <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
-                  <Clock className="h-4 w-4" style={{ color: COLORS.TEAL }} />
-                  <span className={`text-xs font-black uppercase ${isSoldOut ? "text-red-500" : "text-slate-600"}`}>
-                    {isSoldOut ? "FULL" : `${remainingSlots} Left`}
+                <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 ${isSoldOut ? "bg-red-50 border-red-100 text-red-600" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs font-black uppercase">
+                    {isSoldOut ? "Full" : `${remainingSlots} Left`}
                   </span>
                 </div>
               </div>
 
-              <div className="mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              {/* Progress Bar */}
+              <div className="mb-8">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    <Users className="h-3 w-3" /> Event Availability
-                  </span>
-                  <span className={`text-[10px] font-black uppercase ${remainingSlots < 5 ? 'text-red-500' : 'text-emerald-600'}`}>
-                    {isSoldOut ? "Sold Out" : `${remainingSlots} Slots Available`}
-                  </span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Availability</span>
+                  <span className="text-[10px] font-bold text-slate-500">{Math.floor((remainingSlots / (event.available_tickets || 50)) * 100)}% Open</span>
                 </div>
-                <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                    <div 
                     className={`h-full transition-all duration-500 ${remainingSlots < 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
                     style={{ width: `${Math.min((remainingSlots / (event.available_tickets || 50)) * 100, 100)}%` }}
@@ -326,21 +315,18 @@ const EventDetail = () => {
               </div>
 
               <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-                  <span className="text-slate-400">Scheduled Date</span>
-                  <span className={isExpired ? "text-red-500" : "text-slate-700"}>
-                    {event.is_custom_date ? (
-                      <span className="text-emerald-600 font-black">AVAILABLE</span>
-                    ) : (
-                      <>
-                        {new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        {isExpired && <span className="ml-1">(Past)</span>}
-                      </>
-                    )}
-                  </span>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <CalendarDays className="h-5 w-5 text-[#008080]" />
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Date</p>
+                        <p className={`text-xs font-bold ${isExpired ? "text-red-500" : "text-slate-700"}`}>
+                            {event.is_custom_date ? "Open Schedule" : new Date(event.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-                  <span className="text-slate-400">Child (Under 12)</span>
+
+                <div className="flex justify-between text-xs font-bold uppercase tracking-tight px-2">
+                  <span className="text-slate-400">Child Price (Under 12)</span>
                   <span className="text-slate-700">KSh {event.price_child || 0}</span>
                 </div>
               </div>
@@ -348,43 +334,36 @@ const EventDetail = () => {
               <Button 
                 onClick={() => navigate(`/booking/event/${event.id}`)}
                 disabled={!canBook}
-                className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
+                className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none mb-6 hover:brightness-110"
                 style={{ 
                     background: !canBook 
                         ? "#cbd5e1" 
-                        : `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
-                    boxShadow: !canBook ? "none" : `0 12px 24px -8px ${COLORS.CORAL}88`
+                        : `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`
                 }}
               >
                 {isSoldOut ? "Fully Booked" : isExpired ? "Event Expired" : "Reserve Spot"}
               </Button>
 
-              <div className="grid grid-cols-3 gap-3 mt-8 mb-8">
+              <div className="grid grid-cols-3 gap-3">
                 <UtilityButton icon={<MapPin className="h-5 w-5" />} label="Map" onClick={openInMaps} />
                 <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={handleCopyLink} />
                 <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
               </div>
 
-              <div className="space-y-4 pt-6 border-t border-slate-50">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</h3>
+              <div className="space-y-4 pt-6 mt-6 border-t border-slate-100">
                 {event.phone_number && (
-                  <a href={`tel:${event.phone_number}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
-                    <Phone className="h-4 w-4 text-[#008080]" />
+                  <a href={`tel:${event.phone_number}`} className="flex items-center gap-3 text-slate-500 hover:text-[#008080] transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                    <Phone className="h-4 w-4" />
                     <span className="text-xs font-bold uppercase tracking-tight">{event.phone_number}</span>
                   </a>
                 )}
                 {event.email && (
-                  <a href={`mailto:${event.email}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
-                    <Mail className="h-4 w-4 text-[#008080]" />
+                  <a href={`mailto:${event.email}`} className="flex items-center gap-3 text-slate-500 hover:text-[#008080] transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                    <Mail className="h-4 w-4" />
                     <span className="text-xs font-bold uppercase tracking-tight truncate">{event.email}</span>
                   </a>
                 )}
               </div>
-            </div>
-
-            <div className="lg:hidden bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <ReviewHeader event={event} />
-              <ReviewSection itemId={event.id} itemType="event" />
             </div>
           </div>
         </div>
@@ -400,7 +379,7 @@ const EventDetail = () => {
 };
 
 const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
-  <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F0E68C]/10 text-[#857F3E] rounded-2xl hover:bg-[#F0E68C]/30 transition-colors border border-[#F0E68C]/20">
+  <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl border border-slate-100 flex-1 hover:bg-slate-100 transition-colors">
     <div className="mb-1">{icon}</div>
     <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
   </Button>
