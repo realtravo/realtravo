@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Menu, Heart, Ticket, Home, User, Search } from "lucide-react"; // Removed Sun, Moon
+import { Menu, Heart, Ticket, Home, User, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -35,8 +35,10 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
     fetchUserProfile();
   }, [user]);
 
+  // Base styles for the sticky header
   const mobileHeaderClasses = "sticky top-0 left-0 right-0 flex bg-background border-b border-border shadow-sm py-2";
 
+  // Reusable icon button styles
   const headerIconStyles = `
     h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-200 
     active:scale-90 text-foreground hover:bg-muted
@@ -46,11 +48,15 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
     <header className={`z-[100] items-center ${mobileHeaderClasses} ${className || ''}`}>
       <div className="container mx-auto px-4 flex items-center justify-between h-full">
         
-        {/* Left: Menu & Brand */}
+        {/* Left Section: Menu Toggle & Brand Logo */}
         <div className="flex items-center gap-2">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
-              <button className={`${headerIconStyles} lg:hidden`} aria-label="Open Menu">
+              {/* Removed 'lg:hidden' so this button is now visible on big screens */}
+              <button 
+                className={headerIconStyles} 
+                aria-label="Open Menu"
+              >
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -59,7 +65,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
             </SheetContent>
           </Sheet>
           
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group ml-1">
             <img 
               src="/fulllogo.png" 
               alt="Logo"
@@ -80,7 +86,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
           </Link>
         </div>
 
-        {/* Center: Nav */}
+        {/* Center Section: Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-8">
           {[
             { to: "/", icon: <Home className="h-4 w-4" />, label: "Home" },
@@ -98,7 +104,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
           ))}
         </nav>
 
-        {/* Right: Search, Notifications, Profile */}
+        {/* Right Section: Actions (Search, Notifications, Profile) */}
         <div className="flex items-center gap-1 sm:gap-2">
           {showSearchIcon && (
             <button 
