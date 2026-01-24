@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Menu, Heart, Ticket, Home, User, Search, Sun, Moon } from "lucide-react";
+import { Menu, Heart, Ticket, Home, User, Search } from "lucide-react"; // Removed Sun, Moon
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationDrawer } from "./NavigationDrawer";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { NotificationBell } from "./NotificationBell";
-import { useTheme } from "next-themes";
 
 export interface HeaderProps {
   onSearchClick?: () => void;
@@ -18,16 +17,9 @@ export interface HeaderProps {
 export const Header = ({ onSearchClick, showSearchIcon = true, className }: HeaderProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // 1. Fix: Ensure theme/icons only render after mount to prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // 2. Fix: Simplified Profile Fetch (preventing potential single() errors)
+  // Simplified Profile Fetch
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) return;
@@ -36,7 +28,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
         .from('profiles')
         .select('name')
         .eq('id', user.id)
-        .maybeSingle(); // Use maybeSingle to avoid throwing if profile doesn't exist yet
+        .maybeSingle(); 
         
       if (error) console.error("Error fetching profile:", error.message);
     };
@@ -106,19 +98,8 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className }: Head
           ))}
         </nav>
 
-        {/* Right: Theme, Search, Notifications */}
+        {/* Right: Search, Notifications, Profile */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Theme Toggle - Logic corrected for mounted state */}
-          {mounted && (
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className={headerIconStyles}
-              aria-label="Toggle Theme"
-            >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-          )}
-
           {showSearchIcon && (
             <button 
               onClick={() => onSearchClick ? onSearchClick() : navigate('/')}
