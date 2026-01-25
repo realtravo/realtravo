@@ -25,13 +25,9 @@ interface SearchBarWithSuggestionsProps {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  onBack?: () => void;
-  showBackButton?: boolean;
 }
 
-export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, onBlur, onBack, showBackButton }: SearchBarWithSuggestionsProps) => {
+export const SearchBarWithSuggestions = ({ value, onChange, onSubmit }: SearchBarWithSuggestionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dbResults, setDbResults] = useState<SearchResult[]>([]);
   const [trendingSearches, setTrendingSearches] = useState<{query: string, search_count: number}[]>([]);
@@ -40,9 +36,12 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetching everything from trips to ensure we have "all items"
-      const { data: trips } = await supabase.from("trips").select("*");
-      if (trips) setDbResults(trips.map(t => ({ ...t, type: 'trip' })));
+      const { data: trips, error } = await supabase.from("trips").select("*");
+      if (error) {
+        console.error("Error fetching trips:", error);
+      } else if (trips) {
+        setDbResults(trips.map(t => ({ ...t, type: 'trip' })));
+      }
       
       const { data: trending } = await supabase.rpc('get_trending_searches', { limit_count: 6 });
       if (trending) setTrendingSearches(trending);
@@ -50,20 +49,23 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
     fetchData();
   }, []);
 
-  // Updated logic: Returns ALL if empty, otherwise filters by name/location
+  // CASE-INSENSITIVE SEARCH LOGIC
   const filteredSuggestions = useMemo(() => {
-    if (!value.trim()) {
-      return dbResults; // Return everything when empty
+    const searchTerm = value.trim().toLowerCase();
+    
+    if (!searchTerm) {
+      return dbResults;
     }
     
-    const searchTerm = value.toLowerCase();
-    return dbResults.filter(item => 
-      item.name?.toLowerCase().includes(searchTerm) || 
-      item.location?.toLowerCase().includes(searchTerm) ||
-      item.country?.toLowerCase().includes(searchTerm)
-    );
+    return dbResults.filter(item => {
+      const nameMatch = (item.name || "").toLowerCase().includes(searchTerm);
+      const locationMatch = (item.location || "").toLowerCase().includes(searchTerm);
+      const countryMatch = (item.country || "").toLowerCase().includes(searchTerm);
+      return nameMatch || locationMatch || countryMatch;
+    });
   }, [value, dbResults]);
 
+  // Handles clicking outside the entire component
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -73,6 +75,13 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSearchClick = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling up and potentially closing the menu
+    e.stopPropagation();
+    setIsExpanded(true); // Explicitly keep it open
+    onSubmit();
+  };
 
   return (
     <div ref={containerRef} className="relative w-full max-w-2xl mx-auto z-50">
@@ -87,10 +96,16 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
             onChange(e.target.value);
             if (!isExpanded) setIsExpanded(true);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              onSubmit();
+              setIsExpanded(true); // Keep visible on Enter key
+            }
+          }}
           className="pl-14 pr-32 h-16 text-base rounded-full border-none shadow-2xl bg-white focus-visible:ring-2 focus-visible:ring-teal-500"
         />
         <Button
-          onClick={onSubmit}
+          onClick={handleSearchClick}
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-12 px-8 text-sm font-bold text-white shadow-lg border-none hover:opacity-90 transition-opacity"
           style={{ backgroundColor: COLORS.CORAL }}
         >
@@ -105,11 +120,17 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" style={{ color: COLORS.CORAL }} />
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
-                {value.length > 0 ? `Results for "${value}"` : "Discover All Destinations"}
+                {value.trim().length > 0 ? `Results for "${value}"` : "Discover All Destinations"}
               </span>
             </div>
             {value.length > 0 && (
-              <button onClick={() => onChange("")} className="text-[10px] font-bold text-slate-400 hover:text-teal-600 uppercase">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange("");
+                }} 
+                className="text-[10px] font-bold text-slate-400 hover:text-teal-600 uppercase"
+              >
                 Clear
               </button>
             )}
@@ -124,7 +145,11 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
                   className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all text-left rounded-2xl group"
                 >
                   <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 shadow-sm">
-                    <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <img 
+                      src={item.image_url || "/placeholder.svg"} 
+                      alt="" 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                    />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-0.5">
@@ -150,7 +175,6 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
             )}
           </div>
 
-          {/* Trending Section - Visible all the time */}
           <div className="mt-4 pt-4 border-t border-slate-100 px-2 pb-2">
              <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-slate-400" />
@@ -160,7 +184,10 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
                 {trendingSearches.map((t, i) => (
                   <button 
                     key={i} 
-                    onClick={() => onChange(t.query)}
+                    onClick={() => {
+                      onChange(t.query);
+                      setIsExpanded(true);
+                    }}
                     className="px-3 py-1.5 bg-slate-50 rounded-full text-[11px] font-bold text-slate-600 hover:bg-teal-600 hover:text-white transition-all"
                   >
                     {t.query}
