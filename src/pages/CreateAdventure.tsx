@@ -166,6 +166,10 @@ const CreateAdventure = () => {
     }
   };
 
+  const removeImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
     if (!user) { navigate("/auth"); return; }
     if (!validateStep(currentStep)) return;

@@ -14,9 +14,10 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   country?: string;
   placeholder?: string;
+  className?: string;
 }
 
-export const PhoneInput = ({ value, onChange, country, placeholder = "712 345 678" }: PhoneInputProps) => {
+export const PhoneInput = ({ value, onChange, country, placeholder = "712 345 678", className }: PhoneInputProps) => {
   const countryCode = country ? COUNTRY_PHONE_CODES[country] || "+254" : "+254";
   const [selectedCode, setSelectedCode] = useState(countryCode);
   
@@ -40,7 +41,7 @@ export const PhoneInput = ({ value, onChange, country, placeholder = "712 345 67
         Phone Number
       </label>
       
-      <div className="flex gap-0 rounded-[20px] bg-white border border-slate-100 p-1 shadow-sm hover:border-[#008080]/30 transition-all focus-within:ring-2 focus-within:ring-[#008080]/10">
+      <div className={`flex gap-0 rounded-[20px] bg-white border border-slate-100 p-1 shadow-sm hover:border-[#008080]/30 transition-all focus-within:ring-2 focus-within:ring-[#008080]/10 ${className || ''}`}>
         <Select value={selectedCode} onValueChange={handleCodeChange}>
           <SelectTrigger 
             className="w-24 h-12 border-none bg-slate-50 rounded-l-[16px] focus:ring-0 shadow-none"
