@@ -60,28 +60,30 @@ const ListingCardComponent = ({
   const navigate = useNavigate();
 
   const { ref: imageContainerRef, isIntersecting } = useIntersectionObserver({
-    rootMargin: '300px', 
+    rootMargin: '300px', // Increased margin for earlier loading
     triggerOnce: true
   });
 
   const shouldLoadImage = priority || isIntersecting;
   
+  // Type logic
   const isEventOrSport = useMemo(() => type === "EVENT" || type === "SPORT", [type]);
   const isTrip = useMemo(() => type === "TRIP", [type]);
   const tracksAvailability = useMemo(() => isEventOrSport || isTrip, [isEventOrSport, isTrip]);
   
+  // Availability logic
   const remainingTickets = useMemo(() => availableTickets - bookedTickets, [availableTickets, bookedTickets]);
   const isSoldOut = useMemo(() => tracksAvailability && availableTickets > 0 && remainingTickets <= 0, [tracksAvailability, availableTickets, remainingTickets]);
   const fewSlotsRemaining = useMemo(() => tracksAvailability && remainingTickets > 0 && remainingTickets <= 10, [tracksAvailability, remainingTickets]);
   
+  // Unified "Unavailable" state for visual overlays
   const isUnavailable = useMemo(() => isOutdated || isSoldOut, [isOutdated, isSoldOut]);
+  // Optimized image with smaller thumbnail for blur-up effect
   const optimizedImageUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 400, height: 300, quality: 80 }), [imageUrl]);
   const thumbnailUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 32, height: 24, quality: 30 }), [imageUrl]);
   const displayType = useMemo(() => isEventOrSport ? "Event & Sports" : type.replace('_', ' '), [isEventOrSport, type]);
   const formattedDistance = useMemo(() => distance?.toFixed(2), [distance]);
-  
-  // Location string: lowercase for processing, then capitalized via CSS
-  const locationString = useMemo(() => [place, location, country].filter(Boolean).join(', ').toLowerCase(), [place, location, country]);
+  const locationString = useMemo(() => [place, location, country].filter(Boolean).join(', '), [place, location, country]);
 
   const handleCardClick = useCallback(() => {
     const typeMap: Record<string, string> = {
@@ -99,6 +101,7 @@ const ListingCardComponent = ({
   const handleImageLoad = useCallback(() => setImageLoaded(true), []);
   const handleImageError = useCallback(() => setImageError(true), []);
 
+  // Show distance for all types when location is available
   const showDistanceBadge = useMemo(() => distance !== undefined && distance > 0, [distance]);
 
   return (
@@ -106,21 +109,23 @@ const ListingCardComponent = ({
       onClick={handleCardClick} 
       className={cn(
         "group overflow-hidden transition-all duration-300 hover:shadow-2xl cursor-pointer border-slate-200 flex flex-col",
-        "rounded-xl bg-[rgba(0,0,0,0.04)]", 
+        "rounded-[24px] bg-[rgba(0,0,0,0.04)]", // Darkened background to reduce brightness
         compact ? "h-auto" : "h-full",
         isUnavailable && "opacity-90"
       )}
     >
-      {/* Image Section: Removed m-2, removed bottom radius */}
+      {/* Image Section with improved loading */}
       <div 
         ref={imageContainerRef} 
-        className="relative overflow-hidden bg-slate-200 rounded-t-xl" 
+        className="relative overflow-hidden m-2 rounded-[20px] bg-slate-200" 
         style={{ paddingBottom: '70%' }}
       >
+        {/* Skeleton placeholder - always present until loaded */}
         {!imageLoaded && !imageError && (
           <Skeleton className="absolute inset-0 w-full h-full" />
         )}
         
+        {/* Blur-up thumbnail for smooth transition */}
         {shouldLoadImage && !imageLoaded && !imageError && (
           <img 
             src={thumbnailUrl} 
@@ -130,11 +135,14 @@ const ListingCardComponent = ({
           />
         )}
         
+        {/* Main image */}
         {shouldLoadImage && !imageError && (
           <img 
             src={optimizedImageUrl} 
             alt={name}
             loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding={priority ? "sync" : "async"}
             onLoad={handleImageLoad}
             onError={handleImageError}
             className={cn(
@@ -145,12 +153,14 @@ const ListingCardComponent = ({
           />
         )}
         
+        {/* Error fallback */}
         {imageError && (
           <div className="absolute inset-0 w-full h-full bg-slate-100 flex items-center justify-center">
             <span className="text-slate-400 text-xs font-bold uppercase">No Image</span>
           </div>
         )}
 
+        {/* SOLD OUT / NOT AVAILABLE OVERLAY */}
         {isUnavailable && (
           <div className="absolute inset-0 z-20 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
             <Badge className="bg-white text-black font-black border-none px-4 py-1.5 text-[11px] uppercase shadow-2xl">
@@ -159,6 +169,7 @@ const ListingCardComponent = ({
           </div>
         )}
         
+        {/* Category Badge */}
         <Badge 
           className="absolute top-3 left-3 z-10 px-1.5 py-0.5 border-none shadow-md text-[7.5px] font-black uppercase tracking-tight"
           style={{ background: isUnavailable ? '#64748b' : COLORS.TEAL, color: 'white' }}
@@ -189,6 +200,7 @@ const ListingCardComponent = ({
         )}
       </div>
       
+      {/* Content Section */}
       <div className="p-5 flex flex-col flex-1"> 
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-black text-sm md:text-lg leading-tight uppercase tracking-tighter line-clamp-2" 
@@ -205,8 +217,7 @@ const ListingCardComponent = ({
         
         <div className="flex items-center gap-1.5 mb-3">
             <MapPin className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isUnavailable ? '#94a3b8' : COLORS.CORAL }} />
-            {/* Location: Not bold, capitalize first letter only */}
-            <p className="text-[10px] md:text-xs font-medium text-slate-700 capitalize tracking-normal line-clamp-1">
+            <p className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wider line-clamp-1">
                 {locationString}
             </p>
         </div>
@@ -215,7 +226,7 @@ const ListingCardComponent = ({
           <div className="flex flex-wrap gap-1 mb-4">
             {activities.slice(0, 3).map((act, i) => (
               <span key={i} className={cn(
-                "text-[10px] font-bold px-2 py-0.5 rounded-md capitalize",
+                "text-[10px] font-bold px-2 py-0.5 rounded-md capitalize", // Small letters with Capitalize
                 isUnavailable ? "bg-slate-200 text-slate-500" : "bg-[#F0E68C]/40 text-[#5c5829]"
               )}>
                 {typeof act === 'string' ? act : act.name}
@@ -224,12 +235,12 @@ const ListingCardComponent = ({
           </div>
         )}
         
+        {/* Bottom Metadata */}
         <div className="mt-auto pt-4 border-t border-slate-200/60 flex items-center justify-between">
             <div className="flex flex-col">
                 {!hidePrice && price !== undefined && (
                   <>
-                    {/* Starts at: Small letters, not bold */}
-                    <span className="text-[10px] font-normal text-slate-500 lowercase tracking-tight">starts at</span>
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Starts at</span>
                     <span className={cn("text-base font-black", isUnavailable ? "text-slate-500 line-through" : "text-[#FF0000]")}>
                         KSh {price.toLocaleString()}
                     </span>
