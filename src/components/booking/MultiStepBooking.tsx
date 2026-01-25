@@ -112,7 +112,7 @@ export const MultiStepBooking = ({
         : 0;
     const summaryStepNum = totalSteps;
     
-    const [currentStep, setCurrentStep] = useState(skipDateSelection ? 2 : 1);
+    const [currentStep, setCurrentStep] = useState(skipDateSelection ? guestsStepNum : 1);
     const [formData, setFormData] = useState<BookingFormData>({
         visit_date: skipDateSelection ? fixedDate : "",
         num_adults: 1,

@@ -166,37 +166,45 @@ const CreateHotel = () => {
       const imageUrls = await Promise.all(
         galleryImages.map(async (file) => {
           const filePath = `${user.id}/${Date.now()}-${file.name}`;
-          const { error: uploadError } = await supabase.storage.from('establishment-images').upload(filePath, file);
+          const { error: uploadError } = await supabase.storage.from('listing-images').upload(filePath, file);
           if (uploadError) throw uploadError;
-          return supabase.storage.from('establishment-images').getPublicUrl(filePath).data.publicUrl;
+          return supabase.storage.from('listing-images').getPublicUrl(filePath).data.publicUrl;
         })
       );
 
-      // 2. Save Record
-      const { error: insertError } = await supabase.from('establishments').insert({
-        user_id: user.id,
+      const selectedDays = Object.entries(workingDays).filter(([_, s]) => s).map(([d]) => d);
+
+      // 2. Save Record to hotels table
+      const { error: insertError } = await supabase.from('hotels').insert({
         name: formData.registrationName,
         registration_number: formData.registrationNumber,
         establishment_type: formData.establishmentType,
         country: formData.country,
         place: formData.place,
+        location: formData.place, // Using place as location
         email: formData.email,
-        phone_number: formData.phoneNumber,
+        phone_numbers: formData.phoneNumber ? [formData.phoneNumber] : [],
         latitude: formData.latitude,
         longitude: formData.longitude,
+        map_link: formData.latitude ? `https://www.google.com/maps?q=${formData.latitude},${formData.longitude}` : null,
         opening_hours: formData.openingHours,
         closing_hours: formData.closingHours,
-        working_days: workingDays,
+        days_opened: selectedDays.length > 0 ? selectedDays : null,
         description: formData.description,
+        image_url: imageUrls[0] || '',
         images: imageUrls,
-        amenities, facilities, activities,
-        status: 'pending'
+        gallery_images: imageUrls,
+        amenities: amenities.map(a => a.name),
+        facilities: facilities.map(f => ({ name: f.name, price: f.price || 0, capacity: f.capacity })),
+        activities: activities.map(a => ({ name: a.name, price: a.price || 0 })),
+        created_by: user.id,
+        approval_status: 'pending'
       });
 
       if (insertError) throw insertError;
 
       toast({ title: "Property Listed!", description: "Your establishment is under review." });
-      navigate("/dashboard");
+      navigate("/become-host");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
