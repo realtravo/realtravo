@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, Mail, Phone, Calendar, User, Eye, Clock, 
-  ArrowLeft, CheckCircle2, XCircle, ShieldAlert, Zap, 
+  ArrowLeft, CheckCircle2, XCircle, Zap, 
   Tag, Users, Info, Baby
 } from "lucide-react";
 import { approvalStatusSchema } from "@/lib/validation";
@@ -19,11 +19,8 @@ import Autoplay from "embla-carousel-autoplay";
 const COLORS = {
   TEAL: "#008080",
   CORAL: "#FF7F50",
-  CORAL_LIGHT: "#FF9E7A",
-  KHAKI: "#F0E68C",
   KHAKI_DARK: "#857F3E",
-  RED: "#FF0000",
-  SOFT_GRAY: "#F8F9FA"
+  RED: "#FF0000"
 };
 
 const AdminReviewDetail = () => {
@@ -37,24 +34,24 @@ const AdminReviewDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Logic to determine if this is an adventure place
   const isAdventurePlace = type === "adventure" || type === "adventure_place";
 
   useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) { navigate("/auth"); return; }
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      const hasAdminRole = roles?.some(r => r.role === "admin");
+      if (!hasAdminRole) {
+        toast({ title: "Access Denied", variant: "destructive" });
+        navigate("/");
+        return;
+      }
+      setIsAdmin(true);
+      fetchItemDetails();
+    };
     checkAdminStatus();
-  }, [user]);
-
-  const checkAdminStatus = async () => {
-    if (!user) { navigate("/auth"); return; }
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-    const hasAdminRole = roles?.some(r => r.role === "admin");
-    if (!hasAdminRole) {
-      toast({ title: "Access Denied", variant: "destructive" });
-      navigate("/");
-      return;
-    }
-    setIsAdmin(true);
-    fetchItemDetails();
-  };
+  }, [user, navigate, toast]);
 
   const fetchItemDetails = async () => {
     try {
@@ -115,9 +112,6 @@ const AdminReviewDetail = () => {
             <Badge className="bg-[#FF7F50] text-white border-none px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg">
               {type?.replace('_', ' ').toUpperCase()}
             </Badge>
-            <Badge className={`px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg border-none ${item.approval_status === 'approved' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black'}`}>
-              {item.approval_status}
-            </Badge>
           </div>
         </div>
 
@@ -136,10 +130,9 @@ const AdminReviewDetail = () => {
            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white drop-shadow-2xl">
             {item.name || item.location_name}
           </h1>
-          <div className="flex items-center gap-2 mt-2 text-white/80">
-            <MapPin className="h-4 w-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">{item.place}, {item.country}</span>
-          </div>
+          <p className="text-white/80 text-xs font-bold uppercase tracking-widest mt-2">
+            <MapPin className="inline h-3 w-3 mr-1" /> {item.place}, {item.country}
+          </p>
         </div>
       </div>
 
@@ -147,111 +140,111 @@ const AdminReviewDetail = () => {
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
           <div className="space-y-6">
-            {/* 1. DESCRIPTION */}
+            {/* BUSINESS IDENTITY & CONTACT */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Business Identity</h2>
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                 <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Official Email</p>
-                   <p className="text-xs font-black">{item.email || "Not Provided"}</p>
-                 </div>
-                 <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">WhatsApp / Phone</p>
-                   <p className="text-xs font-black">{item.phone_numbers?.[0] || item.phone_number || "Not Provided"}</p>
-                 </div>
+              <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Identity & Contact</h2>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <Mail className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Email</p>
+                    <p className="text-xs font-black">{item.email || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <Phone className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">WhatsApp</p>
+                    <p className="text-xs font-black">{item.phone_numbers?.[0] || item.phone_number || "N/A"}</p>
+                  </div>
+                </div>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">{item.description}</p>
             </div>
 
-            {/* 2. OPERATING SCHEDULE */}
+            {/* ADVENTURE DETAILS: SCHEDULE & OFFERINGS */}
             {isAdventurePlace && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Operation Review</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                    <Clock className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400">Hours</p>
-                      <p className="text-sm font-black uppercase">{item.opening_hours} — {item.closing_hours}</p>
+              <>
+                <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                  <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Operation Schedule</h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                      <Clock className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400">Hours</p>
+                        <p className="text-sm font-black uppercase">{item.opening_hours} — {item.closing_hours}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                    <Calendar className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400">Open Days</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.days_opened?.map((day: string) => (
-                          <Badge key={day} className="text-[8px] font-black bg-white border-slate-200 text-slate-600">{day}</Badge>
-                        ))}
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                      <Calendar className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-slate-400">Open Days</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.days_opened?.map((day: string) => (
+                            <Badge key={day} className="text-[8px] font-black bg-white border-slate-200 text-slate-600">{day}</Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* 3. DETAILED OFFERINGS */}
-            {isAdventurePlace && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.KHAKI_DARK }}>Detailed Offerings</h2>
-                
-                <div className="space-y-8">
-                  {/* Activities */}
-                  {item.activities?.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-                        <Zap className="h-3 w-3" /> Activities & Pricing
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {item.activities.map((act: any, idx: number) => (
-                          <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/50 border border-indigo-100">
-                            <span className="text-xs font-black uppercase text-indigo-900">{act.name}</span>
-                            <Badge className="bg-indigo-600 text-white text-[9px]">
-                              {act.is_free ? "FREE" : `KSh ${act.price}`}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Facilities */}
-                  {item.facilities?.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-                        <Users className="h-3 w-3" /> Facilities & Gear
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {item.facilities.map((fac: any, idx: number) => (
-                          <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="text-xs font-black uppercase text-slate-800">{fac.name}</span>
-                              <span className="text-[10px] font-black text-teal-600">{fac.is_free ? "FREE" : `KSh ${fac.price}`}</span>
+                <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                  <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.KHAKI_DARK }}>Detailed Offerings</h2>
+                  
+                  <div className="space-y-8">
+                    {item.activities?.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
+                          <Zap className="h-3 w-3" /> Activities
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {item.activities.map((act: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/50 border border-indigo-100">
+                              <span className="text-xs font-black uppercase text-indigo-900">{act.name}</span>
+                              <Badge className="bg-indigo-600 text-white text-[9px]">{act.is_free ? "FREE" : `KSh ${act.price}`}</Badge>
                             </div>
-                            {fac.capacity && <p className="text-[9px] font-bold text-slate-400 uppercase">Capacity: {fac.capacity} Pax</p>}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Amenities */}
-                  {item.amenities?.length > 0 && (
-                    <div>
-                      <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-                        <CheckCircle2 className="h-3 w-3" /> Ground Amenities
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {item.amenities.map((am: any, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-600 font-black uppercase text-[9px] py-1 px-3">
-                            {typeof am === 'string' ? am : am.name}
-                          </Badge>
-                        ))}
+                    {item.facilities?.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
+                          <Users className="h-3 w-3" /> Facilities
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {item.facilities.map((fac: any, idx: number) => (
+                            <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="text-xs font-black uppercase text-slate-800">{fac.name}</span>
+                                <span className="text-[10px] font-black text-teal-600">{fac.is_free ? "FREE" : `KSh ${fac.price}`}</span>
+                              </div>
+                              {fac.capacity && <p className="text-[9px] font-bold text-slate-400 uppercase italic">Capacity: {fac.capacity} Pax</p>}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {item.amenities?.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
+                          <CheckCircle2 className="h-3 w-3" /> Ground Amenities
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {item.amenities.map((am: any, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-600 font-black uppercase text-[9px] py-1 px-3">
+                              {typeof am === 'string' ? am : am.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -259,40 +252,35 @@ const AdminReviewDetail = () => {
           <div className="space-y-4">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               
-              {/* ENTRANCE FEES */}
-              <div className="mb-8 space-y-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee Review</p>
-                
-                {item.entry_fee_type === 'free' ? (
-                   <div className="p-4 rounded-2xl bg-green-50 border border-green-100">
-                     <p className="text-sm font-black text-green-700 uppercase">Free Entry</p>
-                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    {/* Adult Price */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+              {/* ENTRANCE FEES - ONLY SHOW IF ADVENTURE PLACE */}
+              {isAdventurePlace && (
+                <div className="mb-8 space-y-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Entrance Fees</p>
+                  
+                  {item.entry_fee_type === 'free' ? (
+                    <div className="p-4 rounded-2xl bg-green-50 border border-green-100">
+                      <p className="text-sm font-black text-green-700 uppercase">Free Admission</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-center gap-3">
                           <User className="h-4 w-4 text-teal-600" />
+                          <span className="text-[10px] font-black uppercase text-slate-500">Adult</span>
                         </div>
-                        <span className="text-[10px] font-black uppercase text-slate-500">Adult</span>
+                        <span className="text-lg font-black text-red-600">KSh {item.entry_fee || item.price_adult || 0}</span>
                       </div>
-                      <span className="text-lg font-black text-red-600">KSh {item.entry_fee || item.price_adult || 0}</span>
-                    </div>
-
-                    {/* Child Price */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-center gap-3">
                           <Baby className="h-4 w-4 text-teal-600" />
+                          <span className="text-[10px] font-black uppercase text-slate-500">Child</span>
                         </div>
-                        <span className="text-[10px] font-black uppercase text-slate-500">Child</span>
+                        <span className="text-lg font-black text-red-600">KSh {item.price_child || 0}</span>
                       </div>
-                      <span className="text-lg font-black text-red-600">KSh {item.price_child || 0}</span>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-3 mb-8">
                  <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
@@ -300,7 +288,7 @@ const AdminReviewDetail = () => {
                      <Tag className="h-4 w-4 text-teal-600" />
                      <span className="text-[10px] font-black uppercase text-slate-500">Reg. No</span>
                    </div>
-                   <span className="text-xs font-black text-slate-800">{item.registration_number || "PENDING"}</span>
+                   <span className="text-xs font-black text-slate-800 tracking-tighter">{item.registration_number || "PENDING"}</span>
                  </div>
               </div>
 
@@ -326,7 +314,6 @@ const AdminReviewDetail = () => {
           </div>
         </div>
       </main>
-
       <MobileBottomBar />
     </div>
   );
