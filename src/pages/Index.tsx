@@ -36,8 +36,6 @@ const Index = () => {
   const { savedItems, handleSave } = useSavedItems();
   const [loading, setLoading] = useState(true);
   const [hasMoreSearchResults, setHasMoreSearchResults] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const { toast } = useToast();
   const {
     position,
     loading: locationLoading,
@@ -69,7 +67,8 @@ const Index = () => {
 
   const [isSearchVisible, setIsSearchVisible] = useState(true);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   const [scrollableRows, setScrollableRows] = useState<{
     trips: any[];
     hotels: any[];
@@ -77,16 +76,15 @@ const Index = () => {
     campsites: any[];
     events: any[];
   }>({ trips: [], hotels: [], attractions: [], campsites: [], events: [] });
-  const [nearbyPlacesHotels, setNearbyPlacesHotels] = useState<any[]>([]);
+  
   const [loadingScrollable, setLoadingScrollable] = useState(true);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const allItemIds = useMemo(() => {
     const ids = new Set<string>();
-    [...listings, ...nearbyPlacesHotels, ...scrollableRows.trips, ...scrollableRows.hotels, ...scrollableRows.campsites, ...scrollableRows.events]
+    [...listings, ...scrollableRows.trips, ...scrollableRows.hotels, ...scrollableRows.campsites, ...scrollableRows.events]
       .forEach(item => ids.add(item.id));
     return Array.from(ids);
-  }, [listings, nearbyPlacesHotels, scrollableRows]);
+  }, [listings, scrollableRows]);
 
   const tripEventIds = useMemo(() => {
     return [...scrollableRows.trips, ...scrollableRows.events].map(item => item.id);
@@ -98,7 +96,6 @@ const Index = () => {
   const fetchScrollableRows = useCallback(async (limit: number) => {
     setLoadingScrollable(true);
     try {
-      // Use public views to avoid exposing contact details
       const [tripsData, hotelsData, campsitesData, eventsData] = await Promise.all([
         supabase.from("public_trips").select("*").eq("type", "trip").limit(limit),
         supabase.from("public_hotels").select("*").limit(limit),
@@ -123,7 +120,6 @@ const Index = () => {
     setLoading(true);
     const searchPattern = query ? `%${query}%` : null;
     
-    // Use public views to avoid exposing contact details
     const fetchTrips = async (tripType: string, type: string) => {
       let dbQuery = supabase.from("public_trips").select("*").eq("type", tripType);
       if (searchPattern) dbQuery = dbQuery.or(`name.ilike.${searchPattern},location.ilike.${searchPattern}`);
@@ -164,12 +160,6 @@ const Index = () => {
   };
 
   useEffect(() => {
-    const cachedData = getCachedHomePageData();
-    if (cachedData) {
-      setListings(cachedData.listings || []);
-      setScrollableRows(cachedData.scrollableRows);
-      setLoading(false);
-    }
     fetchAllData();
     fetchScrollableRows(cardLimit);
   }, [cardLimit, fetchScrollableRows]);
@@ -202,7 +192,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-10">
-      {/* Dynamic Theme Color Overrides */}
       <style dangerouslySetInnerHTML={{ __html: `
         :root { --primary: 180 100% 25%; } 
         .text-primary { color: #008080 !important; }
@@ -217,19 +206,23 @@ const Index = () => {
       
       <HomeFilterBar onApplyFilters={setAppliedFilters} onClear={() => setAppliedFilters({location: ""})} />
       
-      {isSearchVisible && !isSearchFocused && (
+      {/* SEARCH BAR SECTION - Remains in position even after searching */}
+      {isSearchVisible && (
         <div className="w-full px-4 py-3">
           <SearchBarWithSuggestions 
             value={searchQuery} 
             onChange={setSearchQuery} 
-            onSubmit={() => { if(searchQuery.trim()) fetchAllData(searchQuery); setIsSearchFocused(true); }}
+            onSubmit={() => { 
+                if(searchQuery.trim()) fetchAllData(searchQuery); 
+                setIsSearchFocused(true); 
+            }}
             onFocus={() => setIsSearchFocused(true)}
-            showBackButton={false} 
           />
         </div>
       )}
 
       <main className="w-full">
+        {/* Toggle bar only shows when not actively focusing on a search */}
         {!isSearchFocused && (
           <section className="px-4 py-3 border-b border-border flex items-center justify-between">
             <button onClick={() => setListingViewMode('top_destinations')} className={`text-sm font-bold ${listingViewMode === 'top_destinations' ? 'text-primary underline underline-offset-8' : 'text-muted-foreground'}`}>
@@ -244,12 +237,10 @@ const Index = () => {
 
         <div className="w-full px-4 py-4">
           {loading ? (
-            /* Skeleton also updated to 2 columns */
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {[...Array(6)].map((_, i) => <ListingSkeleton key={i} />)}
             </div>
           ) : filteredListings.length > 0 ? (
-            /* THE FIX: grid-cols-2 for mobile */
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {filteredListings.map((listing) => (
                 <MemoizedListingCard
@@ -269,7 +260,20 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 text-muted-foreground">No listings found.</div>
+            <div className="text-center py-20 text-muted-foreground">
+                <p>No listings found for your search.</p>
+                <Button 
+                    variant="link" 
+                    className="text-primary font-bold"
+                    onClick={() => {
+                        setSearchQuery("");
+                        fetchAllData();
+                        setIsSearchFocused(false);
+                    }}
+                >
+                    Clear search and view all
+                </Button>
+            </div>
           )}
         </div>
       </main>
