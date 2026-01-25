@@ -66,6 +66,14 @@ const CreateTripEvent = () => {
   
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
 
+  // Requirement: Events/Sports must have a fixed date.
+  useEffect(() => {
+    if (formData.type === 'event' && formData.is_custom_date) {
+      setFormData(prev => ({ ...prev, is_custom_date: false }));
+    }
+  }, [formData.type]);
+
+  // Database fetching code (Untouched as requested)
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
@@ -113,7 +121,8 @@ const CreateTripEvent = () => {
     switch (step) {
       case 1: return !!formData.type;
       case 2:
-        return !!(formData.name.trim() && formData.country && formData.place.trim() && formData.location.trim() && (formData.is_custom_date || formData.date));
+        const dateValid = formData.is_custom_date || formData.date;
+        return !!(formData.name.trim() && formData.country && formData.place.trim() && formData.location.trim() && dateValid);
       case 3:
         return !!(formData.price && parseFloat(formData.price) >= 0 && formData.available_tickets && parseInt(formData.available_tickets) > 0);
       case 4:
@@ -208,6 +217,7 @@ const CreateTripEvent = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
       <main className="container px-4 py-8 max-w-4xl mx-auto">
+        {/* Header Section */}
         <div className="relative rounded-[40px] overflow-hidden mb-8 shadow-2xl h-[200px] md:h-[280px]">
           <img src="/images/category-trips.webp" className="w-full h-full object-cover" alt="Header" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
@@ -221,6 +231,7 @@ const CreateTripEvent = () => {
           </div>
         </div>
         
+        {/* Progress Indicator */}
         <div className="flex items-center gap-2 mb-8">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
             <div key={step} className="h-2 flex-1 rounded-full transition-all duration-300"
@@ -229,13 +240,14 @@ const CreateTripEvent = () => {
           ))}
         </div>
 
+        {/* Step 1: Type Selection */}
         {currentStep === 1 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>Select Listing Type</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[{ id: 'trip', label: 'Trip / Tour' }, { id: 'event', label: 'Event / Sport' }].map((t) => (
-                <label key={t.id} className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${formData.type === t.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50'}`}>
-                  <input type="radio" name="type" className="hidden" onChange={() => setFormData({...formData, type: t.id as any})} />
+                <label key={t.id} className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${formData.type === t.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50 hover:bg-white'}`}>
+                  <input type="radio" name="type" className="hidden" checked={formData.type === t.id} onChange={() => setFormData({...formData, type: t.id as any})} />
                   <div className="flex justify-between items-center">
                     <span className="font-black uppercase tracking-tight text-sm">{t.label}</span>
                     {formData.type === t.id && <CheckCircle2 className="h-5 w-5 text-[#008080]" />}
@@ -246,6 +258,7 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
+        {/* Step 2: Experience Details */}
         {currentStep === 2 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6">
             <div className="space-y-2">
@@ -272,22 +285,27 @@ const CreateTripEvent = () => {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-2xl">
-                <Checkbox id="custom_date" checked={formData.is_custom_date} onCheckedChange={(c) => setFormData({...formData, is_custom_date: c as boolean})} />
-                <label htmlFor="custom_date" className="text-[11px] font-black uppercase text-slate-500">Flexible dates / Open availability</label>
-              </div>
-              {!formData.is_custom_date && (
+              {formData.type === 'trip' && (
+                <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-2xl">
+                  <Checkbox id="custom_date" checked={formData.is_custom_date} onCheckedChange={(c) => setFormData({...formData, is_custom_date: c as boolean})} />
+                  <label htmlFor="custom_date" className="text-[11px] font-black uppercase text-slate-500 cursor-pointer">Flexible dates / Open availability</label>
+                </div>
+              )}
+              
+              {(!formData.is_custom_date || formData.type === 'event') && (
                 <div className="space-y-2">
-                  <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.date ? 'text-red-500' : ''}`}>Date *</Label>
-                  <Input type="date" className={`rounded-xl h-12 font-bold ${getErrorClass(formData.date)}`} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                  <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.date ? 'text-red-500' : 'text-slate-400'}`}>Date *</Label>
+                  <Input type="date" className={`rounded-xl h-12 font-bold ${getErrorClass(formData.date)}`} min={new Date().toISOString().split('T')[0]} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
                 </div>
               )}
             </div>
           </Card>
         )}
 
+        {/* Step 3: Pricing & Capacity */}
         {currentStep === 3 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.TEAL }}>Pricing & Logistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.price ? 'text-red-500' : ''}`}>Adult Price *</Label>
@@ -295,7 +313,7 @@ const CreateTripEvent = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase">Child Price</Label>
-                <Input type="number" className="rounded-xl h-12" value={formData.price_child} onChange={(e) => setFormData({...formData, price_child: e.target.value})} />
+                <Input type="number" className="rounded-xl h-12 bg-slate-50" value={formData.price_child} onChange={(e) => setFormData({...formData, price_child: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.available_tickets ? 'text-red-500' : ''}`}>Max Slots *</Label>
@@ -305,15 +323,16 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
+        {/* Step 4: Contact & Images */}
         {currentStep === 4 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase">Contact Email</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400">Contact Email</Label>
                 <Input className="rounded-xl h-12 bg-slate-50" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.phone_number ? 'text-red-500' : ''}`}>Phone Number *</Label>
+                <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.phone_number ? 'text-red-500' : 'text-slate-400'}`}>Phone Number *</Label>
                 <div className={`rounded-xl ${attemptedNext && !formData.phone_number ? "ring-1 ring-red-500" : ""}`}>
                   <PhoneInput value={formData.phone_number} onChange={(v) => setFormData({...formData, phone_number: v})} country={formData.country} />
                 </div>
@@ -321,40 +340,40 @@ const CreateTripEvent = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.map_link ? 'text-red-500' : ''}`}>GPS Location *</Label>
+              <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.map_link ? 'text-red-500' : 'text-slate-400'}`}>GPS Location *</Label>
               <div className="flex gap-2">
                 <Input className={`flex-1 rounded-xl h-12 ${getErrorClass(formData.map_link)}`} readOnly value={formData.map_link} placeholder="Click icon to pin" />
-                <Button onClick={getCurrentLocation} className="h-12 w-12 rounded-xl" style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}>
+                <Button onClick={getCurrentLocation} className="h-12 w-12 rounded-xl shadow-md" style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}>
                   <Navigation className="h-5 w-5 text-white" />
                 </Button>
               </div>
             </div>
 
-            {/* Restored Image Upload Section */}
             <div className="pt-6 border-t border-slate-100">
-              <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${attemptedNext && galleryImages.length === 0 ? 'text-red-500' : 'text-[#008080]'}`}>Gallery (Max 5) *</h3>
+              <h3 className={`text-xs font-black uppercase tracking-widest mb-4 ${attemptedNext && galleryImages.length === 0 ? 'text-red-500' : 'text-[#008080]'}`}>Gallery (Min 1, Max 5) *</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {galleryImages.map((file, index) => (
-                  <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100">
+                  <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100 shadow-sm">
                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
-                    <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg">
+                    <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:scale-110 transition-transform">
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
                 {galleryImages.length < 5 && (
-                  <Label className={`aspect-square rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors ${attemptedNext && galleryImages.length === 0 ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}>
+                  <Label className={`aspect-square rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all ${attemptedNext && galleryImages.length === 0 ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}>
                     <Camera className={`h-6 w-6 ${attemptedNext && galleryImages.length === 0 ? 'text-red-500' : 'text-slate-400'}`} />
-                    <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add Image</span>
                     <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
                   </Label>
                 )}
               </div>
-              {attemptedNext && galleryImages.length === 0 && <p className="text-[10px] text-red-500 font-bold mt-2 uppercase">At least one photo is required</p>}
+              {attemptedNext && galleryImages.length === 0 && <p className="text-[10px] text-red-500 font-bold mt-2 uppercase italic">A photo is required for your listing</p>}
             </div>
           </Card>
         )}
 
+        {/* Step 5: Operating Hours */}
         {currentStep === 5 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
             <h2 className="text-xs font-black uppercase mb-6" style={{ color: COLORS.TEAL }}>Operating Hours</h2>
@@ -365,23 +384,25 @@ const CreateTripEvent = () => {
               onDaysChange={setWorkingDays} accentColor={COLORS.TEAL}
             />
             {attemptedNext && (formData.is_custom_date || formData.type === 'event') && (!formData.opening_hours || !Object.values(workingDays).some(v => v)) && (
-              <p className="text-red-500 text-[10px] mt-4 font-bold uppercase italic text-center">Operating hours and days are required for flexible/event types</p>
+              <p className="text-red-500 text-[10px] mt-4 font-bold uppercase italic text-center">Opening hours and days must be selected for this type</p>
             )}
           </Card>
         )}
 
+        {/* Step 6: Description */}
         {currentStep === 6 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
             <Label className={`text-xs font-black uppercase mb-4 block ${attemptedNext && !formData.description ? 'text-red-500' : 'text-[#008080]'}`}>Experience Description *</Label>
             <Textarea 
-              className={`rounded-[24px] min-h-[200px] p-6 text-sm ${getErrorClass(formData.description)}`} 
+              className={`rounded-[24px] min-h-[250px] p-6 text-sm leading-relaxed ${getErrorClass(formData.description)}`} 
               value={formData.description} 
               onChange={(e) => setFormData({...formData, description: e.target.value})} 
-              placeholder="Tell travelers what makes this experience special..." 
+              placeholder="Tell travelers about the itinerary, requirements, and what's included..." 
             />
           </Card>
         )}
 
+        {/* Navigation Controls */}
         <div className="flex gap-4 mt-8">
           {currentStep > 1 && (
             <Button onClick={handlePrevious} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase text-sm border-2">
@@ -389,11 +410,11 @@ const CreateTripEvent = () => {
             </Button>
           )}
           {currentStep < TOTAL_STEPS ? (
-            <Button onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
+            <Button onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white shadow-xl hover:opacity-90 transition-opacity" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
               Next <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}>
+            <Button onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white shadow-xl hover:opacity-90 transition-opacity" style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}>
               {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "Submit for Approval"}
             </Button>
           )}
