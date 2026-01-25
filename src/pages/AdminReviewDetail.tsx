@@ -129,6 +129,9 @@ const AdminReviewDetail = () => {
     ...(item.photo_urls || [])
   ].filter(Boolean);
 
+  // Check if this is a Trip or Event to show specific contact info
+  const isTripOrEvent = type === "trip" || type === "event";
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-32">
       <Header className="hidden md:block" />
@@ -181,6 +184,33 @@ const AdminReviewDetail = () => {
               <p className="text-slate-500 text-sm leading-relaxed">{item.description || "No description provided."}</p>
             </div>
 
+            {/* TRIP/EVENT SPECIFIC CONTACT INFO */}
+            {isTripOrEvent && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.CORAL }}>Direct Listing Contacts</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+                      <Mail className="h-5 w-5" style={{ color: COLORS.TEAL }} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Listing Email</p>
+                      <p className="text-xs font-black text-slate-800">{item.email || "Not Provided"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+                      <Phone className="h-5 w-5" style={{ color: COLORS.TEAL }} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Listing Phone</p>
+                      <p className="text-xs font-black text-slate-800">{item.phone_number || "Not Provided"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Amenities/Highlights */}
             {(item.amenities?.length > 0 || item.activities?.length > 0) && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -198,25 +228,25 @@ const AdminReviewDetail = () => {
               </div>
             )}
 
-            {/* Creator Info */}
+            {/* Creator Info (Account Level) */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-slate-100">
                         <User className="h-6 w-6 text-slate-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Submitted By</p>
-                        <h3 className="text-sm font-black uppercase text-slate-800">{creator?.name || "Unknown Creator"}</h3>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Details</p>
+                        <h3 className="text-sm font-black uppercase text-slate-800">{creator?.full_name || creator?.name || "Unknown Creator"}</h3>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3 text-slate-600">
                         <Mail className="h-4 w-4 text-[#008080]" />
-                        <span className="text-xs font-bold">{creator?.email || "No Email"}</span>
+                        <span className="text-xs font-bold">{creator?.email || "No Account Email"}</span>
                     </div>
                     <div className="flex items-center gap-3 text-slate-600">
                         <Phone className="h-4 w-4 text-[#008080]" />
-                        <span className="text-xs font-bold">{creator?.phone_number || "No Phone"}</span>
+                        <span className="text-xs font-bold">{creator?.phone_number || "No Account Phone"}</span>
                     </div>
                     <div className="flex items-center gap-3 text-slate-600">
                         <MapPin className="h-4 w-4 text-[#FF7F50]" />
@@ -226,6 +256,7 @@ const AdminReviewDetail = () => {
             </div>
           </div>
 
+          {/* SIDEBAR */}
           <div className="space-y-4">
             <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               
