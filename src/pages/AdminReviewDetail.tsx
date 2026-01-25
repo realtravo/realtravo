@@ -9,8 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, Mail, Phone, Calendar, User, Eye, Clock, 
-  ArrowLeft, Copy, Share2, CheckCircle2, XCircle, 
-  ShieldAlert, Info, Zap
+  ArrowLeft, CheckCircle2, XCircle, 
+  ShieldAlert, Zap, Info, Box
 } from "lucide-react";
 import { approvalStatusSchema } from "@/lib/validation";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -129,8 +129,8 @@ const AdminReviewDetail = () => {
     ...(item.photo_urls || [])
   ].filter(Boolean);
 
-  // Check if this is a Trip or Event to show specific contact info
   const isTripOrEvent = type === "trip" || type === "event";
+  const isAdventurePlace = type === "adventure" || type === "adventure_place";
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-32">
@@ -178,13 +178,99 @@ const AdminReviewDetail = () => {
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
           <div className="space-y-6">
-            {/* About Card */}
+            {/* Description Card */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description Review</h2>
               <p className="text-slate-500 text-sm leading-relaxed">{item.description || "No description provided."}</p>
             </div>
 
-            {/* TRIP/EVENT SPECIFIC CONTACT INFO */}
+            {/* --- ADVENTURE PLACE SPECIFIC: SCHEDULE & HOURS --- */}
+            {isAdventurePlace && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.CORAL }}>Operating Schedule</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+                      <Clock className="h-5 w-5" style={{ color: COLORS.CORAL }} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Opening Hours</p>
+                      <p className="text-xs font-black text-slate-800">
+                        {item.opening_hours || item.opening_time || "Not Provided"} - {item.closing_hours || item.closing_time || ""}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+                      <Calendar className="h-5 w-5" style={{ color: COLORS.CORAL }} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operating Days</p>
+                      <p className="text-xs font-black text-slate-800">
+                        {Array.isArray(item.days_opened) ? item.days_opened.join(", ") : (item.working_days || "Not Provided")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- ADVENTURE PLACE SPECIFIC: OFFERINGS --- */}
+            {isAdventurePlace && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.TEAL }}>Offerings & Infrastructure</h2>
+                
+                <div className="space-y-6">
+                  {/* Activities */}
+                  {item.activities?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Activities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {item.activities.map((act: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 bg-[#6366f1]/10 px-3 py-2 rounded-xl border border-[#6366f1]/20">
+                            <Zap className="h-3.5 w-3.5 text-[#6366f1]" />
+                            <span className="text-[10px] font-black text-[#6366f1] uppercase">{typeof act === 'string' ? act : act.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Facilities */}
+                  {item.facilities?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Facilities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {item.facilities.map((fac: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 bg-[#FF7F50]/10 px-3 py-2 rounded-xl border border-[#FF7F50]/20">
+                            <Box className="h-3.5 w-3.5 text-[#FF7F50]" />
+                            <span className="text-[10px] font-black text-[#FF7F50] uppercase">{typeof fac === 'string' ? fac : fac.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Amenities */}
+                  {item.amenities?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Amenities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {item.amenities.map((amenity: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 bg-teal-50 px-3 py-2 rounded-xl border border-teal-100">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
+                            <span className="text-[10px] font-black text-teal-700 uppercase">{typeof amenity === 'string' ? amenity : amenity.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Trip/Event Contacts */}
             {isTripOrEvent && (
               <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <h2 className="text-xl font-black uppercase tracking-tight mb-6" style={{ color: COLORS.CORAL }}>Direct Listing Contacts</h2>
@@ -204,31 +290,14 @@ const AdminReviewDetail = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Listing Phone</p>
-                      <p className="text-xs font-black text-slate-800">{item.phone_number || "Not Provided"}</p>
+                      <p className="text-xs font-black text-slate-800">{item.phone_number || item.phoneNumber || "Not Provided"}</p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Amenities/Highlights */}
-            {(item.amenities?.length > 0 || item.activities?.length > 0) && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Features & Activities</h2>
-                <div className="flex flex-wrap gap-2">
-                  {[...(item.amenities || []), ...(item.activities || [])].map((act: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2 bg-[#F0E68C]/20 px-4 py-2.5 rounded-2xl border border-[#F0E68C]/50">
-                      <CheckCircle2 className="h-4 w-4 text-[#857F3E]" />
-                      <span className="text-[11px] font-black text-[#857F3E] uppercase tracking-wide">
-                        {typeof act === 'string' ? act : act.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Creator Info (Account Level) */}
+            {/* Creator Info */}
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-slate-100">
@@ -242,7 +311,7 @@ const AdminReviewDetail = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3 text-slate-600">
                         <Mail className="h-4 w-4 text-[#008080]" />
-                        <span className="text-xs font-bold">{creator?.email || "No Account Email"}</span>
+                        <span className="text-xs font-bold truncate">{creator?.email || "No Account Email"}</span>
                     </div>
                     <div className="flex items-center gap-3 text-slate-600">
                         <Phone className="h-4 w-4 text-[#008080]" />
@@ -292,7 +361,6 @@ const AdminReviewDetail = () => {
                 )}
               </div>
 
-              {/* Utility Grid */}
               <div className="grid grid-cols-2 gap-3 mb-8">
                 <Button variant="ghost" onClick={openInMaps} className="flex-col h-auto py-3 bg-[#F0E68C]/10 text-[#857F3E] rounded-2xl border border-[#F0E68C]/20">
                   <MapPin className="h-4 w-4 mb-1" />
@@ -308,7 +376,6 @@ const AdminReviewDetail = () => {
                 </Button>
               </div>
 
-              {/* Approval Controls */}
               <div className="space-y-3">
                 <Button 
                   onClick={() => updateApprovalStatus("approved")}
