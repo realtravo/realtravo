@@ -310,7 +310,7 @@ const CreateTripEvent = () => {
                 <Input className="rounded-xl h-12" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.phone_number ? 'text-red-500' : ''}`}>Phone Number *</Label>
+                <Label className={`text-[10px] font-black uppercase ${attemptedNext && !formData.phone_number ? 'text-red-500' : ''}`}>Phone Number </Label>
                 <div className={attemptedNext && !formData.phone_number ? "rounded-xl border border-red-500" : ""}>
                   <PhoneInput value={formData.phone_number} onChange={(v) => setFormData({...formData, phone_number: v})} country={formData.country} />
                 </div>
