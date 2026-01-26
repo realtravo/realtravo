@@ -47,7 +47,6 @@ const AdminReferralSettings = lazy(() => import("./pages/AdminReferralSettings")
 const AdminPaymentVerification = lazy(() => import("./pages/AdminPaymentVerification"));
 const HostBookings = lazy(() => import("./pages/HostBookings"));
 const HostBookingDetails = lazy(() => import("./pages/HostBookingDetails"));
-const HostBankDetails = lazy(() => import("./pages/HostBankDetails"));
 const MyListing = lazy(() => import("./pages/MyListing"));
 const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
 const PendingApprovalItems = lazy(() => import("./pages/admin/PendingApprovalItems"));
@@ -145,7 +144,6 @@ const App = () => {
                     <Route path="/install" element={<Install />} />
                     <Route path="/host-bookings" element={<HostBookings />} />
                     <Route path="/host-bookings/:itemType/:id" element={<HostBookingDetails />} />
-                    <Route path="/host-bank-details" element={<HostBankDetails />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/qr-scanner" element={<QRScanner />} />

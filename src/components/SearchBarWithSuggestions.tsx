@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Clock, X, TrendingUp, Sparkles, Search as SearchIcon, MapPin, Loader2 } from "lucide-react";
+import { Clock, X, TrendingUp, Plane, Hotel, Tent, Landmark, ArrowLeft, Calendar, Search as SearchIcon, MapPin, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getSessionId } from "@/lib/sessionManager";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,20 @@ const COLORS = {
   TEAL: "#008080",
   CORAL: "#FF7F50",
   CORAL_LIGHT: "#FF9E7A",
+  KHAKI: "#F0E68C",
+  KHAKI_DARK: "#857F3E",
+  SOFT_GRAY: "#F8F9FA"
 };
 
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onSuggestionSearch?: (query: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onBack?: () => void;
+  showBackButton?: boolean;
 }
 
 interface SearchResult {
@@ -38,7 +44,12 @@ interface SearchResult {
 const SEARCH_HISTORY_KEY = "search_history";
 const MAX_HISTORY_ITEMS = 10;
 
-export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, onBlur }: SearchBarProps) => {
+interface TrendingSearch {
+  query: string;
+  search_count: number;
+}
+
+export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggestionSearch, onFocus, onBlur, onBack, showBackButton = false }: SearchBarProps) => {
   const { user } = useAuth();
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
@@ -46,29 +57,9 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [trendingSearches, setTrendingSearches] = useState<{ query: string; search_count: number }[]>([]);
+  const [trendingSearches, setTrendingSearches] = useState<TrendingSearch[]>([]);
   const navigate = useNavigate();
-  
-  // Ref to track the search bar container
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Handle Click Outside logic
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    // Bind both mouse and touch events for mobile compatibility
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-    
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -81,29 +72,49 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
     try {
       const { data, error } = await supabase.rpc('get_trending_searches', { limit_count: 10 });
       if (!error && data) setTrendingSearches(data);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error("Error fetching trending searches:", error);
+    }
   };
 
+  // Fetch most popular items to show on focus (before typing)
   const fetchMostPopular = async () => {
     try {
       const [tripsData, hotelsData, adventuresData] = await Promise.all([
-        supabase.from("trips").select("id, name, location, place, country, date, image_url").eq("approval_status", "approved").limit(3),
-        supabase.from("hotels").select("id, name, location, place, country, image_url").eq("approval_status", "approved").limit(3),
-        supabase.from("adventure_places").select("id, name, location, place, country, image_url").eq("approval_status", "approved").limit(3)
+        supabase.from("trips").select("id, name, location, place, country, date, image_url").eq("approval_status", "approved").eq("is_hidden", false).order("created_at", { ascending: false }).limit(3),
+        supabase.from("hotels").select("id, name, location, place, country, image_url").eq("approval_status", "approved").eq("is_hidden", false).order("created_at", { ascending: false }).limit(3),
+        supabase.from("adventure_places").select("id, name, location, place, country, image_url").eq("approval_status", "approved").eq("is_hidden", false).order("created_at", { ascending: false }).limit(3)
       ]);
+
       const popular: SearchResult[] = [
-        ...(tripsData.data || []).map((item: any) => ({ ...item, type: "trip" as const })),
-        ...(hotelsData.data || []).map((item: any) => ({ ...item, type: "hotel" as const })),
-        ...(adventuresData.data || []).map((item: any) => ({ ...item, type: "adventure" as const }))
+        ...(tripsData.data || []).map((item) => ({ ...item, type: (item as any).type === 'event' ? "event" as const : "trip" as const })),
+        ...(hotelsData.data || []).map((item) => ({ ...item, type: "hotel" as const })),
+        ...(adventuresData.data || []).map((item) => ({ ...item, type: "adventure" as const }))
       ];
       setMostPopular(popular.slice(0, 6));
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error("Error fetching most popular:", error);
+    }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+        onBlur?.();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onBlur]);
 
   useEffect(() => {
     if (showSuggestions && value.trim()) {
       setIsSearching(true);
-      const debounceTimer = setTimeout(() => fetchSuggestions(), 300);
+      setHasSearched(false);
+      const debounceTimer = setTimeout(() => {
+        fetchSuggestions();
+      }, 300);
       return () => clearTimeout(debounceTimer);
     } else {
       setSuggestions([]);
@@ -114,156 +125,251 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onFocus, o
   const fetchSuggestions = async () => {
     const queryValue = value.trim().toLowerCase();
     try {
-      const [tripsData, hotelsData, adventuresData] = await Promise.all([
-        supabase.from("trips").select("*").eq("approval_status", "approved").limit(20),
-        supabase.from("hotels").select("*").eq("approval_status", "approved").limit(20),
-        supabase.from("adventure_places").select("*").eq("approval_status", "approved").limit(20)
+      const [tripsData, eventsData, hotelsData, adventuresData] = await Promise.all([
+        supabase.from("trips").select("id, name, location, place, country, activities, date, image_url").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "trip").limit(20),
+        supabase.from("trips").select("id, name, location, place, country, activities, date, image_url").eq("approval_status", "approved").eq("is_hidden", false).eq("type", "event").limit(20),
+        supabase.from("hotels").select("id, name, location, place, country, activities, facilities, image_url").eq("approval_status", "approved").eq("is_hidden", false).limit(20),
+        supabase.from("adventure_places").select("id, name, location, place, country, activities, facilities, image_url").eq("approval_status", "approved").eq("is_hidden", false).limit(20)
       ]);
 
       let combined: SearchResult[] = [
-        ...(tripsData.data || []).map((item: any) => ({ ...item, type: item.type === 'event' ? "event" : "trip" })),
-        ...(hotelsData.data || []).map((item: any) => ({ ...item, type: "hotel" })),
-        ...(adventuresData.data || []).map((item: any) => ({ ...item, type: "adventure" }))
+        ...(tripsData.data || []).map((item) => ({ ...item, type: "trip" as const })),
+        ...(eventsData.data || []).map((item) => ({ ...item, type: "event" as const })),
+        ...(hotelsData.data || []).map((item) => ({ ...item, type: "hotel" as const })),
+        ...(adventuresData.data || []).map((item) => ({ ...item, type: "adventure" as const }))
       ];
 
-      combined = combined.filter(item => 
-        item.name?.toLowerCase().includes(queryValue) ||
-        item.location?.toLowerCase().includes(queryValue)
-      ).sort((a, b) => a.name.localeCompare(b.name));
-
+      if (queryValue) {
+        combined = combined.filter(item => 
+          item.name?.toLowerCase().includes(queryValue) ||
+          item.location?.toLowerCase().includes(queryValue) ||
+          item.place?.toLowerCase().includes(queryValue) ||
+          item.country?.toLowerCase().includes(queryValue) ||
+          checkJsonArrayMatch(item.activities, queryValue) ||
+          checkJsonArrayMatch(item.facilities, queryValue)
+        );
+      }
+      combined.sort((a, b) => a.name.localeCompare(b.name));
       setSuggestions(combined.slice(0, 15));
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
     } finally {
       setIsSearching(false);
       setHasSearched(true);
     }
   };
 
-  const saveToHistory = async (query: string) => {
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    const updated = [trimmed, ...searchHistory.filter(item => item !== trimmed)].slice(0, MAX_HISTORY_ITEMS);
-    setSearchHistory(updated);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
-    await supabase.from('search_queries').insert({ query: trimmed, user_id: user?.id || null, session_id: getSessionId() });
+  const checkJsonArrayMatch = (data: any, query: string): boolean => {
+    if (Array.isArray(data)) {
+      return data.some(item => (typeof item === 'string' ? item : item?.name)?.toLowerCase().includes(query));
+    }
+    return false;
   };
 
-  const handleFinalSubmit = () => {
-    saveToHistory(value);
+  const getActivitiesText = (activities: any) => {
+    const items: string[] = [];
+    if (Array.isArray(activities)) {
+      activities.forEach(item => {
+        const name = typeof item === 'object' ? item.name : item;
+        if (name && items.length < 2) items.push(name);
+      });
+    }
+    return items.join(" • ");
+  };
+
+  const saveToHistory = async (query: string) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+    const updatedHistory = [trimmedQuery, ...searchHistory.filter(item => item !== trimmedQuery)].slice(0, MAX_HISTORY_ITEMS);
+    setSearchHistory(updatedHistory);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updatedHistory));
+    try {
+      await supabase.from('search_queries').insert({ query: trimmedQuery, user_id: user?.id || null, session_id: user ? null : getSessionId() });
+      fetchTrendingSearches();
+    } catch (e) {}
+  };
+
+  const clearHistory = () => { setSearchHistory([]); localStorage.removeItem(SEARCH_HISTORY_KEY); };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") { setShowSuggestions(false); saveToHistory(value); onSubmit(); }
+  };
+
+  const handleSuggestionClick = (result: SearchResult) => {
     setShowSuggestions(false);
-    onSubmit();
+    saveToHistory(result.name);
+    navigate(`/${result.type}/${result.id}`);
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = { trip: "Trip", event: "Experience", hotel: "Stay", adventure: "Campsite", attraction: "Sights" };
+    return labels[type] || type;
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-4xl mx-auto">
-      {/* Input Group */}
-      <div className="relative group">
-        <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10 group-focus-within:text-[#008080] transition-colors" />
-        <Input
-          type="text"
-          placeholder="Where to next? Search countries, stays..."
-          value={value}
-          onChange={(e) => { onChange(e.target.value); setShowSuggestions(true); }}
-          onKeyDown={(e) => e.key === "Enter" && handleFinalSubmit()}
-          onFocus={() => { setShowSuggestions(true); onFocus?.(); }}
-          className="pl-14 pr-32 h-14 md:h-16 text-sm md:text-base rounded-full border-none shadow-xl bg-white focus-visible:ring-2 focus-visible:ring-[#008080] placeholder:text-slate-400 transition-all"
-        />
-        <Button
-          onClick={handleFinalSubmit}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-10 md:h-12 px-6 text-xs font-black uppercase tracking-widest text-white shadow-lg border-none active:scale-95 transition-transform"
-          style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-        >
-          Search
-        </Button>
+    <div ref={wrapperRef} className="relative w-full max-w-4xl mx-auto" style={{ isolation: 'isolate' }}>
+      <div className="flex items-center gap-3">
+        {showBackButton && (
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full bg-white shadow-sm border border-slate-100 hover:text-[#008080]">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        <div className="relative flex-1 group">
+          <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10 group-focus-within:text-[#008080] transition-colors" />
+          <Input
+            type="text"
+            placeholder="Where to next? Search countries, experiences, stays..."
+            value={value}
+            onChange={(e) => { onChange(e.target.value); setShowSuggestions(true); }}
+            onKeyDown={handleKeyPress}
+            onFocus={() => { setShowSuggestions(true); onFocus?.(); }}
+            className="pl-14 pr-32 h-14 md:h-16 text-sm md:text-base rounded-full border-none shadow-xl bg-white focus-visible:ring-2 focus-visible:ring-[#008080] placeholder:text-slate-400 placeholder:font-medium transition-all"
+          />
+          <Button
+            onClick={() => { saveToHistory(value); onSubmit(); setShowSuggestions(false); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-10 md:h-12 px-6 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 border-none"
+            style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
+          >
+            Search
+          </Button>
+        </div>
       </div>
 
-      {/* Suggestions Panel */}
       {showSuggestions && (
-        <div className="absolute left-0 right-0 top-full mt-3 bg-white border border-slate-100 rounded-[32px] shadow-2xl max-h-[500px] overflow-y-auto z-[999] animate-in fade-in slide-in-from-top-2">
-          {!value.trim() ? (
-            <div className="p-2">
-              {/* Most Popular Section */}
+        <div 
+          className="absolute left-0 right-0 top-full mt-3 bg-white border border-slate-100 rounded-[32px] shadow-2xl max-h-[70vh] md:max-h-[500px] overflow-y-auto z-[999] animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          {/* History / Trending / Most Popular Section (Shown when input is empty) */}
+          {!value.trim() && (
+            <div className="p-2 min-h-[100px]">
+              {/* Most Popular Section - Always shown first on focus */}
               {mostPopular.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <Sparkles className="h-4 w-4 text-[#FF7F50]" /> Most Popular
+                  <div className="flex items-center gap-2 px-5 py-3">
+                    <Sparkles className="h-4 w-4 text-[#FF7F50]" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Most Popular</p>
                   </div>
-                  {mostPopular.map((item) => (
-                    <button 
-                      key={item.id} 
-                      onClick={() => { navigate(`/${item.type}/${item.id}`); setShowSuggestions(false); }} 
-                      className="w-full p-3 flex gap-4 hover:bg-slate-50 rounded-[24px] text-left transition-all"
-                    >
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
-                        <img src={item.image_url || "/placeholder.svg"} className="w-full h-full object-cover" alt={item.name} />
-                      </div>
-                      <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <h4 className="font-black text-slate-800 uppercase text-sm truncate">{item.name}</h4>
-                        <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase truncate">
-                          <MapPin className="h-3 w-3" /> {item.location || item.country}
+                  <div className="space-y-1">
+                    {mostPopular.slice(0, 4).map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSuggestionClick(item)}
+                        className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
+                      >
+                        <div className="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden shadow-sm">
+                          <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex-1 flex flex-col justify-center min-w-0">
+                          <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{item.name}</h4>
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin className="h-3 w-3" />
+                            <span className="text-[10px] font-bold uppercase truncate">{item.location || item.country}</span>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-              {/* History Section */}
+
               {searchHistory.length > 0 && (
-                <div className="px-5 mb-4">
-                  <div className="flex justify-between items-center mb-2 text-[10px] font-black text-slate-400 uppercase">
-                    <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> Recent</div>
-                    <button 
-                      onClick={() => { setSearchHistory([]); localStorage.removeItem(SEARCH_HISTORY_KEY); }} 
-                      className="text-[#FF7F50]"
-                    >
-                      Clear
-                    </button>
+                <div className="mb-4">
+                  <div className="flex items-center justify-between px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#008080]" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Recent</p>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-[10px] font-black uppercase text-[#FF7F50] hover:underline">Clear</button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {searchHistory.map((h, i) => (
+                  <div className="flex flex-wrap gap-2 px-4">
+                    {searchHistory.map((item, i) => (
                       <Badge 
                         key={i} 
-                        onClick={() => { onChange(h); onSubmit(); setShowSuggestions(false); }} 
-                        className="cursor-pointer bg-slate-50 hover:bg-[#008080]/10 text-slate-600 border-none py-2 px-4 rounded-xl text-xs font-bold transition-all"
+                        onClick={() => { onChange(item); saveToHistory(item); onSubmit(); setShowSuggestions(false); }} 
+                        className="cursor-pointer bg-slate-50 hover:bg-[#008080]/10 text-slate-600 border border-slate-100 py-2 px-4 rounded-xl text-xs font-bold transition-colors"
                       >
-                        {h}
+                        {item}
                       </Badge>
                     ))}
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="p-2">
-              {isSearching ? (
-                <div className="p-10 flex flex-col items-center gap-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#008080]" />
-                  <span className="text-slate-400 text-xs font-bold uppercase">Searching...</span>
-                </div>
-              ) : suggestions.length > 0 ? (
-                <>
-                  <p className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Top Matches</p>
-                  {suggestions.map((result) => (
+
+              {trendingSearches.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 px-5 py-3">
+                    <TrendingUp className="h-4 w-4 text-[#FF7F50]" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trending Destinations</p>
+                  </div>
+                  {trendingSearches.slice(0, 5).map((item, index) => (
                     <button 
-                      key={result.id} 
-                      onClick={() => { navigate(`/${result.type}/${result.id}`); setShowSuggestions(false); }} 
-                      className="w-full p-3 flex gap-4 hover:bg-slate-50 rounded-[24px] text-left group transition-all"
+                      key={index} 
+                      onClick={() => { onChange(item.query); saveToHistory(item.query); onSubmit(); setShowSuggestions(false); }} 
+                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left rounded-[20px]"
                     >
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
-                        <img src={result.image_url || "/placeholder.svg"} className="w-full h-full object-cover" alt={result.name} />
+                      <span className="text-sm font-black text-slate-700 uppercase tracking-tight group-hover:text-[#008080]">{item.query}</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">{item.search_count} explores</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Result Suggestions (Shown when typing) */}
+          {value.trim() && (
+            <div className="p-2">
+              {/* Loading State */}
+              {isSearching && (
+                <div className="p-10 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#008080]" />
+                  <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Searching...</span>
+                </div>
+              )}
+
+              {/* Results */}
+              {!isSearching && suggestions.length > 0 && (
+                <>
+                  <p className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Top Matches</p>
+                  {suggestions.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => handleSuggestionClick(result)}
+                      className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
+                    >
+                      <div className="relative w-16 h-16 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
+                        <img src={result.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                       </div>
+
                       <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <Badge className="w-fit text-[9px] font-black uppercase mb-1" style={{ background: COLORS.TEAL }}>{result.type}</Badge>
-                        <h4 className="font-black text-slate-800 uppercase text-sm truncate">{result.name}</h4>
-                        <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold uppercase truncate">
-                          <MapPin className="h-3 w-3" /> {result.location || result.country}
+                        <div className="flex items-center gap-2 mb-1">
+                           <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: COLORS.TEAL }}>
+                            {getTypeLabel(result.type)}
+                          </span>
+                          {result.date && (
+                            <span className="text-[9px] font-black text-[#FF7F50] uppercase tracking-widest">
+                              • {new Date(result.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{result.name}</h4>
+                        <div className="flex items-center gap-1 text-slate-400 group-hover:text-[#008080] transition-colors">
+                          <MapPin className="h-3 w-3" />
+                          <span className="text-[10px] font-bold uppercase truncate">
+                            {result.location || result.country}
+                          </span>
                         </div>
                       </div>
                     </button>
                   ))}
                 </>
-              ) : hasSearched && (
+              )}
+
+              {/* Not Available - Only show after search completes with no results */}
+              {!isSearching && hasSearched && suggestions.length === 0 && (
                 <div className="p-10 text-center">
-                  <p className="text-slate-400 text-xs font-bold uppercase mb-1">Not Available</p>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Not Available</p>
                   <p className="text-slate-300 text-[10px]">No results found for "{value}"</p>
                 </div>
               )}
