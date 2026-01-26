@@ -4,9 +4,10 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Share2, Heart, Copy, ArrowLeft, Star, Phone, Mail, Users, CalendarDays } from "lucide-react";
+import { MapPin, Share2, Heart, Copy, CheckCircle2, ArrowLeft, Star, Phone, Mail, Clock, Users, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SimilarItems } from "@/components/SimilarItems";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
@@ -64,6 +65,7 @@ const EventDetail = () => {
         .eq("type", "event")
         .single();
       
+      // Fallback for old IDs if necessary
       if (error && id.length === 8) {
         const { data: prefixData, error: prefixError } = await supabase
           .from("trips")
@@ -123,9 +125,10 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
+      {/* Site Header */}
       <Header showSearchIcon={false} />
       
-      {/* SCROLL FIXED BAR */}
+      {/* 1. SCROLL FIXED BAR (Slide Down Effect) */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${
           scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
@@ -149,8 +152,9 @@ const EventDetail = () => {
 
       <main className="container px-4 max-w-6xl mx-auto pt-6">
         
-        {/* IMAGE GALLERY */}
+        {/* 2. IMAGE GALLERY (Rounded & Contained) */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8 group">
+          {/* Top Buttons (Visible when not scrolled) */}
           <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md hover:bg-black/60">
               <ArrowLeft className="h-5 w-5" />
@@ -176,6 +180,7 @@ const EventDetail = () => {
             </CarouselContent>
           </Carousel>
 
+          {/* Overlay Content */}
           <div className="absolute bottom-0 left-0 z-40 w-full p-6 pb-8">
             <div className="max-w-xl bg-gradient-to-r from-black/70 via-black/40 to-transparent rounded-2xl p-5 backdrop-blur-[2px]">
               <div className="flex gap-2 mb-2">
@@ -204,7 +209,7 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* CONTENT GRID */}
+        {/* 3. CONTENT GRID */}
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
           
           {/* Left Column */}
@@ -216,7 +221,52 @@ const EventDetail = () => {
               </p>
             </div>
 
-            {/* Schedule and Highlights sections have been removed from here */}
+            {(event.opening_hours || event.days_opened?.length > 0) && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Clock className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Schedule</h2>
+                </div>
+                <div className="space-y-4">
+                  {(event.opening_hours || event.closing_hours) && (
+                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Hours</span>
+                      <span className="text-sm font-black text-slate-700">
+                        {event.opening_hours || "08:00"} — {event.closing_hours || "18:00"}
+                      </span>
+                    </div>
+                  )}
+                  {event.days_opened?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {event.days_opened.map((day: string, i: number) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {event.activities?.length > 0 && (
+              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                   <CheckCircle2 className="h-5 w-5 text-[#857F3E]" />
+                   <h2 className="text-xl font-black uppercase tracking-tight text-[#857F3E]">Highlights</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {event.activities.map((act: any, i: number) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-[#F0E68C]/20 border border-[#F0E68C]/50">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#857F3E]" />
+                      <span className="text-[11px] font-bold text-[#857F3E] uppercase tracking-wide">
+                        {typeof act === 'string' ? act : act.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                <div className="flex justify-between items-center mb-6">
@@ -243,6 +293,7 @@ const EventDetail = () => {
                   </div>
                 </div>
                 <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 ${isSoldOut ? "bg-red-50 border-red-100 text-red-600" : "bg-emerald-50 border-emerald-100 text-emerald-600"}`}>
+                  <Users className="h-4 w-4" />
                   <span className="text-xs font-black uppercase">
                     {isSoldOut ? "Full" : `${remainingSlots} Left`}
                   </span>
