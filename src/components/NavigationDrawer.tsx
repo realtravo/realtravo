@@ -1,7 +1,10 @@
-import { Home, Ticket, Heart, Phone, Info, LogIn, LogOut, User, FileText, Shield, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { 
+  Home, Ticket, Heart, Phone, Info, LogIn, LogOut, User, 
+  FileText, Shield, ChevronRight, Trophy, Map, Mountain, Bed 
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface NavigationDrawerProps {
@@ -19,7 +22,6 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return;
-      // Keeping database fetch code as requested
       const { data: profile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
       if (profile?.name) setUserName(profile.name);
     };
@@ -53,7 +55,7 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-950">
-      {/* Brand Header - Now White with Gradient Text Styling */}
+      {/* Brand Header */}
       <div className="p-6 bg-white dark:bg-gray-950 border-b border-slate-100 dark:border-gray-800">
         <div className="flex items-center gap-4">
           <img 
@@ -81,7 +83,7 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide">
-        {/* User Profile Card / Auth Section */}
+        {/* User Profile Card */}
         <div className="mb-6">
           {user ? (
             <div className="p-4 rounded-[24px] bg-slate-50 dark:bg-gray-900 border border-slate-100 dark:border-gray-800">
@@ -129,6 +131,14 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
           <NavItem icon={Heart} label="Wishlist" path="/saved" isProtected />
           
           <div className="h-4" />
+          {/* NEW CATEGORIES SECTION */}
+          <p className="px-4 text-[9px] font-black text-[#008080] uppercase tracking-[0.2em] mb-2">Explore Categories</p>
+          <NavItem icon={Trophy} label="Events & Sports" path="/events" />
+          <NavItem icon={Map} label="Trips & Tours" path="/trips" />
+          <NavItem icon={Mountain} label="Adventure Places" path="/adventures" />
+          <NavItem icon={Bed} label="Hotels & Stays" path="/hotels" />
+
+          <div className="h-4" />
           <p className="px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Support & Legal</p>
           <NavItem icon={Phone} label="Contact" path="/contact" />
           <NavItem icon={Info} label="About" path="/about" />
@@ -137,10 +147,9 @@ export const NavigationDrawer = ({ onClose }: NavigationDrawerProps) => {
         </ul>
       </nav>
       
-      {/* Footer Label */}
       <div className="p-6 border-t border-slate-50 dark:border-gray-900 text-center">
         <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">
-          TripTrac v2.0
+          RealTravo v2.0
         </span>
       </div>
     </div>
