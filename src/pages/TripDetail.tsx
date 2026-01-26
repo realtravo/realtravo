@@ -6,9 +6,8 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, Clock, CalendarDays, Phone, Mail
+  MapPin, Share2, ArrowLeft, Heart, Copy, Clock, CalendarDays, Phone, Mail
 } from "lucide-react";
-import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
@@ -16,14 +15,13 @@ import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
-import { generateReferralLink, trackReferralClick } from "@/lib/referralUtils";
+import { trackReferralClick } from "@/lib/referralUtils";
 
 const COLORS = {
   TEAL: "#008080",
   CORAL: "#FF7F50",
   CORAL_LIGHT: "#FF9E7A",
   RED: "#FF0000",
-  ORANGE: "#FF9800"
 };
 
 const TripDetail = () => {
@@ -171,34 +169,6 @@ const TripDetail = () => {
               <p className="text-slate-500 text-sm leading-relaxed lowercase">{trip.description || "none"}</p>
             </section>
 
-            {(trip.opening_hours || trip.closing_hours || workingDays.length > 0) && (
-              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <Clock className="h-5 w-5 text-[#008080]" />
-                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Trip Schedule</h2>
-                </div>
-                <div className="space-y-4">
-                  {(trip.opening_hours || trip.closing_hours) && (
-                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] font-black uppercase text-slate-400">Trip Hours</span>
-                      <span className="text-sm font-black text-slate-700">
-                        {trip.opening_hours || "08:00"} — {trip.closing_hours || "18:00"}
-                      </span>
-                    </div>
-                  )}
-                  {workingDays.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {workingDays.map((day: string, i: number) => (
-                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
-                          {day.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
             <div className="lg:hidden">
               <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} workingDays={workingDays} />
             </div>
@@ -230,33 +200,33 @@ const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate, wor
       </Badge>
     </div>
 
-    <div className="space-y-3 mb-6">
-      {/* Phone Information */}
+    <div className="space-y-4 mb-6">
+      {/* Contact Phone */}
       {trip.phone && (
         <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
           <Phone className="h-5 w-5 text-[#008080]" />
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contact Phone</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Phone Number</p>
             <p className="text-xs font-bold text-slate-700">{trip.phone}</p>
           </div>
         </div>
       )}
 
-      {/* Email Information */}
+      {/* Contact Email */}
       {trip.email && (
         <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
           <Mail className="h-5 w-5 text-[#FF7F50]" />
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contact Email</p>
-            <p className="text-xs font-bold text-slate-700 truncate max-w-[180px]">{trip.email}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Email Address</p>
+            <p className="text-xs font-bold text-slate-700 truncate max-w-[180px] lowercase">{trip.email}</p>
           </div>
         </div>
       )}
 
-      {/* Operating Hours */}
+      {/* Trip Hours */}
       {(trip.opening_hours || trip.closing_hours) && (
         <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-          <Clock className="h-5 w-5 text-blue-500" />
+          <Clock className="h-5 w-5 text-slate-400" />
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Trip Hours</p>
             <p className="text-xs font-bold text-slate-700">
