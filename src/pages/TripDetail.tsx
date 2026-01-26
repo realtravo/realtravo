@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, Clock, CalendarDays
+  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, Clock, CalendarDays, Phone, Mail
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -96,10 +96,8 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* Site Header */}
       <Header showSearchIcon={false} />
       
-      {/* 1. SCROLL FIXED BAR - Only appears when scrolled */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${
           scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
@@ -122,11 +120,7 @@ const TripDetail = () => {
       </div>
 
       <main className="container px-4 max-w-6xl mx-auto pt-6">
-        
-        {/* 2. IMAGE GALLERY CONTAINER */}
         <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
-          
-          {/* GALLERY BUTTONS - Disappear when scrolled bar takes over */}
           <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
             <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md">
               <ArrowLeft className="h-5 w-5" />
@@ -152,7 +146,6 @@ const TripDetail = () => {
             </CarouselContent>
           </Carousel>
 
-          {/* NAME OVERLAY WITH RGBA FADE */}
           <div className="absolute bottom-0 left-0 z-40 w-full p-6 pb-8">
             <div className="max-w-xl bg-gradient-to-r from-black/70 via-black/40 to-transparent rounded-2xl p-5 backdrop-blur-[2px]">
               <Badge className="bg-[#FF7F50] text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full mb-2">
@@ -171,7 +164,6 @@ const TripDetail = () => {
           </div>
         </div>
 
-        {/* 3. CONTENT GRID */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           <div className="flex flex-col gap-6">
             <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -179,7 +171,6 @@ const TripDetail = () => {
               <p className="text-slate-500 text-sm leading-relaxed lowercase">{trip.description || "none"}</p>
             </section>
 
-            {/* Operating Hours & Days Section */}
             {(trip.opening_hours || trip.closing_hours || workingDays.length > 0) && (
               <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-6">
@@ -207,23 +198,6 @@ const TripDetail = () => {
                 </div>
               </section>
             )}
-
-            <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-3 mb-6">
-                <Zap className="h-5 w-5 text-[#FF9800]" />
-                <h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Included Activities</h2>
-              </div>
-              {trip.activities?.length > 0 ? (
-                <div className="flex flex-wrap gap-3">
-                  {trip.activities.map((act: any, i: number) => (
-                    <div key={i} className="px-5 py-3 rounded-2xl bg-orange-50/50 border border-orange-100 flex items-center gap-3">
-                      <span className="text-[11px] font-medium text-slate-700 lowercase">{act.name}</span>
-                      <span className="text-[10px] font-bold text-[#FF9800]">{act.price === 0 ? "included" : `ksh ${act.price}`}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : <p className="text-slate-400 text-sm italic">none</p>}
-            </section>
 
             <div className="lg:hidden">
               <BookingCard trip={trip} remainingSlots={remainingSlots} isSoldOut={isSoldOut} isExpired={isExpired} navigate={navigate} workingDays={workingDays} />
@@ -256,31 +230,38 @@ const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate, wor
       </Badge>
     </div>
 
-    {/* Operating Hours in Booking Card */}
-    <div className="space-y-4 mb-6">
+    <div className="space-y-3 mb-6">
+      {/* Phone Information */}
+      {trip.phone && (
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <Phone className="h-5 w-5 text-[#008080]" />
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contact Phone</p>
+            <p className="text-xs font-bold text-slate-700">{trip.phone}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Email Information */}
+      {trip.email && (
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <Mail className="h-5 w-5 text-[#FF7F50]" />
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Contact Email</p>
+            <p className="text-xs font-bold text-slate-700 truncate max-w-[180px]">{trip.email}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Operating Hours */}
       {(trip.opening_hours || trip.closing_hours) && (
         <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-          <Clock className="h-5 w-5 text-[#008080]" />
+          <Clock className="h-5 w-5 text-blue-500" />
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Trip Hours</p>
             <p className="text-xs font-bold text-slate-700">
               {trip.opening_hours || "08:00"} — {trip.closing_hours || "18:00"}
             </p>
-          </div>
-        </div>
-      )}
-      {workingDays.length > 0 && (
-        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-          <CalendarDays className="h-5 w-5 text-red-500" />
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Available Days</p>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {workingDays.map((day: string, idx: number) => (
-                <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
-                  {day.trim().substring(0, 3)}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       )}
@@ -294,6 +275,7 @@ const BookingCard = ({ trip, remainingSlots, isSoldOut, isExpired, navigate, wor
     >
       {isSoldOut ? "SOLD OUT" : isExpired ? "EXPIRED" : "BOOK SPOT"}
     </Button>
+    
     <div className="grid grid-cols-3 gap-3">
       <UtilityBtn icon={<MapPin className="h-5 w-5" />} label="Map" />
       <UtilityBtn icon={<Copy className="h-5 w-5" />} label="Copy" />
