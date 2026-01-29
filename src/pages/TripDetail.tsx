@@ -3,17 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star, Zap, Calendar, Users } from "lucide-react";
+import { MapPin, Phone, Share2, Copy, Clock, ArrowLeft, Heart, Calendar, Users } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { useAuth } from "@/contexts/AuthContext";
-import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
 import { generateReferralLink, trackReferralClick } from "@/lib/referralUtils";
 import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
@@ -35,19 +32,14 @@ const TripDetail = () => {
   const id = slug ? extractIdFromSlug(slug) : null;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   
   const [trip, setTrip] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
-  // Change 1 & 2: Scroll listener for Sticky Header
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -99,33 +91,13 @@ const TripDetail = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
   };
 
-  const { submitBooking } = useBookingSubmit();
-
-  const handleBookingSubmit = async (data: BookingFormData) => {
-    if (!trip) return;
-    setIsProcessing(true);
-    try {
-      const totalAmount = (data.num_adults * trip.price) + (data.num_children * (trip.price_child || 0));
-      await submitBooking({
-        itemId: trip.id, itemName: trip.name, bookingType: 'trip', totalAmount,
-        slotsBooked: data.num_adults + data.num_children, visitDate: data.visit_date,
-        guestName: data.guest_name, guestEmail: data.guest_email, guestPhone: data.guest_phone,
-        hostId: trip.created_by, bookingDetails: { ...data, trip_name: trip.name }
-      });
-      setIsCompleted(true);
-      setBookingOpen(false);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally { setIsProcessing(false); }
-  };
-
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, trip?.available_tickets || 0);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white">
         <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
+        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading...</p>
       </div>
     );
   }
@@ -222,9 +194,7 @@ const TripDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* 1. Header Removed as requested */}
-
-      {/* 2. STICKY TOP ACTION BAR */}
+      {/* 1. STICKY TOP ACTION BAR */}
       <div 
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
           scrolled 
@@ -259,36 +229,37 @@ const TripDetail = () => {
         </Button>
       </div>
 
-      {/* 3. HERO SECTION - Now starts from the absolute top of the viewport */}
-      <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900">
-        <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full p-0">
-          <CarouselContent className="h-full ml-0">
-            {allImages.map((img, idx) => (
-              <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                <div className="relative h-full w-full">
-                  <img src={img} alt={trip.name} className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10" />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-
-        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
-          <div className="relative z-10 space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
-            <Button className="bg-[#FF7F50] border-none px-3 py-1 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg text-white">Scheduled Trip</Button>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">{trip.name}</h1>
+      {/* 2. PAGE HEADER SECTION */}
+      <header className="bg-white pt-20 pb-10 px-4">
+        <div className="max-w-6xl mx-auto">
+            <Button className="bg-[#FF7F50] border-none px-3 py-1 mb-4 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg text-white">Scheduled Trip</Button>
+            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-slate-900 mb-2">{trip.name}</h1>
             <div className="flex items-center gap-2 group w-fit cursor-pointer" onClick={openInMaps}>
-              <MapPin className="h-4 w-4 text-white" />
-              <span className="text-xs font-bold text-white uppercase tracking-wide">
+              <MapPin className="h-4 w-4 text-slate-400" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
                 {[trip.place, trip.location, trip.country].filter(Boolean).join(', ')}
               </span>
             </div>
-          </div>
         </div>
-      </div>
+      </header>
 
-      <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
+      <main className="container px-4 max-w-6xl mx-auto relative z-50">
+        {/* 3. IMAGE GALLERY (Positioned below header, spanning full width of the main content area) */}
+        <div className="relative w-full overflow-hidden h-[40vh] md:h-[55vh] bg-slate-900 rounded-[32px] mb-8 shadow-xl">
+            <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full p-0">
+            <CarouselContent className="h-full ml-0">
+                {allImages.map((img, idx) => (
+                <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                    <div className="relative h-full w-full">
+                    <img src={img} alt={trip.name} className="w-full h-full object-cover object-center" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10" />
+                    </div>
+                </CarouselItem>
+                ))}
+            </CarouselContent>
+            </Carousel>
+        </div>
+
         <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
           <div className="flex flex-col gap-6">
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
@@ -321,26 +292,6 @@ const TripDetail = () => {
             <div className="block lg:hidden">
               <BookingCard />
             </div>
-
-            {trip.activities?.length > 0 && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-xl bg-orange-50"><Zap className="h-5 w-5 text-[#FF9800]" /></div>
-                  <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.ORANGE }}>Included Activities</h2>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {trip.activities.map((act: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-orange-50/50 border border-orange-100/50">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF9800]" />
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-black text-slate-700 uppercase">{act.name}</span>
-                        <span className="text-[10px] font-bold text-[#FF9800]">{act.price === 0 ? "Included" : `KSh ${act.price}`}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
               <ReviewSection itemId={trip.id} itemType="trip" />
