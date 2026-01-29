@@ -1,177 +1,284 @@
-import { useState, useEffect, useMemo, memo } from "react";
-import { Header } from "@/components/Header";
-import { SearchBarWithSuggestions } from "@/components/SearchBarWithSuggestions";
-import { ListingCard } from "@/components/ListingCard";
-import { HomeCategoryFilter, CategoryType } from "@/components/HomeCategoryFilter";
-import { HomeFilterBar, HomeFilterValues } from "@/components/HomeFilterBar";
-import { MapPin, Loader2, Navigation } from "lucide-react";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
-import { ListingSkeleton } from "@/components/ui/listing-skeleton";
-import { useSavedItems } from "@/hooks/useSavedItems";
-import { useRatings } from "@/hooks/useRatings";
+import { useState, memo, useCallback, useMemo } from "react";
+import { MapPin, Heart, Star, Calendar, Ticket } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, optimizeSupabaseImage } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { createDetailPath } from "@/lib/slugUtils";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
-const MemoizedListingCard = memo(ListingCard);
+const COLORS = {
+  TEAL: "#008080",
+  CORAL: "#FF7F50",
+  KHAKI: "#F0E68C",
+  KHAKI_DARK: "#857F3E",
+  RED: "#FF0000",
+  SOFT_GRAY: "#F8F9FA"
+} as const;
 
-const Index = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [listings, setListings] = useState<any[]>([]);
-  const { savedItems, handleSave } = useSavedItems();
-  const [loading, setLoading] = useState(true);
-  const { position, loading: locationLoading, permissionDenied, forceRequestLocation } = useGeolocation();
-  const [showLocationDialog, setShowLocationDialog] = useState(false);
+interface ListingCardProps {
+  id: string;
+  type: 'TRIP' | 'EVENT' | 'SPORT' | 'HOTEL' | 'ADVENTURE PLACE' | 'ACCOMMODATION' | 'ATTRACTION';
+  name: string;
+  imageUrl: string;
+  location: string;
+  country: string;
+  price?: number;
+  date?: string;
+  isCustomDate?: boolean;
+  isFlexibleDate?: boolean;
+  isOutdated?: boolean;
+  onSave?: (id: string, type: string) => void;
+  isSaved?: boolean;
+  amenities?: string[];
+  activities?: any[];
+  hidePrice?: boolean;
+  availableTickets?: number;
+  bookedTickets?: number;
+  showBadge?: boolean;
+  priority?: boolean;
+  minimalDisplay?: boolean;
+  hideEmptySpace?: boolean;
+  compact?: boolean;
+  distance?: number;
+  avgRating?: number;
+  reviewCount?: number;
+  place?: string;
+  showFlexibleDate?: boolean;
+}
+
+const ListingCardComponent = ({
+  id, type, name, imageUrl, location, country, price, date,
+  isOutdated = false, onSave, isSaved = false, activities, 
+  hidePrice = false, availableTickets = 0, bookedTickets = 0, 
+  priority = false, compact = false, avgRating, distance, place,
+  isFlexibleDate = false
+}: ListingCardProps) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const navigate = useNavigate();
+
+  const { ref: imageContainerRef, isIntersecting } = useIntersectionObserver({
+    rootMargin: '300px', // Increased margin for earlier loading
+    triggerOnce: true
+  });
+
+  const shouldLoadImage = priority || isIntersecting;
   
-  const [activeCategory, setActiveCategory] = useState<CategoryType>("all");
-  const [appliedFilters, setAppliedFilters] = useState<HomeFilterValues>({ location: "" });
-  const [listingViewMode, setListingViewMode] = useState<'top_destinations' | 'my_location'>('top_destinations');
+  // Type logic
+  const isEventOrSport = useMemo(() => type === "EVENT" || type === "SPORT", [type]);
+  const isTrip = useMemo(() => type === "TRIP", [type]);
+  const tracksAvailability = useMemo(() => isEventOrSport || isTrip, [isEventOrSport, isTrip]);
+  
+  // Availability logic
+  const remainingTickets = useMemo(() => availableTickets - bookedTickets, [availableTickets, bookedTickets]);
+  const isSoldOut = useMemo(() => tracksAvailability && availableTickets > 0 && remainingTickets <= 0, [tracksAvailability, availableTickets, remainingTickets]);
+  const fewSlotsRemaining = useMemo(() => tracksAvailability && remainingTickets > 0 && remainingTickets <= 10, [tracksAvailability, remainingTickets]);
+  
+  // Unified "Unavailable" state for visual overlays
+  const isUnavailable = useMemo(() => isOutdated || isSoldOut, [isOutdated, isSoldOut]);
+  // Optimized image with smaller thumbnail for blur-up effect
+  const optimizedImageUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 400, height: 300, quality: 80 }), [imageUrl]);
+  const thumbnailUrl = useMemo(() => optimizeSupabaseImage(imageUrl, { width: 32, height: 24, quality: 30 }), [imageUrl]);
+  const displayType = useMemo(() => isEventOrSport ? "Event & Sports" : type.replace('_', ' '), [isEventOrSport, type]);
+  const formattedDistance = useMemo(() => distance?.toFixed(2), [distance]);
+  const locationString = useMemo(() => [place, location, country].filter(Boolean).join(', '), [place, location, country]);
 
-  const fetchAllData = async (query?: string) => {
-    setLoading(true);
-    const searchPattern = query ? `%${query}%` : null;
-    
-    const fetchTable = async (table: string, type: string) => {
-      let q = supabase.from(table).select("*");
-      if (searchPattern) {
-        q = q.or(`name.ilike.${searchPattern},location.ilike.${searchPattern}`);
-      }
-      const { data } = await q.limit(40);
-      // Map the internal table columns to the ListingCard expected props
-      return (data || []).map(item => ({
-        ...item,
-        type, // Explicitly set the type based on the table
-        imageUrl: item.image_url || item.imageUrl, // Handle variations in DB column naming
-      }));
+  const handleCardClick = useCallback(() => {
+    const typeMap: Record<string, string> = {
+      "TRIP": "trip", "EVENT": "event", "SPORT": "event", "HOTEL": "hotel",
+      "ADVENTURE PLACE": "adventure", "ACCOMMODATION": "accommodation", "ATTRACTION": "attraction"
     };
+    navigate(createDetailPath(typeMap[type], id, name, location));
+  }, [navigate, type, id, name, location]);
 
-    // Parallel fetch including the events table
-    try {
-      const [trips, hotels, adventures, events] = await Promise.all([
-        fetchTable("public_trips", "TRIP"),
-        fetchTable("public_hotels", "HOTEL"),
-        fetchTable("public_adventure_places", "ADVENTURE PLACE"),
-        fetchTable("public_events", "EVENT") 
-      ]);
+  const handleSaveClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSave?.(id, type);
+  }, [onSave, id, type]);
 
-      setListings([...trips, ...hotels, ...adventures, ...events]);
-    } catch (error) {
-      console.error("Error fetching listings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleImageLoad = useCallback(() => setImageLoaded(true), []);
+  const handleImageError = useCallback(() => setImageError(true), []);
 
-  useEffect(() => { fetchAllData(); }, []);
-
-  const { ratings } = useRatings(listings.map(l => l.id));
-
-  const filteredListings = useMemo(() => {
-    let result = [...listings];
-    
-    if (activeCategory !== "all") {
-      result = result.filter(item => {
-        const type = item.type?.toUpperCase();
-        // Map the category selection to the type strings we assigned during fetch
-        if (activeCategory === "events") return type === "EVENT" || type === "SPORT";
-        if (activeCategory === "campsite") return type === "ADVENTURE PLACE";
-        if (activeCategory === "hotels") return type === "HOTEL" || type === "ACCOMMODATION";
-        if (activeCategory === "trips") return type === "TRIP";
-        return true;
-      });
-    }
-
-    if (appliedFilters.location) {
-      const loc = appliedFilters.location.toLowerCase();
-      result = result.filter(i => i.location?.toLowerCase().includes(loc));
-    }
-
-    if (listingViewMode === 'my_location' && position) {
-      result.sort((a, b) => 
-        (calculateDistance(position.latitude, position.longitude, a.latitude, a.longitude) || 0) - 
-        (calculateDistance(position.latitude, position.longitude, b.latitude, b.longitude) || 0)
-      );
-    }
-    return result;
-  }, [listings, activeCategory, appliedFilters, listingViewMode, position]);
+  // Show distance for all types when location is available
+  const showDistanceBadge = useMemo(() => distance !== undefined && distance > 0, [distance]);
 
   return (
-    <div className="min-h-screen bg-background pb-10">
-      <style dangerouslySetInnerHTML={{ __html: `
-        :root { --primary: 180 100% 25%; } 
-        .text-primary { color: #008080 !important; }
-        .bg-primary { background-color: #008080 !important; }
-      `}} />
+    <Card 
+      onClick={handleCardClick} 
+      className={cn(
+        "group overflow-hidden transition-all duration-300 hover:shadow-2xl cursor-pointer border-slate-200 flex flex-col",
+        "rounded-[24px] bg-[rgba(0,0,0,0.04)]", // Darkened background to reduce brightness
+        compact ? "h-auto" : "h-full",
+        isUnavailable && "opacity-90"
+      )}
+    >
+      {/* Image Section with improved loading */}
+      <div 
+        ref={imageContainerRef} 
+        className="relative overflow-hidden m-2 rounded-[20px] bg-slate-200" 
+        style={{ paddingBottom: '70%' }}
+      >
+        {/* Skeleton placeholder - always present until loaded */}
+        {!imageLoaded && !imageError && (
+          <Skeleton className="absolute inset-0 w-full h-full" />
+        )}
+        
+        {/* Blur-up thumbnail for smooth transition */}
+        {shouldLoadImage && !imageLoaded && !imageError && (
+          <img 
+            src={thumbnailUrl} 
+            alt="" 
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-md scale-110"
+          />
+        )}
+        
+        {/* Main image */}
+        {shouldLoadImage && !imageError && (
+          <img 
+            src={optimizedImageUrl} 
+            alt={name}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding={priority ? "sync" : "async"}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            className={cn(
+                "absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110", 
+                imageLoaded ? "opacity-100" : "opacity-0",
+                isUnavailable && "grayscale-[0.6]" 
+            )} 
+          />
+        )}
+        
+        {/* Error fallback */}
+        {imageError && (
+          <div className="absolute inset-0 w-full h-full bg-slate-100 flex items-center justify-center">
+            <span className="text-slate-400 text-xs font-bold uppercase">No Image</span>
+          </div>
+        )}
 
-      <Header onSearchClick={() => {}} showSearchIcon={false} />
-      
-      <HomeCategoryFilter activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
-      
-      <HomeFilterBar onApplyFilters={setAppliedFilters} onClear={() => setAppliedFilters({location: ""})} />
-      
-      <div className="w-full px-4 py-3">
-        <SearchBarWithSuggestions 
-          value={searchQuery} 
-          onChange={setSearchQuery} 
-          onSubmit={() => fetchAllData(searchQuery)}
-        />
+        {/* SOLD OUT / NOT AVAILABLE OVERLAY */}
+        {isUnavailable && (
+          <div className="absolute inset-0 z-20 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+            <Badge className="bg-white text-black font-black border-none px-4 py-1.5 text-[11px] uppercase shadow-2xl">
+                {isSoldOut ? 'Sold Out' : 'Not Available'}
+            </Badge>
+          </div>
+        )}
+        
+        {/* Category Badge */}
+        <Badge 
+          className="absolute top-3 left-3 z-10 px-1.5 py-0.5 border-none shadow-md text-[7.5px] font-black uppercase tracking-tight"
+          style={{ background: isUnavailable ? '#64748b' : COLORS.TEAL, color: 'white' }}
+        >
+          {displayType}
+        </Badge>
+
+        {showDistanceBadge && (
+          <Badge 
+            className="absolute bottom-3 right-3 z-10 px-2 py-1 border-none shadow-lg text-[9px] font-black"
+            style={{ background: COLORS.CORAL, color: 'white' }}
+          >
+            {formattedDistance} km
+          </Badge>
+        )}
+
+        {onSave && (
+          <button 
+            onClick={handleSaveClick}
+            aria-label={isSaved ? "Remove from wishlist" : "Save to wishlist"}
+            className={cn(
+                "absolute top-3 right-3 z-20 h-8 w-8 flex items-center justify-center rounded-full backdrop-blur-md transition-all", 
+                isSaved ? "bg-red-500" : "bg-black/20 hover:bg-black/40"
+            )}
+          >
+            <Heart className={cn("h-3.5 w-3.5", isSaved ? "text-white fill-white" : "text-white")} />
+          </button>
+        )}
       </div>
-
-      <main className="w-full">
-        <section className="px-4 py-3 border-b border-border flex items-center justify-between">
-          <button 
-            onClick={() => setListingViewMode('top_destinations')} 
-            className={`text-sm font-bold ${listingViewMode === 'top_destinations' ? 'text-primary underline underline-offset-8' : 'text-muted-foreground'}`}
-          >
-            Top Destinations
-          </button>
-          <button 
-            onClick={() => permissionDenied ? setShowLocationDialog(true) : setListingViewMode('my_location')} 
-            className={`flex items-center gap-1 text-sm font-bold ${listingViewMode === 'my_location' ? 'text-primary underline underline-offset-8' : 'text-muted-foreground'}`}
-          >
-            {locationLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-            My Location
-          </button>
-        </section>
-
-        <div className="w-full px-4 py-4">
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[...Array(6)].map((_, i) => <ListingSkeleton key={i} />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredListings.map((listing) => (
-                <MemoizedListingCard
-                  key={`${listing.type}-${listing.id}`}
-                  {...listing}
-                  isSaved={savedItems.has(listing.id)}
-                  onSave={handleSave}
-                  avgRating={ratings.get(listing.id)?.avgRating}
-                  distance={position ? calculateDistance(position.latitude, position.longitude, listing.latitude, listing.longitude) : undefined}
-                />
-              ))}
+      
+      {/* Content Section */}
+      <div className="p-5 flex flex-col flex-1"> 
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-black text-sm md:text-lg leading-tight uppercase tracking-tighter line-clamp-2" 
+              style={{ color: isUnavailable ? '#475569' : COLORS.TEAL }}>
+            {name}
+          </h3>
+          {avgRating && (
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm">
+              <Star className="h-3 w-3 fill-[#FF7F50] text-[#FF7F50]" />
+              <span className="text-[11px] font-black" style={{ color: '#0d7377' }}>{avgRating.toFixed(1)}</span>
             </div>
           )}
         </div>
-      </main>
+        
+        <div className="flex items-center gap-1.5 mb-3">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" style={{ color: isUnavailable ? '#94a3b8' : COLORS.CORAL }} />
+            <p className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wider line-clamp-1">
+                {locationString}
+            </p>
+        </div>
 
-      <AlertDialog open={showLocationDialog} onOpenChange={setShowLocationDialog}>
-        <AlertDialogContent className="max-w-[90vw] rounded-xl">
-          <AlertDialogHeader>
-            <div className="flex justify-center mb-2"><Navigation className="h-10 w-10 text-primary" /></div>
-            <AlertDialogTitle>Enable Location</AlertDialogTitle>
-            <AlertDialogDescription>Find trips and events happening near you.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setShowLocationDialog(false); forceRequestLocation(); }}>Try Again</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {activities && activities.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {activities.slice(0, 3).map((act, i) => (
+              <span key={i} className={cn(
+                "text-[10px] font-bold px-2 py-0.5 rounded-md capitalize", // Small letters with Capitalize
+                isUnavailable ? "bg-slate-200 text-slate-500" : "bg-[#F0E68C]/40 text-[#5c5829]"
+              )}>
+                {typeof act === 'string' ? act : act.name}
+              </span>
+            ))}
+          </div>
+        )}
+        
+        {/* Bottom Metadata */}
+        <div className="mt-auto pt-4 border-t border-slate-200/60 flex items-center justify-between">
+            <div className="flex flex-col">
+                {!hidePrice && price !== undefined && (
+                  <>
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Starts at</span>
+                    <span className={cn("text-base font-black", isUnavailable ? "text-slate-500 line-through" : "text-[#FF0000]")}>
+                        KSh {price.toLocaleString()}
+                    </span>
+                  </>
+                )}
+            </div>
+
+            <div className="flex flex-col items-end">
+                {(date || isFlexibleDate) && (
+                  <div className="flex items-center gap-1 text-slate-700">
+                      <Calendar className="h-3 w-3" />
+                      <span className={`text-[10px] font-black uppercase ${isFlexibleDate ? 'text-emerald-700' : ''}`}>
+                          {isFlexibleDate ? 'Flexible' : new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                      </span>
+                  </div>
+                )}
+                
+                <div className="mt-1">
+                  {isOutdated ? (
+                    <span className="text-[9px] font-black text-slate-600 uppercase">Event Passed</span>
+                  ) : isSoldOut ? (
+                    <span className="text-[9px] font-black text-red-600 uppercase">Sold Out</span>
+                  ) : fewSlotsRemaining ? (
+                    <span className="text-[9px] font-black text-red-500 uppercase animate-pulse flex items-center gap-1">
+                        <Ticket className="h-2.5 w-2.5" />
+                        Only {remainingTickets} left!
+                    </span>
+                  ) : (tracksAvailability && availableTickets > 0) && (
+                    <span className="text-[9px] font-black text-teal-700 uppercase">
+                        {remainingTickets} Slots available
+                    </span>
+                  )}
+                </div>
+            </div>
+        </div>
+      </div>
+    </Card>
   );
 };
 
-export default Index;
+export const ListingCard = memo(ListingCardComponent);
