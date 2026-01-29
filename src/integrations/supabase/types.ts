@@ -186,13 +186,19 @@ export type Database = {
           guest_phone: string | null
           host_confirmed: boolean | null
           host_confirmed_at: string | null
+          host_payout_amount: number | null
           id: string
           is_guest_booking: boolean | null
           item_id: string
           payment_method: string | null
           payment_phone: string | null
           payment_status: string | null
+          payout_processed_at: string | null
+          payout_reference: string | null
+          payout_scheduled_at: string | null
+          payout_status: string | null
           referral_tracking_id: string | null
+          service_fee_amount: number | null
           slots_booked: number | null
           status: string
           total_amount: number
@@ -212,13 +218,19 @@ export type Database = {
           guest_phone?: string | null
           host_confirmed?: boolean | null
           host_confirmed_at?: string | null
+          host_payout_amount?: number | null
           id?: string
           is_guest_booking?: boolean | null
           item_id: string
           payment_method?: string | null
           payment_phone?: string | null
           payment_status?: string | null
+          payout_processed_at?: string | null
+          payout_reference?: string | null
+          payout_scheduled_at?: string | null
+          payout_status?: string | null
           referral_tracking_id?: string | null
+          service_fee_amount?: number | null
           slots_booked?: number | null
           status?: string
           total_amount: number
@@ -238,13 +250,19 @@ export type Database = {
           guest_phone?: string | null
           host_confirmed?: boolean | null
           host_confirmed_at?: string | null
+          host_payout_amount?: number | null
           id?: string
           is_guest_booking?: boolean | null
           item_id?: string
           payment_method?: string | null
           payment_phone?: string | null
           payment_status?: string | null
+          payout_processed_at?: string | null
+          payout_reference?: string | null
+          payout_scheduled_at?: string | null
+          payout_status?: string | null
           referral_tracking_id?: string | null
+          service_fee_amount?: number | null
           slots_booked?: number | null
           status?: string
           total_amount?: number
@@ -615,6 +633,88 @@ export type Database = {
         }
         Relationships: []
       }
+      payouts: {
+        Row: {
+          account_name: string
+          account_number: string
+          amount: number
+          bank_code: string
+          booking_id: string | null
+          commission_id: string | null
+          created_at: string
+          failure_reason: string | null
+          id: string
+          processed_at: string | null
+          recipient_id: string
+          recipient_type: string
+          reference: string | null
+          scheduled_for: string | null
+          status: string
+          transfer_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          amount: number
+          bank_code: string
+          booking_id?: string | null
+          commission_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          recipient_id: string
+          recipient_type: string
+          reference?: string | null
+          scheduled_for?: string | null
+          status?: string
+          transfer_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          amount?: number
+          bank_code?: string
+          booking_id?: string | null
+          commission_id?: string | null
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          processed_at?: string | null
+          recipient_id?: string
+          recipient_type?: string
+          reference?: string | null
+          scheduled_for?: string | null
+          status?: string
+          transfer_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "creator_booking_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "referral_commissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           country: string | null
@@ -704,6 +804,8 @@ export type Database = {
           referred_user_id: string | null
           referrer_id: string
           status: string | null
+          withdrawal_reference: string | null
+          withdrawn_at: string | null
         }
         Insert: {
           booking_amount: number
@@ -718,6 +820,8 @@ export type Database = {
           referred_user_id?: string | null
           referrer_id: string
           status?: string | null
+          withdrawal_reference?: string | null
+          withdrawn_at?: string | null
         }
         Update: {
           booking_amount?: number
@@ -732,6 +836,8 @@ export type Database = {
           referred_user_id?: string | null
           referrer_id?: string
           status?: string | null
+          withdrawal_reference?: string | null
+          withdrawn_at?: string | null
         }
         Relationships: [
           {
@@ -973,6 +1079,45 @@ export type Database = {
         }
         Relationships: []
       }
+      transfer_recipients: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_code: string
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_verified: boolean | null
+          recipient_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          bank_code: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          recipient_code: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_code?: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          recipient_code?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           activities: Json | null
@@ -1149,6 +1294,255 @@ export type Database = {
           total_amount?: number | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      public_adventure_places: {
+        Row: {
+          activities: Json | null
+          amenities: Json | null
+          approval_status: string | null
+          available_slots: number | null
+          closing_hours: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          days_opened: string[] | null
+          description: string | null
+          entry_fee: number | null
+          entry_fee_type: string | null
+          facilities: Json | null
+          gallery_images: string[] | null
+          id: string | null
+          image_url: string | null
+          images: string[] | null
+          is_hidden: boolean | null
+          latitude: number | null
+          local_name: string | null
+          location: string | null
+          longitude: number | null
+          map_link: string | null
+          name: string | null
+          opening_hours: string | null
+          place: string | null
+        }
+        Insert: {
+          activities?: Json | null
+          amenities?: Json | null
+          approval_status?: string | null
+          available_slots?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          entry_fee?: number | null
+          entry_fee_type?: string | null
+          facilities?: Json | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_hidden?: boolean | null
+          latitude?: number | null
+          local_name?: string | null
+          location?: string | null
+          longitude?: number | null
+          map_link?: string | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+        }
+        Update: {
+          activities?: Json | null
+          amenities?: Json | null
+          approval_status?: string | null
+          available_slots?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          entry_fee?: number | null
+          entry_fee_type?: string | null
+          facilities?: Json | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_hidden?: boolean | null
+          latitude?: number | null
+          local_name?: string | null
+          location?: string | null
+          longitude?: number | null
+          map_link?: string | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+        }
+        Relationships: []
+      }
+      public_hotels: {
+        Row: {
+          activities: Json | null
+          amenities: string[] | null
+          approval_status: string | null
+          available_rooms: number | null
+          closing_hours: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          days_opened: string[] | null
+          description: string | null
+          facilities: Json | null
+          gallery_images: string[] | null
+          id: string | null
+          image_url: string | null
+          images: string[] | null
+          is_hidden: boolean | null
+          latitude: number | null
+          location: string | null
+          longitude: number | null
+          name: string | null
+          opening_hours: string | null
+          place: string | null
+        }
+        Insert: {
+          activities?: Json | null
+          amenities?: string[] | null
+          approval_status?: string | null
+          available_rooms?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          facilities?: Json | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_hidden?: boolean | null
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+        }
+        Update: {
+          activities?: Json | null
+          amenities?: string[] | null
+          approval_status?: string | null
+          available_rooms?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          facilities?: Json | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_hidden?: boolean | null
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+        }
+        Relationships: []
+      }
+      public_trips: {
+        Row: {
+          activities: Json | null
+          approval_status: string | null
+          available_tickets: number | null
+          closing_hours: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          days_opened: string[] | null
+          description: string | null
+          gallery_images: string[] | null
+          id: string | null
+          image_url: string | null
+          images: string[] | null
+          is_custom_date: boolean | null
+          is_flexible_date: boolean | null
+          is_hidden: boolean | null
+          location: string | null
+          map_link: string | null
+          name: string | null
+          opening_hours: string | null
+          place: string | null
+          price: number | null
+          price_child: number | null
+          slot_limit_type: string | null
+          type: string | null
+        }
+        Insert: {
+          activities?: Json | null
+          approval_status?: string | null
+          available_tickets?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_custom_date?: boolean | null
+          is_flexible_date?: boolean | null
+          is_hidden?: boolean | null
+          location?: string | null
+          map_link?: string | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+          price?: number | null
+          price_child?: number | null
+          slot_limit_type?: string | null
+          type?: string | null
+        }
+        Update: {
+          activities?: Json | null
+          approval_status?: string | null
+          available_tickets?: number | null
+          closing_hours?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          days_opened?: string[] | null
+          description?: string | null
+          gallery_images?: string[] | null
+          id?: string | null
+          image_url?: string | null
+          images?: string[] | null
+          is_custom_date?: boolean | null
+          is_flexible_date?: boolean | null
+          is_hidden?: boolean | null
+          location?: string | null
+          map_link?: string | null
+          name?: string | null
+          opening_hours?: string | null
+          place?: string | null
+          price?: number | null
+          price_child?: number | null
+          slot_limit_type?: string | null
+          type?: string | null
         }
         Relationships: []
       }

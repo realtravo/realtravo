@@ -259,7 +259,6 @@ const CategoryDetail = () => {
             <FilterBar 
               type={category === "hotels" ? "hotels" : category === "campsite" ? "adventure" : "trips-events"} 
               onApplyFilters={handleApplyFilters}
-              collapsible={true}
             />
           </div>
         </div>

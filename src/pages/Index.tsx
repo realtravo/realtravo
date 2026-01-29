@@ -619,7 +619,7 @@ const Index = () => {
      {!isSearchFocused && (
     <div 
       ref={searchRef}
-      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] md:mt-16 overflow-hidden"
+      className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] mt-0 overflow-hidden"
     >
       {/* Hero background image with high priority for LCP */}
       <picture>
@@ -740,50 +740,29 @@ const Index = () => {
                 </div>}
 
             <main className="w-full">
-{/* Desktop Category Cards - hidden on mobile since they're in hero */}
+{/* Desktop Category Cards - same style as mobile (icon + title only) */}
 {!isSearchFocused && (
   <div className="hidden md:block w-full px-4 md:px-6 lg:px-8 py-4 md:py-6 overflow-hidden">
     <div className="grid grid-cols-4 gap-4 w-full">
       {categories.map((cat, index) => {
         // Eye-catching category colors matching mobile
         const categoryColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF7F50'];
-        const iconColor = categoryColors[index % categoryColors.length];
+        const bgColor = categoryColors[index % categoryColors.length];
         return (
           <div 
             key={cat.title} 
             onClick={() => navigate(cat.path)} 
-            className="flex flex-col items-center cursor-pointer group"
+            className="flex flex-col items-center cursor-pointer group border-2 border-slate-200 hover:border-primary rounded-xl p-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-background"
           >
-            {/* ICON CONTAINER with background image */}
             <div 
-              className="flex items-end justify-center transition-all w-full h-40 lg:h-48 rounded-lg relative overflow-hidden"
+              className="h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+              style={{ backgroundColor: `${bgColor}CC` }}
             >
-              {/* Category background image - optimized loading */}
-              <div className="absolute inset-0 bg-slate-200">
-                <img 
-                  src={cat.bgImage}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-opacity duration-300"
-                />
-              </div>
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/70 group-hover:via-black/30 transition-all" />
-              
-              {/* Icon: Center aligned with category color */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <cat.icon className="h-12 w-12 lg:h-16 lg:w-16 drop-shadow-lg" style={{ color: iconColor }} />
-              </div>
-
-              {/* TEXT: Inside image at bottom */}
-              <div className="relative z-10 p-3 text-center w-full">
-                <span className="font-bold text-white text-base lg:text-lg leading-tight block drop-shadow-lg" role="heading" aria-level={3}>
-                  {cat.title}
-                </span>
-                <p className="text-white/90 text-sm mt-1 drop-shadow">{cat.description}</p>
-              </div>
+              <cat.icon className="h-5 w-5 text-white" />
             </div>
+            <span className="font-bold text-sm text-foreground mt-2 text-center" role="heading" aria-level={3}>
+              {cat.title}
+            </span>
           </div>
         );
       })}
