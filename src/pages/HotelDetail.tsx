@@ -2,334 +2,414 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
-import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MapPin, Share2, ArrowLeft, Heart, Copy, Star, Zap, ShieldCheck, Coffee, Wifi, Clock, CalendarDays
+  MapPin, Clock, ArrowLeft, 
+  Heart, Star, Circle, ShieldCheck, Tent, Zap, Calendar, Loader2, Share2, Copy, Navigation
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
+import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
+import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
-
-const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-  CORAL_LIGHT: "#FF9E7A",
-  RED: "#FF0000",
-};
+import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
+import { trackReferralClick, generateReferralLink } from "@/lib/referralUtils";
 
 const HotelDetail = () => {
   const { slug } = useParams();
   const id = slug ? extractIdFromSlug(slug) : null;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { position, requestLocation } = useGeolocation();
   
   const [hotel, setHotel] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [scrolled, setScrolled] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isOpenNow, setIsOpenNow] = useState(false);
+  const [liveRating, setLiveRating] = useState({ avg: 0, count: 0 });
+  const [scrolled, setScrolled] = useState(false); // Track scroll for sticky bar
 
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
+  // Scroll logic for sticky behavior
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 80);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 60);
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const distance = position && hotel?.latitude && hotel?.longitude
+    ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude)
+    : undefined;
+
+  const getStartingPrice = () => {
+    if (!hotel) return 0;
+    const prices: number[] = [];
+    if (hotel.price_per_night) prices.push(Number(hotel.price_per_night));
+    
+    const extractPrices = (arr: any[]) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach((item) => {
+        const p = typeof item === 'object' ? item.price : null;
+        if (p) prices.push(Number(p));
+      });
+    };
+
+    extractPrices(hotel.facilities);
+    extractPrices(hotel.activities);
+    return prices.length > 0 ? Math.min(...prices) : 0;
+  };
+
+  const startingPrice = getStartingPrice();
+
   useEffect(() => {
+    if (id) {
+      fetchHotel();
+      fetchLiveRating();
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const refSlug = urlParams.get("ref");
+    if (refSlug && id) trackReferralClick(refSlug, id, "hotel", "booking");
+    requestLocation();
     window.scrollTo(0, 0);
-    if (id) fetchHotel();
-  }, [id]);
+  }, [id, slug]);
+
+  useEffect(() => {
+    if (!hotel) return;
+    const checkOpenStatus = () => {
+      const now = new Date();
+      const currentDay = now.toLocaleString('en-us', { weekday: 'long' }).toLowerCase();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      
+      const parseTime = (timeStr: string) => {
+        if (!timeStr) return 0;
+        const [time, modifier] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':').map(Number);
+        if (modifier === 'PM' && hours < 12) hours += 12;
+        if (modifier === 'AM' && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+      };
+
+      const openTime = parseTime(hotel.opening_hours || "08:00 AM");
+      const closeTime = parseTime(hotel.closing_hours || "11:00 PM");
+      const days = Array.isArray(hotel.days_opened) 
+        ? hotel.days_opened.map((d: string) => d.toLowerCase()) 
+        : ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      
+      setIsOpenNow(days.includes(currentDay) && currentTime >= openTime && currentTime <= closeTime);
+    };
+    checkOpenStatus();
+    const interval = setInterval(checkOpenStatus, 60000);
+    return () => clearInterval(interval);
+  }, [hotel]);
 
   const fetchHotel = async () => {
     if (!id) return;
     try {
-      const { data, error } = await supabase.from("hotels").select("*").eq("id", id).single();
+      let { data, error } = await supabase
+        .from("hotels")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (error) throw error;
       setHotel(data);
     } catch (error) {
       toast({ title: "Hotel not found", variant: "destructive" });
+      navigate('/');
     } finally { setLoading(false); }
+  };
+
+  const fetchLiveRating = async () => {
+    if (!id) return;
+    const { data } = await supabase.from("reviews").select("rating").eq("item_id", id).eq("item_type", "hotel");
+    if (data && data.length > 0) {
+      const avg = data.reduce((acc, curr) => acc + curr.rating, 0) / data.length;
+      setLiveRating({ avg: parseFloat(avg.toFixed(1)), count: data.length });
+    }
+  };
+
+  const { submitBooking } = useBookingSubmit();
+
+  const handleBookingSubmit = async (data: BookingFormData) => {
+    if (!hotel) return;
+    setIsProcessing(true);
+    try {
+      await submitBooking({
+        itemId: hotel.id, itemName: hotel.name, bookingType: 'hotel', totalAmount: startingPrice, 
+        slotsBooked: data.num_adults + data.num_children, visitDate: data.visit_date,
+        guestName: data.guest_name, guestEmail: data.guest_email, guestPhone: data.guest_phone,
+        hostId: hotel.created_by, bookingDetails: { ...data, hotel_name: hotel.name }
+      });
+      setIsCompleted(true);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally { setIsProcessing(false); }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-muted-foreground">Loading hotel details...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!hotel) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-lg font-bold text-foreground mb-2">Hotel not found</p>
-          <Button onClick={() => navigate(-1)} variant="outline">Go Back</Button>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <Loader2 className="h-10 w-10 animate-spin text-teal-600 mb-4" />
+        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
       </div>
     );
   }
 
-  const allImages = [hotel.image_url, ...(hotel.gallery_images || []), ...(hotel.images || [])].filter(Boolean);
-  const amenitiesList = Array.isArray(hotel.amenities) ? hotel.amenities : hotel.amenities?.split(',').filter(Boolean) || [];
-  const activitiesList = Array.isArray(hotel.activities) ? hotel.activities : [];
-  const workingDays = Array.isArray(hotel.days_opened) ? hotel.days_opened : hotel.days_opened?.split(',').filter(Boolean) || [];
+  if (!hotel) return null;
+
+  const allImages = [hotel.image_url, ...(hotel.gallery_images || [])].filter(Boolean);
+
+  const OperatingHoursInfo = () => (
+    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-slate-400">
+          <Clock className="h-4 w-4 text-teal-600" />
+          <span className="text-[10px] font-black uppercase tracking-tight">Working Hours</span>
+        </div>
+        <span className={`text-[10px] font-black uppercase ${isOpenNow ? "text-emerald-600" : "text-red-500"}`}>
+          {hotel.opening_hours || "08:00 AM"} - {hotel.closing_hours || "11:00 PM"}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-100">
+        <div className="flex items-center gap-2 text-slate-400">
+          <Calendar className="h-4 w-4 text-teal-600" />
+          <span className="text-[10px] font-black uppercase tracking-tight">Working Days</span>
+        </div>
+        <p className="text-[10px] font-normal leading-tight text-slate-500 lowercase italic">
+          {Array.isArray(hotel.days_opened) ? hotel.days_opened.join(", ") : "monday, tuesday, wednesday, thursday, friday, saturday, sunday"}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* Site Header */}
-      <Header showSearchIcon={false} />
-      
-      {/* 1. SCROLL FIXED BAR */}
+      {/* 1. DYNAMIC STICKY ACTION BAR (Replacing Main Header) */}
       <div 
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4 py-3 flex justify-between items-center bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 ${
-          scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
+          scrolled 
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
+            : "bg-transparent"
         }`}
       >
         <div className="flex items-center gap-4">
-          <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 bg-slate-100 text-slate-900 border-none shadow-sm">
+          <Button 
+            onClick={() => navigate(-1)} 
+            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
+              scrolled ? "bg-slate-100 text-slate-900 shadow-sm" : "bg-black/30 text-white backdrop-blur-md"
+            }`}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[200px]">
-            {hotel.name}
-          </h2>
+          
+          {scrolled && (
+            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
+              {hotel.name}
+            </h2>
+          )}
         </div>
+
         <Button 
           onClick={() => id && handleSaveItem(id, "hotel")} 
-          className={`rounded-full w-10 h-10 p-0 border-none shadow-md ${isSaved ? "bg-red-500 text-white" : "bg-slate-100 text-slate-900"}`}
+          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
+            isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
+          }`}
         >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
+          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
         </Button>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto pt-6">
-        
-        {/* 2. IMAGE GALLERY */}
-        <div className="relative w-full h-[45vh] md:h-[60vh] bg-slate-900 overflow-hidden rounded-[32px] shadow-xl mb-8">
-          <div className={`absolute top-4 left-4 right-4 z-50 flex justify-between items-center transition-opacity duration-300 ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
-            <Button onClick={() => navigate(-1)} className="rounded-full w-10 h-10 p-0 border-none bg-black/40 text-white backdrop-blur-md">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Button 
-              onClick={() => id && handleSaveItem(id, "hotel")} 
-              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-md ${isSaved ? "bg-red-500 text-white" : "bg-black/40 text-white"}`}
-            >
-              <Heart className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
-            </Button>
-          </div>
+      {/* 2. HERO SECTION (Starts at the very top) */}
+      <div className="relative w-full h-[45vh] md:h-[65vh] bg-slate-900 overflow-hidden">
+        <Carousel plugins={[Autoplay({ delay: 3500 })]} className="w-full h-full">
+          <CarouselContent className="h-full ml-0">
+            {allImages.map((img, idx) => (
+              <CarouselItem key={idx} className="h-full pl-0 basis-full">
+                <img src={img} alt={hotel.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10" />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
-          <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
-            <CarouselContent className="h-full ml-0">
-              {allImages.map((img, idx) => (
-                <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                  <div className="relative h-full w-full">
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-
-          <div className="absolute bottom-0 left-0 z-40 w-full p-6 pb-8">
-            <div className="max-w-xl bg-gradient-to-r from-black/70 via-black/40 to-transparent rounded-2xl p-5 backdrop-blur-[2px]">
-              <div className="flex gap-2 mb-2">
-                <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full">
-                  <Star className="h-3 w-3 fill-current mr-1" /> Premium Stay
-                </Badge>
-              </div>
-              <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white leading-tight mb-1">
-                {hotel.name}
-              </h1>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-white/80" />
-                <span className="text-xs font-bold text-white/90 uppercase tracking-wide">
-                   {[hotel.location, hotel.place, hotel.country].filter(Boolean).join(', ')}
-                </span>
-              </div>
+        <div className="absolute bottom-6 left-0 w-full px-4 z-20">
+          <div className="bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
+            <div className="flex flex-wrap gap-2 mb-2">
+                 <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
+                   <Star className="h-3 w-3 fill-current" />
+                   {liveRating.avg > 0 ? liveRating.avg : "New"}
+                 </Badge>
+                 <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}>
+                   <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
+                   {isOpenNow ? "open" : "closed"}
+                 </Badge>
+            </div>
+            <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2">{hotel.name}</h1>
+            <div className="flex items-center gap-1 text-white">
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="text-xs font-bold uppercase truncate">
+                {[hotel.place, hotel.location, hotel.country].filter(Boolean).join(', ')}
+              </span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* 3. CONTENT GRID */}
-        <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
-          <div className="flex flex-col gap-6">
-            {/* Description */}
-            <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4 text-[#008080]">Description</h2>
-              <p className="text-slate-500 text-sm leading-relaxed lowercase">
-                {hotel.description || "no description available."}
-              </p>
+      <main className="container px-4 -mt-4 relative z-30 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.8fr,1fr] gap-4">
+          <div className="space-y-4">
+            <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+              <h2 className="text-[11px] font-black uppercase tracking-widest mb-3 text-slate-400">Description</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">{hotel.description}</p>
             </section>
 
-            {/* MOBILE ONLY PRICE CARD - Positioned below description */}
-            <div className="lg:hidden">
-              <PriceCard hotel={hotel} navigate={navigate} workingDays={workingDays} />
+            {/* Mobile Booking Card */}
+            <div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100 lg:hidden">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Starting Price</p>
+                  <span className="text-4xl font-black text-red-600">KSh {startingPrice.toLocaleString()}</span>
+                </div>
+                <div className="text-right">
+                    <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span>{liveRating.avg || "0"}</span>
+                    </div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
+                </div>
+              </div>
+              <OperatingHoursInfo />
+              <Button onClick={() => navigate(`/booking/hotel/${hotel.id}`)} className="w-full mt-6 py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-lg transition-all active:scale-95">Book Now</Button>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <UtilityButton 
+                   icon={<Navigation className="h-5 w-5" />} 
+                   label="Map" 
+                   onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(`${hotel.name}, ${hotel.location}`)}`, "_blank")} 
+                />
+                <UtilityButton 
+                   icon={<Copy className="h-5 w-5" />} 
+                   label="Copy" 
+                   onClick={async () => {
+                     const refLink = await generateReferralLink(id!, "hotel", id!);
+                     await navigator.clipboard.writeText(refLink);
+                     toast({ title: "Link Copied!" });
+                   }} 
+                />
+                <UtilityButton 
+                   icon={<Share2 className="h-5 w-5" />} 
+                   label="Share" 
+                   onClick={() => navigator.share && navigator.share({ title: hotel.name, url: window.location.href })} 
+                />
+              </div>
             </div>
 
-            {/* Operating Hours & Days Section */}
-            {(hotel.opening_hours || hotel.closing_hours || workingDays.length > 0) && (
-              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <Clock className="h-5 w-5 text-[#008080]" />
-                  <h2 className="text-xl font-black uppercase tracking-tight text-[#008080]">Operating Hours</h2>
-                </div>
-                <div className="space-y-4">
-                  {(hotel.opening_hours || hotel.closing_hours) && (
-                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] font-black uppercase text-slate-400">Working Hours</span>
-                      <span className="text-sm font-black text-slate-700">
-                        {hotel.opening_hours || "08:00"} — {hotel.closing_hours || "22:00"}
-                      </span>
-                    </div>
-                  )}
-                  {workingDays.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {workingDays.map((day: string, i: number) => (
-                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">
-                          {day.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* Activities Section */}
-            {activitiesList.length > 0 && (
-              <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <Zap className="h-5 w-5 text-[#FF9800]" />
-                  <h2 className="text-xl font-black uppercase tracking-tight text-[#FF9800]">Activities</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {activitiesList.map((activity: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-orange-50/50 border border-orange-100">
-                      <span className="text-[11px] font-medium text-slate-700 lowercase">{activity.name || activity}</span>
-                      {activity.price !== undefined && (
-                        <Badge className="bg-white text-[#FF9800] text-[10px] font-black border border-orange-100">
-                          {activity.price > 0 ? `KSH ${activity.price}` : "FREE"}
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Amenities Section - Ensures all items are visible */}
-            <section className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-3 mb-6">
+            <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck className="h-5 w-5 text-red-600" />
-                <h2 className="text-xl font-black uppercase tracking-tight text-red-600">Amenities & Facilities</h2>
+                <h2 className="text-sm font-black uppercase tracking-widest text-red-600">Amenities</h2>
               </div>
-              {amenitiesList.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {amenitiesList.map((item: string, i: number) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-red-50/50 border border-red-100">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      <span className="text-[11px] font-medium text-red-700 lowercase">{item.trim()}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {hotel.amenities?.map((amenity: string, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 p-3 bg-red-50/50 rounded-xl border border-red-100">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    <span className="text-[10px] font-black uppercase text-red-700 truncate">{amenity}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {hotel.facilities?.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Tent className="h-5 w-5 text-[#008080]" />
+                  <h2 className="text-sm font-black uppercase tracking-widest text-[#008080]">Facilities & Pricing</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {hotel.facilities.map((f: any, i: number) => (
+                    <div key={i} className="p-3 rounded-xl bg-teal-50/50 border border-teal-100 flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase text-[#008080]">{f.name || f}</span>
+                      {f.price && <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-lg">KSh {f.price.toLocaleString()}</span>}
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-slate-400 text-sm italic">none</p>}
-            </section>
+              </section>
+            )}
 
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <ReviewSection itemId={hotel.id} itemType="hotel" />
-            </div>
+            {hotel.activities?.length > 0 && (
+              <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="h-5 w-5 text-orange-500" />
+                  <h2 className="text-sm font-black uppercase tracking-widest text-orange-500">Activities</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {hotel.activities.map((act: any, i: number) => (
+                    <Badge key={i} className="bg-orange-50 text-orange-600 border-orange-100 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase flex items-center gap-2">
+                      {act.name || act}
+                      {act.price && <span className="text-orange-400">| KSh {act.price.toLocaleString()}</span>}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
-          {/* Sticky Sidebar for Desktop */}
-          <div className="hidden lg:block lg:sticky lg:top-24 h-fit">
-            <PriceCard hotel={hotel} navigate={navigate} workingDays={workingDays} />
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24 bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100 space-y-6">
+                <div className="text-center">
+                  <p className="text-xs font-black uppercase text-slate-400 mb-1">Starting from</p>
+                  <h3 className="text-5xl font-black text-red-600 mb-2">KSh {startingPrice.toLocaleString()}</h3>
+                  <div className="flex items-center justify-center gap-1.5 text-amber-500 font-black">
+                    <Star className="h-4 w-4 fill-current" />
+                    <span className="text-lg">{liveRating.avg || "0"}</span>
+                  </div>
+                </div>
+                <OperatingHoursInfo />
+                <Button onClick={() => setBookingOpen(true)} className="w-full py-8 rounded-3xl text-lg font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-xl hover:scale-[1.02] transition-transform active:scale-95">Reserve Now</Button>
+                <div className="grid grid-cols-3 gap-3">
+                  <UtilityButton icon={<Navigation className="h-5 w-5" />} label="Map" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(`${hotel.name}, ${hotel.location}`)}`, "_blank")} />
+                  <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={async () => { const link = await generateReferralLink(id!, "hotel", id!); await navigator.clipboard.writeText(link); toast({title: "Copied!"}); }} />
+                  <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={() => navigator.share && navigator.share({title: hotel.name, url: window.location.href})} />
+                </div>
+            </div>
           </div>
         </div>
 
-        <div className="mt-16">
+        <div className="mt-8"><ReviewSection itemId={hotel.id} itemType="hotel" /></div>
+        <div className="mt-12">
+          <h2 className="text-xl font-black uppercase tracking-tighter mb-6">Explore Similar Stays</h2>
           <SimilarItems currentItemId={hotel.id} itemType="hotel" country={hotel.country} />
         </div>
       </main>
+
+      <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[95vh] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
+          <MultiStepBooking 
+            onSubmit={handleBookingSubmit} itemName={hotel.name} itemId={hotel.id} bookingType="hotel"
+            priceAdult={startingPrice} isProcessing={isProcessing} isCompleted={isCompleted} 
+            hostId={hotel.created_by} facilities={hotel.facilities || []} activities={hotel.activities || []}
+            onPaymentSuccess={() => setIsCompleted(true)} primaryColor="#008080" accentColor="#FF7F50"
+          />
+        </DialogContent>
+      </Dialog>
       <MobileBottomBar />
     </div>
   );
 };
 
-const PriceCard = ({ hotel, navigate, workingDays }: any) => {
-  return (
-    <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100">
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Price Per Night</p>
-          <span className="text-4xl font-black text-red-600">KSh {hotel.available_rooms || "N/A"}</span>
-        </div>
-        <div className="text-right">
-          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Avg Rating</span>
-          <div className="flex items-center justify-end gap-1 text-amber-500 font-black">
-            <Star className="h-4 w-4 fill-current" /> 4.8
-          </div>
-        </div>
-      </div>
-
-      {/* OPERATING HOURS & DAYS */}
-      <div className="space-y-4 mb-8">
-        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <Clock className="h-5 w-5 text-[#008080]" />
-            <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Check-in / Check-out</p>
-                <p className="text-xs font-bold text-slate-700">
-                    {hotel.opening_hours || "11:00 AM"} — {hotel.closing_hours || "10:00 AM"}
-                </p>
-            </div>
-        </div>
-
-        {workingDays.length > 0 && (
-          <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <CalendarDays className="h-5 w-5 text-red-500" />
-              <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Available Days</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                      {workingDays.map((day: string, idx: number) => (
-                          <span key={idx} className="text-[9px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded uppercase">
-                              {day.trim().substring(0, 3)}
-                          </span>
-                      ))}
-                  </div>
-              </div>
-          </div>
-        )}
-      </div>
-      
-      <Button 
-        onClick={() => navigate(`/booking/hotel/${hotel.id}`)}
-        className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-widest text-white shadow-xl border-none transition-all active:scale-95 mb-6"
-        style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-      >
-        Reserve Room
-      </Button>
-
-      <div className="grid grid-cols-3 gap-3">
-        <UtilityBtn icon={<MapPin className="h-5 w-5" />} label="Map" />
-        <UtilityBtn icon={<Copy className="h-5 w-5" />} label="Copy" />
-        <UtilityBtn icon={<Share2 className="h-5 w-5" />} label="Share" />
-      </div>
-    </div>
-  );
-};
-
-const UtilityBtn = ({ icon, label }: any) => (
-  <Button variant="ghost" className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl border border-slate-100 flex-1 hover:bg-slate-100 transition-colors">
+const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
+  <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-slate-50 text-slate-500 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
     <div className="mb-1">{icon}</div>
     <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
   </Button>
