@@ -4,30 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star, Zap, Calendar, Users } from "lucide-react";
+import { MapPin, Phone, Share2, Mail, Clock, ArrowLeft, Heart, Copy, Star, Zap, Calendar, Users, Info, ShieldCheck } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { ReviewSection } from "@/components/ReviewSection";
 import { useSavedItems } from "@/hooks/useSavedItems";
 import { useAuth } from "@/contexts/AuthContext";
-import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
 import { generateReferralLink, trackReferralClick } from "@/lib/referralUtils";
 import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 
+// Refined Color Palette for better Accessibility
 const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-  CORAL_LIGHT: "#FF9E7A",
-  KHAKI: "#F0E68C",
-  KHAKI_DARK: "#857F3E",
-  RED: "#FF0000",
-  ORANGE: "#FF9800",
-  SOFT_GRAY: "#F8F9FA"
+  PRIMARY: "#006666", // Slightly darker Teal for WCAG contrast
+  ACCENT: "#FF6B35",  // More vibrant Coral
+  SOFT_BG: "#F1F5F9",
+  GLASS: "rgba(255, 255, 255, 0.85)",
 };
 
 const TripDetail = () => {
@@ -35,23 +30,15 @@ const TripDetail = () => {
   const id = slug ? extractIdFromSlug(slug) : null;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
-  
   const [trip, setTrip] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
-  // Change 1 & 2: Scroll listener for Sticky Header
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -59,9 +46,6 @@ const TripDetail = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     if (id) fetchTrip();
-    const urlParams = new URLSearchParams(window.location.search);
-    const refSlug = urlParams.get("ref");
-    if (refSlug && id) trackReferralClick(refSlug, id, "trip", "booking");
   }, [id]);
 
   const fetchTrip = async () => {
@@ -69,7 +53,7 @@ const TripDetail = () => {
     try {
       const { data, error } = await supabase
         .from("trips")
-        .select("id,name,location,place,country,image_url,gallery_images,images,date,is_custom_date,price,price_child,available_tickets,description,activities,phone_number,email,created_by,opening_hours,closing_hours,days_opened")
+        .select("*")
         .eq("id", id)
         .single();
       if (error) throw error;
@@ -79,282 +63,228 @@ const TripDetail = () => {
     } finally { setLoading(false); }
   };
 
-  const handleSave = () => id && handleSaveItem(id, "trip");
-  
-  const handleCopyLink = async () => {
-    const refLink = await generateReferralLink(trip.id, "trip", trip.id);
-    await navigator.clipboard.writeText(refLink);
-    toast({ title: "Link Copied!" });
-  };
-
-  const handleShare = async () => {
-    const refLink = await generateReferralLink(trip.id, "trip", trip.id);
-    if (navigator.share) {
-      try { await navigator.share({ title: trip.name, url: refLink }); } catch (e) {}
-    } else { handleCopyLink(); }
-  };
-
-  const openInMaps = () => {
-    const query = encodeURIComponent(`${trip?.name}, ${trip?.location}`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
-  };
-
-  const { submitBooking } = useBookingSubmit();
-
-  const handleBookingSubmit = async (data: BookingFormData) => {
-    if (!trip) return;
-    setIsProcessing(true);
-    try {
-      const totalAmount = (data.num_adults * trip.price) + (data.num_children * (trip.price_child || 0));
-      await submitBooking({
-        itemId: trip.id, itemName: trip.name, bookingType: 'trip', totalAmount,
-        slotsBooked: data.num_adults + data.num_children, visitDate: data.visit_date,
-        guestName: data.guest_name, guestEmail: data.guest_email, guestPhone: data.guest_phone,
-        hostId: trip.created_by, bookingDetails: { ...data, trip_name: trip.name }
-      });
-      setIsCompleted(true);
-      setBookingOpen(false);
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally { setIsProcessing(false); }
-  };
-
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, trip?.available_tickets || 0);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading...</p>
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 border-4 border-slate-200 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-[#008080] border-t-transparent rounded-full animate-spin"></div>
       </div>
-    );
-  }
+    </div>
+  );
+
   if (!trip) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tripDate = trip.date ? new Date(trip.date) : null;
-  const isExpired = !trip.is_custom_date && tripDate && tripDate < today;
-  const canBook = !isExpired && !isSoldOut;
   const allImages = [trip.image_url, ...(trip.gallery_images || []), ...(trip.images || [])].filter(Boolean);
 
   const BookingCard = () => (
-    <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ticket Price</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black" style={{ color: COLORS.RED }}>KSh {trip.price}</span>
-            <span className="text-slate-400 text-[10px] font-bold uppercase">/ adult</span>
+    <div className="bg-white rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 lg:sticky lg:top-28">
+      <div className="flex items-center gap-2 mb-6">
+        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-1 rounded-full">
+          <ShieldCheck className="w-3 h-3 mr-1" /> Verified Organizer
+        </Badge>
+      </div>
+
+      <div className="space-y-1 mb-6">
+        <p className="text-sm font-medium text-slate-500">Starting from</p>
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-black text-slate-900">KSh {trip.price}</span>
+          <span className="text-slate-400 font-semibold">/person</span>
+        </div>
+      </div>
+
+      <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-bold text-slate-600 flex items-center gap-2">
+            <Calendar className="w-4 h-4" /> Date
+          </span>
+          <span className="text-sm font-black text-slate-900">
+             {trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString()}
+          </span>
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span>Availability</span>
+            <span className={remainingSlots < 5 ? "text-red-500" : "text-emerald-600"}>
+              {isSoldOut ? "Sold Out" : `${remainingSlots} spots left`}
+            </span>
           </div>
-        </div>
-        <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex items-center gap-2">
-          <Clock className="h-4 w-4" style={{ color: COLORS.TEAL }} />
-          <span className={`text-xs font-black uppercase ${isSoldOut ? "text-red-500" : "text-slate-600"}`}>
-            {isSoldOut ? "Full" : `${remainingSlots} Left`}
-          </span>
-        </div>
-      </div>
-
-      <div className="mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-            <Users className="h-3 w-3" /> Booking Availability
-          </span>
-          <span className={`text-[10px] font-black uppercase ${remainingSlots < 5 ? 'text-red-500' : 'text-emerald-600'}`}>
-            {isSoldOut ? "Sold Out" : `${remainingSlots} Tickets Remaining`}
-          </span>
-        </div>
-        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-           <div 
-            className={`h-full transition-all duration-500 ${remainingSlots < 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
-            style={{ width: `${Math.min((remainingSlots / (trip.available_tickets || 50)) * 100, 100)}%` }}
-           />
-        </div>
-      </div>
-
-      <div className="space-y-4 mb-8">
-        <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-          <span className="text-slate-400 flex items-center gap-1"><Calendar className="h-3 w-3" /> Trip Date</span>
-          <span className={isExpired ? "text-red-500" : "text-slate-700"}>
-            {trip.is_custom_date ? "Flexible" : new Date(trip.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-            {isExpired && " (Past)"}
-          </span>
-        </div>
-        <div className="flex justify-between text-xs font-bold uppercase tracking-tight">
-           <span className="text-slate-400">Child Rate</span>
-           <span className="text-slate-700">KSh {trip.price_child || 'N/A'}</span>
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div 
+              className={`h-full transition-all duration-700 ${remainingSlots < 5 ? 'bg-red-500' : 'bg-teal-600'}`}
+              style={{ width: `${(remainingSlots / (trip.available_tickets || 20)) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
       <Button 
         onClick={() => navigate(`/booking/trip/${trip.id}`)}
-        disabled={!canBook}
-        className="w-full py-8 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none mb-6"
-        style={{ 
-            background: !canBook 
-                ? "#cbd5e1" 
-                : `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
-        }}
+        disabled={isSoldOut}
+        className="w-full h-16 rounded-2xl text-lg font-bold shadow-lg shadow-orange-200 hover:shadow-orange-300 transition-all hover:-translate-y-0.5 active:translate-y-0"
+        style={{ background: `linear-gradient(135deg, ${COLORS.ACCENT}, #FF8C42)` }}
       >
-        {isSoldOut ? "Fully Booked" : isExpired ? "Trip Expired" : "Secure My Spot"}
+        {isSoldOut ? "Join Waitlist" : "Reserve Your Spot"}
       </Button>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        <UtilityButton icon={<MapPin className="h-5 w-5" />} label="Map" onClick={openInMaps} />
-        <UtilityButton icon={<Copy className="h-5 w-5" />} label="Copy" onClick={handleCopyLink} />
-        <UtilityButton icon={<Share2 className="h-5 w-5" />} label="Share" onClick={handleShare} />
-      </div>
-
-      <div className="space-y-4 pt-6 border-t border-slate-50">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organizer Contact</h3>
-        {trip.phone_number && (
-          <a href={`tel:${trip.phone_number}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
-            <div className="p-2 rounded-lg bg-slate-50">
-              <Phone className="h-4 w-4 text-[#008080]" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-tight">{trip.phone_number}</span>
-          </a>
-        )}
-      </div>
+      <p className="text-center text-xs text-slate-400 mt-4 font-medium">No hidden fees • Instant Confirmation</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* 1. Header Removed as requested */}
-
-      {/* 2. STICKY TOP ACTION BAR */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-3 flex justify-between items-center ${
-          scrolled 
-            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100" 
-            : "bg-transparent"
-        }`}
-      >
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-50/50 pb-20">
+      {/* Dynamic Navigation Bar */}
+      <nav className={`fixed top-0 inset-x-0 z-[100] transition-all duration-500 px-4 py-4 ${
+        scrolled ? "bg-white/80 backdrop-blur-xl shadow-md" : "bg-transparent"
+      }`}>
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Button 
-            onClick={() => navigate(-1)} 
-            className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none ${
-              scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
-            }`}
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className={`rounded-full w-12 h-12 p-0 ${scrolled ? "bg-slate-100" : "bg-white/20 backdrop-blur-md text-white hover:bg-white/40"}`}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-6 w-6" />
           </Button>
-          
+
           {scrolled && (
-            <h2 className="text-sm font-black uppercase tracking-tighter text-slate-900 truncate max-w-[180px] md:max-w-md animate-in fade-in slide-in-from-left-2">
+            <h2 className="text-sm font-bold text-slate-800 animate-in fade-in slide-in-from-top-2">
               {trip.name}
             </h2>
           )}
+
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost"
+              onClick={() => handleSaveItem(trip.id, 'trip')}
+              className={`rounded-full w-12 h-12 p-0 transition-transform active:scale-90 ${
+                isSaved ? "bg-red-50 text-red-500" : scrolled ? "bg-slate-100" : "bg-white/20 backdrop-blur-md text-white"
+              }`}
+            >
+              <Heart className={`h-6 w-6 ${isSaved ? "fill-current" : ""}`} />
+            </Button>
+          </div>
         </div>
+      </nav>
 
-        <Button 
-          onClick={handleSave} 
-          className={`rounded-full transition-all duration-300 w-10 h-10 p-0 border-none shadow-lg ${
-            isSaved ? "bg-red-500" : scrolled ? "bg-slate-100 text-slate-900" : "bg-black/30 text-white backdrop-blur-md"
-          }`}
-        >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : scrolled ? "text-slate-900" : "text-white"}`} />
-        </Button>
-      </div>
-
-      {/* 3. HERO SECTION - Now starts from the absolute top of the viewport */}
-      <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900">
-        <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full p-0">
-          <CarouselContent className="h-full ml-0">
+      {/* Hero Section */}
+      <section className="relative h-[60vh] md:h-[75vh] w-full overflow-hidden">
+        <Carousel plugins={[Autoplay({ delay: 5000 })]} className="w-full h-full">
+          <CarouselContent className="h-[75vh] ml-0">
             {allImages.map((img, idx) => (
-              <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                <div className="relative h-full w-full">
-                  <img src={img} alt={trip.name} className="w-full h-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10" />
-                </div>
+              <CarouselItem key={idx} className="pl-0 basis-full h-full">
+                <img src={img} alt="" className="w-full h-full object-cover" />
               </CarouselItem>
             ))}
           </CarouselContent>
         </Carousel>
-
-        <div className="absolute bottom-6 left-0 z-40 w-full px-4 md:px-8 pointer-events-none">
-          <div className="relative z-10 space-y-2 pointer-events-auto bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
-            <Button className="bg-[#FF7F50] border-none px-3 py-1 h-auto uppercase font-black tracking-[0.1em] text-[9px] rounded-full shadow-lg text-white">Scheduled Trip</Button>
-            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">{trip.name}</h1>
-            <div className="flex items-center gap-2 group w-fit cursor-pointer" onClick={openInMaps}>
-              <MapPin className="h-4 w-4 text-white" />
-              <span className="text-xs font-bold text-white uppercase tracking-wide">
-                {[trip.place, trip.location, trip.country].filter(Boolean).join(', ')}
-              </span>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+        
+        {/* Floating Info Glass Card */}
+        <div className="absolute bottom-12 left-0 w-full px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="inline-block px-4 py-6 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-white max-w-2xl">
+              <Badge className="mb-4 bg-teal-500/20 text-teal-200 border-teal-500/30 backdrop-blur-sm">
+                Adventure • {trip.location}
+              </Badge>
+              <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight leading-tight">
+                {trip.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-4 text-sm font-medium opacity-90">
+                <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-full">
+                  <MapPin className="w-4 h-4 text-teal-400" /> {trip.place}
+                </span>
+                <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-full">
+                  <Star className="w-4 h-4 text-orange-400 fill-orange-400" /> 4.9 (120 Reviews)
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <main className="container px-4 max-w-6xl mx-auto -mt-10 relative z-50">
-        <div className="flex flex-col lg:grid lg:grid-cols-[1.7fr,1fr] gap-6">
-          <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Overview</h2>
-              <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{trip.description}</p>
-            </div>
-
-            {trip.is_custom_date && (trip.opening_hours || trip.days_opened?.length > 0) && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-xl bg-teal-50"><Clock className="h-5 w-5 text-[#008080]" /></div>
-                  <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Operating Hours</h2>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 -mt-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Details */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Bento Box: Overview */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-teal-50 rounded-2xl">
+                  <Info className="w-6 h-6 text-teal-600" />
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Working Hours</span>
-                    <span className="text-sm font-black text-slate-700">{trip.opening_hours || "08:00"} - {trip.closing_hours || "18:00"}</span>
-                  </div>
-                  {trip.days_opened?.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {trip.days_opened.map((day: string, i: number) => (
-                        <span key={i} className="px-4 py-2 rounded-xl bg-teal-50 text-[10px] font-black uppercase text-[#008080] border border-teal-100">{day}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <h2 className="text-2xl font-bold text-slate-800">Experience Highlights</h2>
               </div>
-            )}
-
-            <div className="block lg:hidden">
-              <BookingCard />
+              <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-line">
+                {trip.description}
+              </p>
             </div>
 
+            {/* Bento Box: Activities */}
             {trip.activities?.length > 0 && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 rounded-xl bg-orange-50"><Zap className="h-5 w-5 text-[#FF9800]" /></div>
-                  <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.ORANGE }}>Included Activities</h2>
-                </div>
-                <div className="flex flex-wrap gap-3">
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+                <h3 className="text-xl font-bold text-slate-800 mb-6">What's Included</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {trip.activities.map((act: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-orange-50/50 border border-orange-100/50">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF9800]" />
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-black text-slate-700 uppercase">{act.name}</span>
-                        <span className="text-[10px] font-bold text-[#FF9800]">{act.price === 0 ? "Included" : `KSh ${act.price}`}</span>
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-200 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                          <Zap className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <span className="font-bold text-slate-700">{act.name}</span>
                       </div>
+                      <Badge variant="outline" className="border-teal-200 text-teal-700">
+                        {act.price === 0 ? "Free" : `+KSh ${act.price}`}
+                      </Badge>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
+            {/* Mobile Booking Card Visibility */}
+            <div className="lg:hidden">
+              <BookingCard />
+            </div>
+
+            {/* Reviews */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
               <ReviewSection itemId={trip.id} itemType="trip" />
             </div>
           </div>
 
+          {/* Right Column: Desktop Booking Card */}
           <div className="hidden lg:block">
             <BookingCard />
+            
+            {/* Quick Actions Card */}
+            <div className="mt-6 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+               <h4 className="text-sm font-bold text-slate-800 mb-4 px-2">Quick Actions</h4>
+               <div className="grid grid-cols-2 gap-3">
+                  <UtilityButton icon={<Share2 />} label="Share" onClick={() => {}} />
+                  <UtilityButton icon={<Copy />} label="Copy Link" onClick={() => {}} />
+                  <UtilityButton icon={<Phone />} label="Contact" onClick={() => {}} />
+                  <UtilityButton icon={<MapPin />} label="Directions" onClick={() => {}} />
+               </div>
+            </div>
           </div>
+
         </div>
 
-        <div className="mt-12 lg:mt-16">
+        {/* Similar Trips */}
+        <section className="mt-20">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">More Adventures</h2>
+              <p className="text-slate-500">Hand-picked experiences similar to this one</p>
+            </div>
+            <Button variant="link" className="text-teal-600 font-bold">View All</Button>
+          </div>
           <SimilarItems currentItemId={trip.id} itemType="trip" country={trip.country} />
-        </div>
+        </section>
       </main>
 
       <MobileBottomBar />
@@ -363,10 +293,15 @@ const TripDetail = () => {
 };
 
 const UtilityButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
-  <Button variant="ghost" onClick={onClick} className="flex-col h-auto py-3 bg-[#F8F9FA] text-slate-500 rounded-2xl hover:bg-slate-100 transition-colors border border-slate-100 flex-1">
-    <div className="mb-1">{icon}</div>
-    <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
-  </Button>
+  <button 
+    onClick={onClick}
+    className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-slate-50 hover:bg-teal-50 hover:text-teal-700 transition-all border border-transparent hover:border-teal-100 group"
+  >
+    <div className="text-slate-400 group-hover:text-teal-600 transition-colors">
+      {icon}
+    </div>
+    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+  </button>
 );
 
 export default TripDetail;
