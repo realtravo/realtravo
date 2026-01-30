@@ -30,14 +30,15 @@ const COLORS = {
   SOFT_GRAY: "#F8F9FA"
 };
 
+
+
 const CreateAdventure = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
-
+  
   const [formData, setFormData] = useState({
     registrationName: "",
     registrationNumber: "",
@@ -50,12 +51,14 @@ const CreateAdventure = () => {
     openingHours: "",
     closingHours: "",
     entranceFeeType: "free",
-    adultPrice: "",
-    childPrice: "",
+    adultPrice: "0",
+    childPrice: "0",
     latitude: null as number | null,
     longitude: null as number | null
   });
 
+  const [creatorProfile, setCreatorProfile] = useState({ name: "", email: "", phone: "" });
+  
   const [workingDays, setWorkingDays] = useState({
     Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false, Sun: false
   });
@@ -65,110 +68,136 @@ const CreateAdventure = () => {
   const [activities, setActivities] = useState<DynamicItem[]>([]);
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
 
-  const errorClass = (field: string) => 
-    errors[field] ? "border-red-500 bg-red-50 ring-2 ring-red-500" : "border-slate-100 bg-slate-50/50";
-
-  const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, boolean> = {};
-
-    if (step === 1) {
-      if (!formData.registrationName.trim()) newErrors.registrationName = true;
-      if (!formData.registrationNumber.trim()) newErrors.registrationNumber = true;
-      if (!formData.country) newErrors.country = true;
-    }
-
-    if (step === 2) {
-      if (!formData.locationName.trim()) newErrors.locationName = true;
-      if (!formData.place.trim()) newErrors.place = true;
-      if (!formData.latitude) newErrors.gps = true;
-    }
-
-    if (step === 3) {
-      if (!formData.email.trim()) newErrors.email = true;
-      if (!formData.phoneNumber.trim()) newErrors.phoneNumber = true;
-      if (!formData.description.trim()) newErrors.description = true;
-    }
-
-    if (step === 4) {
-      if (!formData.openingHours) newErrors.openingHours = true;
-      if (!formData.closingHours) newErrors.closingHours = true;
-      if (!Object.values(workingDays).some(v => v)) newErrors.workingDays = true;
-      
-      if (formData.entranceFeeType === "paid") {
-        if (!formData.adultPrice || parseFloat(formData.adultPrice) < 0) newErrors.adultPrice = true;
-        if (!formData.childPrice || parseFloat(formData.childPrice) < 0) newErrors.childPrice = true;
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('country, name, email, phone_number').eq('id', user.id).single();
+        if (profile?.country) setFormData(prev => ({ ...prev, country: profile.country }));
+        if (profile) {
+          setCreatorProfile({
+            name: profile.name || "",
+            email: profile.email || user.email || "",
+            phone: profile.phone_number || ""
+          });
+        }
       }
-    }
-
-    if (step === 5) {
-      // Logic: Facilities and Amenities are optional to START, 
-      // but IF a Facility is named, Capacity is MANDATORY.
-      const hasIncompleteFacility = facilities.some(f => 
-        f.name.trim() !== "" && (!f.capacity || parseInt(f.capacity) <= 0)
-      );
-      
-      if (hasIncompleteFacility) {
-        newErrors.facilities = true;
-        toast({ 
-          title: "Capacity Required", 
-          description: "Please enter a valid capacity for all named facilities.", 
-          variant: "destructive" 
-        });
-      }
-    }
-
-    if (step === 6) {
-      if (galleryImages.length === 0) newErrors.gallery = true;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setErrors({});
-      setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
-    } else {
-      toast({ 
-        title: "Incomplete Details", 
-        description: "Please fill all required fields highlighted in red.", 
-        variant: "destructive" 
-      });
-    }
-  };
+    };
+    fetchUserProfile();
+  }, [user]);
 
   const getCurrentLocation = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setFormData(prev => ({ 
-            ...prev, 
-            latitude: position.coords.latitude, 
-            longitude: position.coords.longitude 
-          }));
-          setErrors(prev => ({ ...prev, gps: false }));
-          toast({ title: "Location captured successfully" });
+          const { latitude, longitude } = position.coords;
+          setFormData(prev => ({ ...prev, latitude, longitude }));
+          toast({ title: "Coordinates captured", description: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` });
         },
-        () => toast({ title: "Error", description: "Could not capture GPS", variant: "destructive" })
+        () => toast({ title: "Location Error", variant: "destructive" })
       );
     }
   };
 
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files).slice(0, 5 - galleryImages.length);
+    try {
+      const compressed = await compressImages(newFiles);
+      setGalleryImages(prev => [...prev, ...compressed.map(c => c.file)].slice(0, 5));
+    } catch (error) {
+      console.error("Error compressing images:", error);
+      setGalleryImages(prev => [...prev, ...newFiles].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index: number) => setGalleryImages(prev => prev.filter((_, i) => i !== index));
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        if (!formData.registrationName.trim()) {
+          toast({ title: "Required", description: "Registration name is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.registrationNumber.trim()) {
+          toast({ title: "Required", description: "Registration number is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.country) {
+          toast({ title: "Required", description: "Country is required", variant: "destructive" });
+          return false;
+        }
+        return true;
+      case 2:
+        if (!formData.locationName.trim()) {
+          toast({ title: "Required", description: "Location name is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.place.trim()) {
+          toast({ title: "Required", description: "Place/City is required", variant: "destructive" });
+          return false;
+        }
+        if (!formData.latitude) {
+          toast({ title: "Required", description: "GPS coordinates are required", variant: "destructive" });
+          return false;
+        }
+        return true;
+      case 3:
+        if (!formData.description.trim()) {
+          toast({ title: "Required", description: "Description is required", variant: "destructive" });
+          return false;
+        }
+        return true;
+      case 4:
+        return true; // Operating hours optional
+      case 5:
+        return true; // Amenities/facilities/activities optional
+      case 6:
+        if (galleryImages.length === 0) {
+          toast({ title: "Required", description: "At least one photo is required", variant: "destructive" });
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+    }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const formatItemsForDB = (items: DynamicItem[]) => {
+    return items.map(item => ({
+      name: item.name,
+      price: item.priceType === "paid" ? parseFloat(item.price) || 0 : 0,
+      is_free: item.priceType === "free",
+      capacity: item.capacity ? parseInt(item.capacity) : null
+    }));
+  };
+
   const handleSubmit = async () => {
-    if (!user) return navigate("/auth");
+    if (!user) { navigate("/auth"); return; }
     if (!validateStep(currentStep)) return;
 
     setLoading(true);
     try {
       const uploadedUrls: string[] = [];
       for (const file of galleryImages) {
-        const fileName = `${user.id}/${Date.now()}-${file.name}`;
+        const fileName = `${user.id}/${Math.random()}.${file.name.split('.').pop()}`;
         const { error: uploadError } = await supabase.storage.from('listing-images').upload(fileName, file);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('listing-images').getPublicUrl(fileName);
         uploadedUrls.push(publicUrl);
       }
+
+      const selectedDays = Object.entries(workingDays).filter(([_, s]) => s).map(([d]) => d);
 
       const { error } = await supabase.from("adventure_places").insert([{
         name: formData.registrationName,
@@ -178,72 +207,104 @@ const CreateAdventure = () => {
         country: formData.country,
         description: formData.description,
         email: formData.email,
-        phone_numbers: [formData.phoneNumber],
+        phone_numbers: formData.phoneNumber ? [formData.phoneNumber] : [],
+        map_link: formData.latitude ? `https://www.google.com/maps?q=${formData.latitude},${formData.longitude}` : "",
         latitude: formData.latitude,
         longitude: formData.longitude,
         opening_hours: formData.openingHours,
         closing_hours: formData.closingHours,
-        days_opened: Object.entries(workingDays).filter(([_, s]) => s).map(([d]) => d),
+        days_opened: selectedDays,
         image_url: uploadedUrls[0],
         gallery_images: uploadedUrls,
         entry_fee_type: formData.entranceFeeType,
-        entry_fee: parseFloat(formData.adultPrice || "0"),
-        child_entry_fee: parseFloat(formData.childPrice || "0"),
+        entry_fee: formData.entranceFeeType === "paid" ? parseFloat(formData.adultPrice) : 0,
+        child_entry_fee: formData.entranceFeeType === "paid" ? parseFloat(formData.childPrice) : 0,
         amenities: amenities.map(a => a.name),
-        facilities: facilities.map(f => ({ name: f.name, capacity: parseInt(f.capacity || "0") })),
-        activities: activities.map(a => ({ name: a.name })),
+        facilities: formatItemsForDB(facilities),
+        activities: formatItemsForDB(activities),
         created_by: user.id,
         approval_status: "pending"
       }]);
 
       if (error) throw error;
-      toast({ title: "Submitted!", description: "Your adventure is under review." });
+      toast({ title: "Experience Submitted", description: "Pending admin review." });
       navigate("/become-host");
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
+  const StepIndicator = () => (
+    <div className="flex items-center gap-2 mb-8">
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+        <div key={step} className="h-2 flex-1 rounded-full transition-all duration-300"
+          style={{ backgroundColor: step <= currentStep ? COLORS.TEAL : '#e2e8f0' }}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
       
-      <div className="relative h-[30vh] bg-slate-900 overflow-hidden">
-        <img src="/images/category-campsite.webp" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+      {/* Hero Header */}
+      <div className="relative h-[30vh] w-full overflow-hidden bg-slate-900">
+        <img src="/images/category-campsite.webp" 
+          className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Header"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] via-transparent to-transparent" />
+        <Button onClick={() => navigate(-1)} className="absolute top-4 left-4 rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0 z-50">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        
         <div className="absolute bottom-8 left-0 w-full px-8 container max-w-4xl mx-auto">
           <p className="text-[#FF7F50] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Step {currentStep} of {TOTAL_STEPS}</p>
-          <h1 className="text-3xl md:text-5xl font-black uppercase text-white tracking-tighter">Create <span style={{ color: COLORS.KHAKI }}>Adventure</span></h1>
+          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
+            Create <span style={{ color: COLORS.KHAKI }}>Adventure</span>
+          </h1>
         </div>
       </div>
 
       <main className="container px-4 max-w-4xl mx-auto -mt-6 relative z-50">
-        <div className="flex gap-2 mb-8">
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <div key={i} className="h-2 flex-1 rounded-full transition-all" style={{ backgroundColor: i + 1 <= currentStep ? COLORS.TEAL : '#e2e8f0' }} />
-          ))}
-        </div>
+        <StepIndicator />
 
         {/* Step 1: Registration */}
         {currentStep === 1 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100">
-            <h2 className="text-xl font-black uppercase mb-6 flex items-center gap-3" style={{ color: COLORS.TEAL }}><Info className="h-5 w-5" /> Registration</h2>
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#008080]/10 text-[#008080]">
+                <Info className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Registration</h2>
+            </div>
+            
             <div className="grid gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-slate-400">Registration Name *</Label>
-                <Input value={formData.registrationName} onChange={(e) => setFormData({...formData, registrationName: e.target.value})} className={errorClass('registrationName')} />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Name *</Label>
+                <Input
+                  value={formData.registrationName}
+                  onChange={(e) => setFormData({...formData, registrationName: e.target.value})}
+                  placeholder="Official Government Name"
+                  className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-12 font-bold"
+                />
               </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Reg Number *</Label>
-                  <Input value={formData.registrationNumber} onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})} className={errorClass('registrationNumber')} />
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
+                  <Input
+                    value={formData.registrationNumber}
+                    onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
+                    placeholder="e.g. BN-X12345"
+                    className="rounded-xl border-slate-100 bg-slate-50/50 h-12 font-bold"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Country *</Label>
-                  <div className={errors.country ? "rounded-xl ring-2 ring-red-500" : ""}>
-                    <CountrySelector value={formData.country} onChange={(v) => setFormData({...formData, country: v})} />
-                  </div>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country *</Label>
+                  <CountrySelector value={formData.country} onChange={(value) => setFormData({...formData, country: value})} />
                 </div>
               </div>
             </div>
@@ -252,86 +313,297 @@ const CreateAdventure = () => {
 
         {/* Step 2: Location */}
         {currentStep === 2 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100">
-            <h2 className="text-xl font-black uppercase mb-6 flex items-center gap-3" style={{ color: COLORS.TEAL }}><MapPin className="h-5 w-5" /> Location</h2>
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#FF7F50]/10 text-[#FF7F50]">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Location Details</h2>
+            </div>
+
             <div className="grid gap-6">
-              <Input placeholder="Location Name" value={formData.locationName} onChange={(e) => setFormData({...formData, locationName: e.target.value})} className={errorClass('locationName')} />
-              <Input placeholder="City/Place" value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} className={errorClass('place')} />
-              
-              <div className={`p-6 rounded-2xl border-2 border-dashed ${errors.gps ? "border-red-500 bg-red-50" : "border-slate-100"}`}>
-                <Button onClick={getCurrentLocation} className="w-full h-12 text-white font-black uppercase tracking-widest" style={{ background: formData.latitude ? COLORS.TEAL : COLORS.CORAL }}>
-                  {formData.latitude ? "✓ GPS Captured" : "Capture Precise GPS *"}
-                </Button>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Location Name *</Label>
+                  <Input
+                    value={formData.locationName}
+                    onChange={(e) => setFormData({...formData, locationName: e.target.value})}
+                    placeholder="Area / Forest / Beach"
+                    className="rounded-xl border-slate-100 bg-slate-50/50 h-12 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Place (City/Town) *</Label>
+                  <Input
+                    value={formData.place}
+                    onChange={(e) => setFormData({...formData, place: e.target.value})}
+                    placeholder="e.g. Nairobi"
+                    className="rounded-xl border-slate-100 bg-slate-50/50 h-12 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#F0E68C]/10 border border-[#F0E68C]/30 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[#857F3E]">GPS Coordinates *</h4>
+                    <p className="text-[10px] text-[#857F3E]/80 font-bold uppercase mt-1">Capture precise location for maps</p>
+                  </div>
+                  <Button type="button" onClick={getCurrentLocation}
+                    className="text-white rounded-xl px-6 h-12 font-black uppercase text-[10px] tracking-widest"
+                    style={{ background: formData.latitude ? COLORS.TEAL : COLORS.KHAKI_DARK }}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    {formData.latitude ? '✓ Location Captured' : 'Auto-Capture GPS'}
+                  </Button>
+                </div>
+                {formData.latitude && (
+                  <div className="flex items-center gap-2 text-[#857F3E] text-xs font-black bg-white/50 p-3 rounded-lg border border-[#F0E68C]">
+                    <CheckCircle2 className="h-4 w-4" /> 
+                    COORD: {formData.latitude.toFixed(6)}, {formData.longitude?.toFixed(6)}
+                  </div>
+                )}
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 4: Pricing & Fees */}
-        {currentStep === 4 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100">
-            <h2 className="text-xl font-black uppercase mb-6 flex items-center gap-3" style={{ color: COLORS.TEAL }}><Clock className="h-5 w-5" /> Schedule & Fees</h2>
-            <OperatingHoursSection
-              openingHours={formData.openingHours} closingHours={formData.closingHours} workingDays={workingDays}
-              onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
-              onClosingChange={(v) => setFormData({...formData, closingHours: v})}
-              onDaysChange={setWorkingDays} accentColor={COLORS.TEAL}
-            />
-            <div className="mt-8 pt-6 border-t border-slate-100">
-              <Label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Admission Type *</Label>
-              <Select value={formData.entranceFeeType} onValueChange={(v) => setFormData({...formData, entranceFeeType: v})}>
-                <SelectTrigger className="rounded-xl h-12 font-bold mb-4"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-white"><SelectItem value="free">FREE</SelectItem><SelectItem value="paid">PAID</SelectItem></SelectContent>
-              </Select>
-
-              {formData.entranceFeeType === "paid" && (
-                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400">Adult Price (KSh) *</Label>
-                    <Input type="number" value={formData.adultPrice} onChange={(e) => setFormData({...formData, adultPrice: e.target.value})} className={errorClass('adultPrice')} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400">Child Price (KSh) *</Label>
-                    <Input type="number" value={formData.childPrice} onChange={(e) => setFormData({...formData, childPrice: e.target.value})} className={errorClass('childPrice')} />
-                  </div>
+        {/* Step 3: Contact & Description */}
+        {currentStep === 3 && (
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#008080]/10 text-[#008080]">
+                <Mail className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Contact & About</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email</Label>
+                  <Input type="email" value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="contact@business.com"
+                    className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-12 font-bold"
+                  />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp / Phone</Label>
+                  <PhoneInput value={formData.phoneNumber}
+                    onChange={(value) => setFormData({...formData, phoneNumber: value})}
+                    country={formData.country}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description *</Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Tell the community what makes this adventure special..."
+                  rows={5}
+                  className="rounded-2xl border-slate-100 bg-slate-50/50 font-bold resize-none"
+                />
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Step 4: Pricing & Schedule */}
+        {currentStep === 4 && (
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#FF7F50]/10 text-[#FF7F50]">
+                <Clock className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Access & Pricing</h2>
+            </div>
+
+            <div className="grid gap-8">
+              <OperatingHoursSection
+                openingHours={formData.openingHours}
+                closingHours={formData.closingHours}
+                workingDays={workingDays}
+                onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
+                onClosingChange={(v) => setFormData({...formData, closingHours: v})}
+                onDaysChange={setWorkingDays}
+                accentColor={COLORS.TEAL}
+              />
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrance Fee</Label>
+                  <Select value={formData.entranceFeeType} onValueChange={(v) => setFormData({...formData, entranceFeeType: v})}>
+                    <SelectTrigger className="rounded-xl h-12 font-bold border-slate-100">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white rounded-xl font-bold">
+                      <SelectItem value="free">FREE ACCESS</SelectItem>
+                      <SelectItem value="paid">PAID ADMISSION</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {formData.entranceFeeType === "paid" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Adult Entry (KSh)</Label>
+                      <Input type="number" value={formData.adultPrice}
+                        onChange={(e) => setFormData({...formData, adultPrice: e.target.value})}
+                        className="rounded-xl h-12 border-slate-100 font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Child Entry (KSh)</Label>
+                      <Input type="number" value={formData.childPrice}
+                        onChange={(e) => setFormData({...formData, childPrice: e.target.value})}
+                        className="rounded-xl h-12 border-slate-100 font-bold"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Step 5: Amenities, Facilities & Activities */}
+        {currentStep === 5 && (
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#008080]/10 text-[#008080]">
+                <DollarSign className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Amenities, Facilities & Activities</h2>
+            </div>
+            
+            <div className="space-y-8">
+              <DynamicItemList
+                items={amenities}
+                onChange={setAmenities}
+                label="Amenities"
+                placeholder="e.g. Parking, Restrooms, Picnic Area"
+                showCapacity={false}
+                showPrice={false}
+                accentColor={COLORS.TEAL}
+              />
+
+              <DynamicItemList
+                items={facilities}
+                onChange={setFacilities}
+                label="Facilities"
+                placeholder="e.g. Campsite, Viewing Deck"
+                showCapacity={true}
+                accentColor={COLORS.CORAL}
+              />
+
+              <DynamicItemList
+                items={activities}
+                onChange={setActivities}
+                label="Activities"
+                placeholder="e.g. Hiking, Bird Watching, Zip Lining"
+                showCapacity={false}
+                accentColor="#6366f1"
+              />
+            </div>
+          </Card>
+        )}
+
+        {/* Step 6: Photos */}
+        {currentStep === 6 && (
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-[#008080]/10 text-[#008080]">
+                <Camera className="h-5 w-5" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Gallery (Max 5) *</h2>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {galleryImages.map((file, index) => (
+                <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100">
+                  <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
+                  <button type="button" onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {galleryImages.length < 5 && (
+                <Label className="aspect-square rounded-[20px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
+                  <Plus className="h-6 w-6 text-slate-400" />
+                  <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add Photo</span>
+                  <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
+                </Label>
               )}
             </div>
+            <p className="text-xs text-slate-400 mt-4 text-center">Upload at least 1 photo to submit</p>
           </Card>
         )}
 
-        {/* Step 5: Facilities Guard */}
-        {currentStep === 5 && (
-          <Card className={`bg-white rounded-[28px] p-8 shadow-sm border transition-all ${errors.facilities ? "border-red-500 bg-red-50/10" : "border-slate-100"}`}>
-            <h2 className="text-xl font-black uppercase mb-6 flex items-center gap-3" style={{ color: COLORS.TEAL }}><DollarSign className="h-5 w-5" /> Features</h2>
-            <div className="space-y-8">
-              <DynamicItemList items={amenities} onChange={setAmenities} label="Amenities (Optional)" accentColor={COLORS.TEAL} />
-              
-              <div className={`p-5 rounded-2xl border-2 border-dashed ${errors.facilities ? "border-red-400 bg-red-50" : "border-slate-100"}`}>
-                <div className="flex flex-col mb-4">
-                  <Label className="text-sm font-black uppercase text-slate-600">Facilities</Label>
-                  <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">Capacity is mandatory for every facility listed!</p>
-                </div>
-                <DynamicItemList items={facilities} onChange={setFacilities} label="" showCapacity={true} accentColor={COLORS.CORAL} />
-              </div>
-
-              <DynamicItemList items={activities} onChange={setActivities} label="Activities (Optional)" accentColor="#6366f1" />
-            </div>
-          </Card>
+        {/* Step 7: Review */}
+        {currentStep === 7 && (
+          <ReviewStep
+            type="adventure"
+            data={{
+              name: formData.registrationName,
+              registrationName: formData.registrationName,
+              registrationNumber: formData.registrationNumber,
+              location: formData.locationName,
+              place: formData.place,
+              country: formData.country,
+              description: formData.description,
+              email: formData.email,
+              phoneNumber: formData.phoneNumber,
+              openingHours: formData.openingHours,
+              closingHours: formData.closingHours,
+              workingDays: Object.entries(workingDays).filter(([_, v]) => v).map(([d]) => d),
+              entranceFeeType: formData.entranceFeeType,
+              adultPrice: formData.adultPrice,
+              childPrice: formData.childPrice,
+              amenities: amenities.map(a => ({ name: a.name })),
+              facilities: formatItemsForDB(facilities),
+              activities: formatItemsForDB(activities),
+              imageCount: galleryImages.length,
+            }}
+            creatorName={creatorProfile.name}
+            creatorEmail={creatorProfile.email}
+            creatorPhone={creatorProfile.phone}
+            accentColor={COLORS.TEAL}
+          />
         )}
 
+        {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8">
-          {currentStep > 1 && <Button onClick={() => setCurrentStep(s => s - 1)} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase">Previous</Button>}
-          <Button 
-            onClick={currentStep < TOTAL_STEPS ? handleNext : handleSubmit} 
-            disabled={loading}
-            className="flex-1 py-6 rounded-2xl font-black uppercase text-white shadow-lg"
-            style={{ background: currentStep < TOTAL_STEPS ? COLORS.CORAL : COLORS.TEAL }}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : currentStep < TOTAL_STEPS ? "Next" : "Submit Listing"}
-          </Button>
+          {currentStep > 1 && (
+            <Button type="button" onClick={handlePrevious} variant="outline"
+              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" /> Previous
+            </Button>
+          )}
+          
+          {currentStep < TOTAL_STEPS ? (
+            <Button type="button" onClick={handleNext}
+              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
+              style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
+            >
+              Next <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button type="button" onClick={handleSubmit} disabled={loading}
+              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
+              style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}
+            >
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : "Submit for Approval"}
+            </Button>
+          )}
         </div>
       </main>
+      
       <MobileBottomBar />
     </div>
   );
