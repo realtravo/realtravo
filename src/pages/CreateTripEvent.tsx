@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, DollarSign, Users, Navigation, ArrowLeft, ArrowRight, Camera, CheckCircle2, X, Plus, Loader2 } from "lucide-react";
+import { Calendar, MapPin, DollarSign, Users, Navigation, ArrowLeft, ArrowRight, Camera, CheckCircle2, X, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CountrySelector } from "@/components/creation/CountrySelector";
 import { PhoneInput } from "@/components/creation/PhoneInput";
@@ -19,22 +19,26 @@ import { compressImages } from "@/lib/imageCompression";
 import { OperatingHoursSection } from "@/components/creation/OperatingHoursSection";
 import { ReviewStep } from "@/components/creation/ReviewStep";
 
-interface WorkingDays {
-  Mon: boolean;
-  Tue: boolean;
-  Wed: boolean;
-  Thu: boolean;
-  Fri: boolean;
-  Sat: boolean;
-  Sun: boolean;
-}
-
+// Move Styled Components outside to prevent focus loss on re-render
 const COLORS = {
   TEAL: "#008080",
   CORAL: "#FF7F50",
   CORAL_LIGHT: "#FF9E7A",
   SOFT_GRAY: "#F8F9FA"
 };
+
+const StyledInput = ({ className = "", isInvalid = false, ...props }: React.ComponentProps<typeof Input> & { isInvalid?: boolean }) => (
+  <Input 
+    className={`rounded-xl border-slate-100 bg-slate-50 focus:bg-white transition-all h-12 font-bold ${
+      isInvalid ? "border-red-500 ring-1 ring-red-500" : ""
+    } ${className}`} 
+    {...props} 
+  />
+);
+
+interface WorkingDays {
+  Mon: boolean; Tue: boolean; Wed: boolean; Thu: boolean; Fri: boolean; Sat: boolean; Sun: boolean;
+}
 
 const TOTAL_STEPS = 7;
 
@@ -44,6 +48,7 @@ const CreateTripEvent = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -101,6 +106,7 @@ const CreateTripEvent = () => {
           const { latitude, longitude } = position.coords;
           const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
           setFormData(prev => ({ ...prev, map_link: mapUrl, latitude, longitude }));
+          setValidationErrors(prev => prev.filter(e => e !== 'map_link'));
           toast({ title: "Location Added", description: "Current location pinned." });
         },
         () => toast({ title: "Error", description: "Unable to get location.", variant: "destructive" })
@@ -108,93 +114,46 @@ const CreateTripEvent = () => {
     }
   };
 
-  const handleImageUpload = async (files: FileList | null) => {
-    if (!files) return;
-    const newFiles = Array.from(files).slice(0, 5 - galleryImages.length);
-    try {
-      const compressed = await compressImages(newFiles);
-      setGalleryImages(prev => [...prev, ...compressed.map(c => c.file)].slice(0, 5));
-    } catch (error) {
-      console.error("Error compressing images:", error);
-      setGalleryImages(prev => [...prev, ...newFiles].slice(0, 5));
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setGalleryImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Step validation
   const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        // Type selection - always valid
-        return true;
-      case 2:
-        if (!formData.name.trim()) {
-          toast({ title: "Required", description: "Experience name is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.country) {
-          toast({ title: "Required", description: "Country is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.place.trim()) {
-          toast({ title: "Required", description: "Region/Place is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.location.trim()) {
-          toast({ title: "Required", description: "Specific location is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.is_custom_date && !formData.date) {
-          toast({ title: "Required", description: "Date is required (or select custom tour)", variant: "destructive" });
-          return false;
-        }
-        return true;
-      case 3:
-        if (!formData.price || parseFloat(formData.price) < 0) {
-          toast({ title: "Required", description: "Adult price is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.available_tickets || parseInt(formData.available_tickets) <= 0) {
-          toast({ title: "Required", description: "Max slots must be greater than 0", variant: "destructive" });
-          return false;
-        }
-        return true;
-      case 4:
-        if (!formData.phone_number) {
-          toast({ title: "Required", description: "Phone number is required", variant: "destructive" });
-          return false;
-        }
-        if (!formData.map_link) {
-          toast({ title: "Required", description: "GPS location is required", variant: "destructive" });
-          return false;
-        }
-        return true;
-      case 5:
-        // Operating hours validation - only for custom date trips or events
-        if (formData.is_custom_date || formData.type === 'event') {
-          if (!formData.opening_hours || !formData.closing_hours) {
-            toast({ title: "Required", description: "Operating hours are required", variant: "destructive" });
-            return false;
-          }
-          const hasWorkingDays = Object.values(workingDays).some(Boolean);
-          if (!hasWorkingDays) {
-            toast({ title: "Required", description: "Select at least one operating day", variant: "destructive" });
-            return false;
-          }
-        }
-        return true;
-      case 6:
-        if (!formData.description.trim()) {
-          toast({ title: "Required", description: "Description is required", variant: "destructive" });
-          return false;
-        }
-        return true;
-      default:
-        return true;
+    const errors: string[] = [];
+    
+    if (step === 2) {
+      if (!formData.name.trim()) errors.push("name");
+      if (!formData.country) errors.push("country");
+      if (!formData.place.trim()) errors.push("place");
+      if (!formData.location.trim()) errors.push("location");
+      if (!formData.is_custom_date && !formData.date) errors.push("date");
     }
+    
+    if (step === 3) {
+      if (!formData.price || parseFloat(formData.price) < 0) errors.push("price");
+      if (!formData.available_tickets || parseInt(formData.available_tickets) <= 0) errors.push("available_tickets");
+    }
+    
+    if (step === 4) {
+      if (!formData.phone_number) errors.push("phone_number");
+      if (!formData.map_link) errors.push("map_link");
+    }
+    
+    if (step === 5) {
+      if (formData.is_custom_date || formData.type === 'event') {
+        if (!formData.opening_hours) errors.push("opening_hours");
+        if (!formData.closing_hours) errors.push("closing_hours");
+        if (!Object.values(workingDays).some(Boolean)) errors.push("working_days");
+      }
+    }
+    
+    if (step === 6) {
+      if (!formData.description.trim()) errors.push("description");
+    }
+
+    setValidationErrors(errors);
+    
+    if (errors.length > 0) {
+      toast({ title: "Required Fields", description: "Please fill in all marked fields.", variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
   const handleNext = () => {
@@ -204,7 +163,23 @@ const CreateTripEvent = () => {
   };
 
   const handlePrevious = () => {
+    setValidationErrors([]); // Clear errors when going back
     setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files).slice(0, 5 - galleryImages.length);
+    try {
+      const compressed = await compressImages(newFiles);
+      setGalleryImages(prev => [...prev, ...compressed.map(c => c.file)].slice(0, 5));
+    } catch (error) {
+      setGalleryImages(prev => [...prev, ...newFiles].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -222,9 +197,7 @@ const CreateTripEvent = () => {
         uploadedUrls.push(publicUrl);
       }
 
-      // Convert working days to array of day names
-      const daysOpened = (Object.keys(workingDays) as (keyof WorkingDays)[])
-        .filter(day => workingDays[day]);
+      const daysOpened = (Object.keys(workingDays) as (keyof WorkingDays)[]).filter(day => workingDays[day]);
 
       const { error } = await supabase.from("trips").insert([{
         name: formData.name,
@@ -261,25 +234,11 @@ const CreateTripEvent = () => {
     }
   };
 
-  const StepIndicator = () => (
-    <div className="flex items-center gap-2 mb-8">
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
-        <div key={step} className="h-2 flex-1 rounded-full transition-all duration-300"
-          style={{ backgroundColor: step <= currentStep ? COLORS.TEAL : '#e2e8f0' }}
-        />
-      ))}
-    </div>
-  );
-
-  const StyledInput = ({ className = "", ...props }: React.ComponentProps<typeof Input>) => (
-    <Input className={`rounded-xl border-slate-100 bg-slate-50 focus:bg-white transition-all h-12 font-bold ${className}`} {...props} />
-  );
-
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
       <Header />
-      
       <main className="container px-4 py-8 max-w-4xl mx-auto">
+        {/* Header Visual */}
         <div className="relative rounded-[40px] overflow-hidden mb-8 shadow-2xl h-[200px] md:h-[280px]">
           <img src="/images/category-trips.webp" className="w-full h-full object-cover" alt="Header" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
@@ -293,7 +252,14 @@ const CreateTripEvent = () => {
           </div>
         </div>
         
-        <StepIndicator />
+        {/* Progress Bar */}
+        <div className="flex items-center gap-2 mb-8">
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+            <div key={step} className="h-2 flex-1 rounded-full transition-all duration-300"
+              style={{ backgroundColor: step <= currentStep ? COLORS.TEAL : '#e2e8f0' }}
+            />
+          ))}
+        </div>
 
         {/* Step 1: Type Selection */}
         {currentStep === 1 && (
@@ -304,20 +270,11 @@ const CreateTripEvent = () => {
                 { id: 'trip', label: 'Trip / Tour', sub: 'Flexible or fixed multi-day adventures' },
                 { id: 'event', label: 'Event / Sport', sub: 'Fixed date single sessions or matches' }
               ].map((type) => (
-                <label 
-                  key={type.id}
-                  className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${
-                    formData.type === type.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50 hover:bg-white'
-                  }`}
-                >
-                  <input type="radio" name="type" value={type.id} className="hidden"
-                    onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-                  />
+                <label key={type.id} className={`relative p-6 rounded-[24px] border-2 cursor-pointer transition-all ${formData.type === type.id ? 'border-[#008080] bg-[#008080]/5' : 'border-slate-100 bg-slate-50 hover:bg-white'}`}>
+                  <input type="radio" name="type" value={type.id} className="hidden" onChange={(e) => setFormData({...formData, type: e.target.value as any})} />
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className={`block font-black uppercase tracking-tight text-sm ${formData.type === type.id ? 'text-[#008080]' : 'text-slate-600'}`}>
-                        {type.label}
-                      </span>
+                      <span className={`block font-black uppercase tracking-tight text-sm ${formData.type === type.id ? 'text-[#008080]' : 'text-slate-600'}`}>{type.label}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 block">{type.sub}</span>
                     </div>
                     {formData.type === type.id && <CheckCircle2 className="h-5 w-5 text-[#008080]" />}
@@ -332,58 +289,59 @@ const CreateTripEvent = () => {
         {currentStep === 2 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.TEAL }}>Experience Details</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Experience Name *</Label>
-                <StyledInput value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g. Hiking in the Clouds" />
+                <StyledInput 
+                  isInvalid={validationErrors.includes("name")}
+                  value={formData.name} 
+                  onChange={(e) => {
+                    setFormData({...formData, name: e.target.value});
+                    if(e.target.value) setValidationErrors(prev => prev.filter(err => err !== "name"));
+                  }} 
+                  placeholder="e.g. Hiking in the Clouds" 
+                />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country *</Label>
-                <CountrySelector value={formData.country} onChange={(value) => setFormData({...formData, country: value})} />
+                <div className={validationErrors.includes("country") ? "rounded-xl ring-1 ring-red-500" : ""}>
+                   <CountrySelector value={formData.country} onChange={(val) => {
+                     setFormData({...formData, country: val});
+                     setValidationErrors(prev => prev.filter(err => err !== "country"));
+                   }} />
+                </div>
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Region / Place *</Label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput className="pl-11" value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} placeholder="e.g. Mt. Kenya Region" />
+                  <StyledInput isInvalid={validationErrors.includes("place")} className="pl-11" value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} placeholder="e.g. Mt. Kenya Region" />
                 </div>
               </div>
-
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Specific Location *</Label>
-                <StyledInput value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} placeholder="e.g. Nanyuki Main Gate" />
+                <StyledInput isInvalid={validationErrors.includes("location")} value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} placeholder="e.g. Nanyuki Main Gate" />
               </div>
             </div>
-
             <div className="space-y-4 pt-4 border-t border-slate-50">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date Settings *</Label>
               {formData.type === "trip" && (
                 <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-2xl">
-                  <Checkbox id="custom_date" checked={formData.is_custom_date}
-                    onCheckedChange={(checked) => setFormData({...formData, is_custom_date: checked as boolean})}
-                  />
-                  <label htmlFor="custom_date" className="text-[11px] font-black uppercase tracking-tight text-slate-500 cursor-pointer">
-                    Flexible dates - Open availability
-                  </label>
+                  <Checkbox id="custom_date" checked={formData.is_custom_date} onCheckedChange={(checked) => setFormData({...formData, is_custom_date: checked as boolean})} />
+                  <label htmlFor="custom_date" className="text-[11px] font-black uppercase tracking-tight text-slate-500 cursor-pointer">Flexible dates - Open availability</label>
                 </div>
               )}
-              
               {!formData.is_custom_date && (
                 <div className="relative">
                   <Calendar className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="date" className="pl-11" min={new Date().toISOString().split('T')[0]}
-                    value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  />
+                  <StyledInput isInvalid={validationErrors.includes("date")} type="date" className="pl-11" min={new Date().toISOString().split('T')[0]} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
                 </div>
               )}
             </div>
           </Card>
         )}
 
-        {/* Step 3: Pricing & Capacity */}
+        {/* Step 3: Pricing */}
         {currentStep === 3 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>Pricing & Logistics</h2>
@@ -392,88 +350,65 @@ const CreateTripEvent = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Adult Price (KSh) *</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  />
+                  <StyledInput isInvalid={validationErrors.includes("price")} type="number" className="pl-11" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Child Price (KSh)</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.price_child}
-                    onChange={(e) => setFormData({...formData, price_child: e.target.value})}
-                  />
+                  <StyledInput type="number" className="pl-11" value={formData.price_child} onChange={(e) => setFormData({...formData, price_child: e.target.value})} />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Max Slots *</Label>
                 <div className="relative">
                   <Users className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <StyledInput type="number" className="pl-11" value={formData.available_tickets}
-                    onChange={(e) => setFormData({...formData, available_tickets: e.target.value})}
-                  />
+                  <StyledInput isInvalid={validationErrors.includes("available_tickets")} type="number" className="pl-11" value={formData.available_tickets} onChange={(e) => setFormData({...formData, available_tickets: e.target.value})} />
                 </div>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Step 4: Contact & Location */}
+        {/* Step 4: Contact & GPS */}
         {currentStep === 4 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.TEAL }}>Contact & GPS Location</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact Email</Label>
-                <StyledInput type="email" value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="contact@example.com"
-                />
+                <StyledInput type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="contact@example.com" />
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact Phone *</Label>
-                <PhoneInput value={formData.phone_number}
-                  onChange={(value) => setFormData({...formData, phone_number: value})}
-                  country={formData.country} placeholder="712345678"
-                />
+                <div className={validationErrors.includes("phone_number") ? "rounded-xl ring-1 ring-red-500" : ""}>
+                   <PhoneInput value={formData.phone_number} onChange={(val) => setFormData({...formData, phone_number: val})} country={formData.country} placeholder="712345678" />
+                </div>
               </div>
             </div>
-
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">GPS Location *</Label>
               <div className="flex gap-2">
-                <StyledInput className="bg-slate-50 flex-1" readOnly value={formData.map_link} placeholder="Tap the icon to pin your location" />
-                <Button type="button" onClick={getCurrentLocation}
-                  className="h-12 w-12 rounded-2xl shadow-lg"
-                  style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}
-                >
+                <StyledInput isInvalid={validationErrors.includes("map_link")} className="bg-slate-50 flex-1" readOnly value={formData.map_link} placeholder="Tap icon to pin location" />
+                <Button type="button" onClick={getCurrentLocation} className="h-12 w-12 rounded-2xl shadow-lg" style={{ background: formData.map_link ? COLORS.TEAL : COLORS.CORAL }}>
                   <Navigation className="h-5 w-5 text-white" />
                 </Button>
               </div>
             </div>
-
-            {/* Gallery Upload */}
+            {/* Gallery */}
             <div className="pt-6 border-t border-slate-100">
               <h3 className="text-xs font-black uppercase tracking-widest mb-4" style={{ color: COLORS.TEAL }}>Gallery (Max 5)</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {galleryImages.map((file, index) => (
                   <div key={index} className="relative aspect-square rounded-[20px] overflow-hidden border-2 border-slate-100">
                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
-                    <button type="button" onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                    <button type="button" onClick={() => removeImage(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
                 {galleryImages.length < 5 && (
                   <Label className="aspect-square rounded-[20px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
                     <Camera className="h-6 w-6 text-slate-400" />
-                    <span className="text-[9px] font-black uppercase text-slate-400 mt-1">Add</span>
                     <Input type="file" multiple className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files)} />
                   </Label>
                 )}
@@ -482,26 +417,23 @@ const CreateTripEvent = () => {
           </Card>
         )}
 
-        {/* Step 5: Operating Hours (for custom date or events) */}
+        {/* Step 5: Operating Hours */}
         {currentStep === 5 && (
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <h2 className="text-xs font-black uppercase tracking-widest mb-6" style={{ color: COLORS.TEAL }}>
               Operating Hours {(formData.is_custom_date || formData.type === 'event') ? '*' : '(Optional)'}
             </h2>
-            {!(formData.is_custom_date || formData.type === 'event') && (
-              <p className="text-xs text-slate-400 mb-4">
-                Since you have a fixed date, operating hours are optional. Skip if not applicable.
-              </p>
-            )}
-            <OperatingHoursSection
-              openingHours={formData.opening_hours}
-              closingHours={formData.closing_hours}
-              workingDays={workingDays}
-              onOpeningChange={(value) => setFormData({...formData, opening_hours: value})}
-              onClosingChange={(value) => setFormData({...formData, closing_hours: value})}
-              onDaysChange={setWorkingDays}
-              accentColor={COLORS.TEAL}
-            />
+            <div className={validationErrors.includes("opening_hours") || validationErrors.includes("working_days") ? "p-2 border border-red-500 rounded-2xl" : ""}>
+              <OperatingHoursSection
+                openingHours={formData.opening_hours}
+                closingHours={formData.closing_hours}
+                workingDays={workingDays}
+                onOpeningChange={(value) => setFormData({...formData, opening_hours: value})}
+                onClosingChange={(value) => setFormData({...formData, closing_hours: value})}
+                onDaysChange={setWorkingDays}
+                accentColor={COLORS.TEAL}
+              />
+            </div>
           </Card>
         )}
 
@@ -510,7 +442,7 @@ const CreateTripEvent = () => {
           <Card className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4">
             <Label className="text-xs font-black uppercase tracking-widest mb-4 block" style={{ color: COLORS.TEAL }}>Experience Description *</Label>
             <Textarea
-              className="rounded-[24px] border-slate-100 bg-slate-50 p-6 min-h-[200px] focus:ring-[#008080] text-sm"
+              className={`rounded-[24px] border-slate-100 bg-slate-50 p-6 min-h-[200px] focus:ring-[#008080] text-sm ${validationErrors.includes("description") ? "border-red-500 ring-1 ring-red-500" : ""}`}
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
               placeholder="Tell travelers what makes this experience special..."
@@ -523,60 +455,36 @@ const CreateTripEvent = () => {
           <ReviewStep
             type={formData.type as 'trip' | 'event'}
             data={{
-              name: formData.name,
-              location: formData.location,
-              place: formData.place,
-              country: formData.country,
-              description: formData.description,
-              email: formData.email,
-              phoneNumber: formData.phone_number,
-              openingHours: formData.opening_hours,
-              closingHours: formData.closing_hours,
-              workingDays: formData.is_custom_date 
-                ? Object.entries(workingDays).filter(([_, v]) => v).map(([d]) => d)
-                : undefined,
-              date: formData.date,
-              isFlexibleDate: formData.is_custom_date,
-              priceAdult: formData.price,
-              priceChild: formData.price_child,
-              capacity: formData.available_tickets,
-              imageCount: galleryImages.length,
+              name: formData.name, location: formData.location, place: formData.place, country: formData.country,
+              description: formData.description, email: formData.email, phoneNumber: formData.phone_number,
+              openingHours: formData.opening_hours, closingHours: formData.closing_hours,
+              workingDays: formData.is_custom_date ? Object.entries(workingDays).filter(([_, v]) => v).map(([d]) => d) : undefined,
+              date: formData.date, isFlexibleDate: formData.is_custom_date, priceAdult: formData.price,
+              priceChild: formData.price_child, capacity: formData.available_tickets, imageCount: galleryImages.length,
             }}
-            creatorName={creatorProfile.name}
-            creatorEmail={creatorProfile.email}
-            creatorPhone={creatorProfile.phone}
-            accentColor={COLORS.TEAL}
+            creatorName={creatorProfile.name} creatorEmail={creatorProfile.email} creatorPhone={creatorProfile.phone} accentColor={COLORS.TEAL}
           />
         )}
 
         {/* Navigation Buttons */}
         <div className="flex gap-4 mt-8">
           {currentStep > 1 && (
-            <Button type="button" onClick={handlePrevious} variant="outline"
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm"
-            >
+            <Button type="button" onClick={handlePrevious} variant="outline" className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm">
               <ArrowLeft className="h-4 w-4 mr-2" /> Previous
             </Button>
           )}
           
           {currentStep < TOTAL_STEPS ? (
-            <Button type="button" onClick={handleNext}
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
-              style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-            >
+            <Button type="button" onClick={handleNext} className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}>
               Next <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmit} disabled={loading}
-              className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white"
-              style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}
-            >
+            <Button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 py-6 rounded-2xl font-black uppercase tracking-widest text-sm text-white" style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #006666 100%)` }}>
               {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : "Submit for Approval"}
             </Button>
           )}
         </div>
       </main>
-      
       <MobileBottomBar />
     </div>
   );
