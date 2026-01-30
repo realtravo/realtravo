@@ -10,8 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, Mail, Phone, Calendar, User, Eye, Clock, 
   ArrowLeft, CheckCircle2, XCircle, ShieldAlert, 
-  Users, Landmark, Tag, Globe, Info, ClipboardCheck,
-  Navigation, CreditCard, Layers
+  Users, Landmark, Tag, Globe, Info, Navigation
 } from "lucide-react";
 import { approvalStatusSchema } from "@/lib/validation";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -65,15 +64,14 @@ const AdminReviewDetail = () => {
 
       if (type === "trip" || type === "event") {
         tableName = "trips";
-        const { data } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
-        itemData = data;
       } else if (type === "hotel") {
         tableName = "hotels";
-        const { data } = await supabase.from("hotels").select("*").eq("id", id).maybeSingle();
-        itemData = data;
       } else if (type === "adventure" || type === "adventure_place") {
         tableName = "adventure_places";
-        const { data } = await supabase.from("adventure_places").select("*").eq("id", id).maybeSingle();
+      }
+
+      if (tableName) {
+        const { data } = await supabase.from(tableName).select("*").eq("id", id).maybeSingle();
         itemData = data;
       }
 
@@ -122,7 +120,7 @@ const AdminReviewDetail = () => {
     window.open(mapUrl, "_blank");
   };
 
-  if (loading || !isAdmin) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
+  if (loading || !isAdmin || !item) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
 
   const displayImages = [
     item.image_url,
@@ -135,7 +133,6 @@ const AdminReviewDetail = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-32">
       <Header className="hidden md:block" />
 
-      {/* --- HERO SECTION --- */}
       <div className="relative w-full h-[45vh] md:h-[55vh] overflow-hidden">
         <div className="absolute top-4 left-4 right-4 z-50 flex justify-between">
           <Button onClick={() => navigate(-1)} className="rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0 hover:bg-black/50">
@@ -179,15 +176,14 @@ const AdminReviewDetail = () => {
 
       <main className="container px-4 max-w-7xl mx-auto -mt-10 relative z-50">
         <div className="grid lg:grid-cols-[1.7fr,1fr] gap-8">
-          
           <div className="space-y-6">
             {/* 1. DESCRIPTION SECTION */}
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-4" style={{ color: COLORS.TEAL }}>Submission Description</h2>
               <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">{item.description || "No description provided."}</p>
-            </section>
+            </div>
 
-            {/* 2. TECHNICAL SPECIFICATIONS (REGISTRATION, CAPACITY, SLOTS) */}
+            {/* 2. TECHNICAL SPECIFICATIONS */}
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Technical Specifications</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -215,7 +211,7 @@ const AdminReviewDetail = () => {
               </div>
             </div>
 
-            {/* 3. SCHEDULE & WORKING HOURS */}
+            {/* 3. SCHEDULE */}
             {(item.opening_hours || item.date) && (
               <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Operation Schedule</h2>
@@ -229,7 +225,7 @@ const AdminReviewDetail = () => {
                       <p className="text-sm font-black">{item.opening_hours || "N/A"} — {item.closing_hours || "N/A"}</p>
                     </div>
                   </div>
-                  {item.days_opened && (
+                  {Array.isArray(item.days_opened) && (
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Available Days</p>
                       <div className="flex flex-wrap gap-1">
@@ -256,8 +252,8 @@ const AdminReviewDetail = () => {
               </div>
             )}
 
-            {/* 4. FEATURES, AMENITIES & ACTIVITIES */}
-            {(item.amenities?.length > 0 || item.activities?.length > 0 || item.facilities?.length > 0) && (
+            {/* 4. FEATURES */}
+            {((item.amenities?.length > 0) || (item.activities?.length > 0) || (item.facilities?.length > 0)) && (
               <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Facilities & Activities Review</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -276,7 +272,7 @@ const AdminReviewDetail = () => {
               </div>
             )}
 
-            {/* 5. CREATOR & SUBMITTER INFO */}
+            {/* 5. SUBMITTER INFO */}
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Submitter Information</h2>
               <div className="flex flex-col md:flex-row gap-6 md:items-center">
@@ -307,10 +303,8 @@ const AdminReviewDetail = () => {
             </div>
           </div>
 
-          {/* --- SIDEBAR: PRICING & ACTIONS --- */}
           <div className="space-y-6">
             <div className="bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
-              
               <div className="mb-8">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Pricing Policy</p>
                 <div className="space-y-4">
@@ -321,7 +315,6 @@ const AdminReviewDetail = () => {
                     </div>
                     <Tag className="h-5 w-5 text-slate-200" />
                   </div>
-                  
                   {item.price_child !== undefined && (
                     <div className="flex justify-between items-end p-5 rounded-3xl bg-slate-50 border border-slate-100">
                       <div>
@@ -349,7 +342,6 @@ const AdminReviewDetail = () => {
                 </Button>
               </div>
 
-              {/* Approval Buttons */}
               <div className="space-y-3">
                 <Button 
                   onClick={() => updateApprovalStatus("approved")}
@@ -374,21 +366,11 @@ const AdminReviewDetail = () => {
                   </Button>
                 )}
               </div>
-
-              <div className="mt-8 pt-6 border-t border-slate-50">
-                <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-                  <Info className="h-4 w-4 text-blue-500 shrink-0" />
-                  <p className="text-[10px] font-bold text-blue-700 leading-tight italic">
-                    Approving this entry will make it visible to all users across the platform.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Mobile Floating Bar */}
       <div className="fixed bottom-24 left-4 right-4 md:hidden z-[100]">
         <div className="bg-black/90 backdrop-blur-xl p-4 rounded-3xl flex items-center justify-between border border-white/10 shadow-2xl">
             <div className="flex items-center gap-3">
@@ -406,7 +388,6 @@ const AdminReviewDetail = () => {
             </div>
         </div>
       </div>
-
       <MobileBottomBar />
     </div>
   );
