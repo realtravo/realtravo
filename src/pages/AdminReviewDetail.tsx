@@ -9,8 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, Mail, Phone, Calendar, User, Eye, Clock, 
-  ArrowLeft, Copy, Share2, CheckCircle2, XCircle, 
-  ShieldAlert, Info, Zap
+  ArrowLeft, CheckCircle2, XCircle, ShieldAlert, 
+  Users, Landmark, Tag, Globe, Info, ClipboardCheck,
+  Navigation, CreditCard, Layers
 } from "lucide-react";
 import { approvalStatusSchema } from "@/lib/validation";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -116,8 +117,9 @@ const AdminReviewDetail = () => {
   };
 
   const openInMaps = () => {
-    const query = encodeURIComponent(`${item?.name || item?.location_name}, ${item?.location || item?.location_name}`);
-    window.open(item?.map_link || item?.location_link || `https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
+    const query = encodeURIComponent(`${item?.name || item?.location_name}, ${item?.location || item?.place}`);
+    const mapUrl = item?.map_link || item?.location_link || `https://www.google.com/maps/search/?api=1&query=${query}`;
+    window.open(mapUrl, "_blank");
   };
 
   if (loading || !isAdmin) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
@@ -133,15 +135,15 @@ const AdminReviewDetail = () => {
     <div className="min-h-screen bg-[#F8F9FA] pb-32">
       <Header className="hidden md:block" />
 
-      {/* --- HERO IMAGE SECTION --- */}
-      <div className="relative w-full h-[40vh] md:h-[50vh] overflow-hidden">
+      {/* --- HERO SECTION --- */}
+      <div className="relative w-full h-[45vh] md:h-[55vh] overflow-hidden">
         <div className="absolute top-4 left-4 right-4 z-50 flex justify-between">
           <Button onClick={() => navigate(-1)} className="rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0 hover:bg-black/50">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex gap-2">
             <Badge className="bg-[#FF7F50] text-white border-none px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg">
-              {type?.toUpperCase()}
+              {type?.replace('_', ' ')}
             </Badge>
             <Badge className={`border-none px-4 py-1.5 h-auto uppercase font-black tracking-widest text-[10px] rounded-full shadow-lg ${
               item.approval_status === 'approved' ? 'bg-green-500' : 'bg-yellow-500'
@@ -164,130 +166,200 @@ const AdminReviewDetail = () => {
           </CarouselContent>
         </Carousel>
 
-        <div className="absolute bottom-6 left-6 z-40">
-           <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
+        <div className="absolute bottom-12 left-8 z-40">
+           <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
             {item.name || item.location_name}
           </h1>
+          <div className="flex items-center gap-2 text-white/80 mt-2">
+            <MapPin className="h-4 w-4" />
+            <span className="text-sm font-bold uppercase tracking-widest">{item.place || item.location}, {item.country}</span>
+          </div>
         </div>
       </div>
 
-      <main className="container px-4 max-w-6xl mx-auto -mt-8 relative z-50">
-        <div className="grid lg:grid-cols-[1.7fr,1fr] gap-6">
+      <main className="container px-4 max-w-7xl mx-auto -mt-10 relative z-50">
+        <div className="grid lg:grid-cols-[1.7fr,1fr] gap-8">
           
           <div className="space-y-6">
-            {/* About Card */}
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-              <h2 className="text-xl font-black uppercase tracking-tight mb-4" style={{ color: COLORS.TEAL }}>Description Review</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{item.description || "No description provided."}</p>
+            {/* 1. DESCRIPTION SECTION */}
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-4" style={{ color: COLORS.TEAL }}>Submission Description</h2>
+              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">{item.description || "No description provided."}</p>
+            </section>
+
+            {/* 2. TECHNICAL SPECIFICATIONS (REGISTRATION, CAPACITY, SLOTS) */}
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Technical Specifications</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Reg / License No.</p>
+                  <div className="flex items-center gap-2">
+                    <Landmark className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-black">{item.registration_number || "NOT PROVIDED"}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Available Slots / Capacity</p>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-black">{item.available_tickets || item.capacity || "UNLIMITED"}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase">Origin Country</p>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-black uppercase">{item.country}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Amenities/Highlights */}
-            {(item.amenities?.length > 0 || item.activities?.length > 0) && (
-              <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-black uppercase tracking-tight mb-5" style={{ color: COLORS.TEAL }}>Features & Activities</h2>
-                <div className="flex flex-wrap gap-2">
-                  {[...(item.amenities || []), ...(item.activities || [])].map((act: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2 bg-[#F0E68C]/20 px-4 py-2.5 rounded-2xl border border-[#F0E68C]/50">
-                      <CheckCircle2 className="h-4 w-4 text-[#857F3E]" />
-                      <span className="text-[11px] font-black text-[#857F3E] uppercase tracking-wide">
-                        {typeof act === 'string' ? act : act.name}
-                      </span>
+            {/* 3. SCHEDULE & WORKING HOURS */}
+            {(item.opening_hours || item.date) && (
+              <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Operation Schedule</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-teal-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Working Hours</p>
+                      <p className="text-sm font-black">{item.opening_hours || "N/A"} — {item.closing_hours || "N/A"}</p>
+                    </div>
+                  </div>
+                  {item.days_opened && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Available Days</p>
+                      <div className="flex flex-wrap gap-1">
+                        {item.days_opened.map((day: string) => (
+                          <Badge key={day} variant="secondary" className="text-[9px] font-black uppercase bg-teal-50 text-teal-700 border-none">
+                            {day}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {item.date && (
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                        <Calendar className="h-6 w-6 text-coral" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Fixed Event Date</p>
+                        <p className="text-sm font-black">{new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 4. FEATURES, AMENITIES & ACTIVITIES */}
+            {(item.amenities?.length > 0 || item.activities?.length > 0 || item.facilities?.length > 0) && (
+              <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Facilities & Activities Review</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[...(item.amenities || []), ...(item.activities || []), ...(item.facilities || [])].map((feat: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-4 w-4 text-teal-600" />
+                        <span className="text-[11px] font-black uppercase text-slate-700">
+                          {typeof feat === 'string' ? feat : feat.name}
+                        </span>
+                      </div>
+                      {feat.price && <span className="text-[10px] font-bold text-teal-600">KSh {feat.price}</span>}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Creator Info */}
-            <div className="bg-white rounded-[28px] p-7 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-2xl flex items-center justify-center bg-slate-100">
-                        <User className="h-6 w-6 text-slate-400" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Submitted By</p>
-                        <h3 className="text-sm font-black uppercase text-slate-800">{creator?.name || "Unknown Creator"}</h3>
-                    </div>
+            {/* 5. CREATOR & SUBMITTER INFO */}
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] mb-6" style={{ color: COLORS.TEAL }}>Submitter Information</h2>
+              <div className="flex flex-col md:flex-row gap-6 md:items-center">
+                <div className="h-16 w-16 rounded-3xl bg-slate-100 flex items-center justify-center">
+                  <User className="h-8 w-8 text-slate-300" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-3 text-slate-600">
-                        <Mail className="h-4 w-4 text-[#008080]" />
-                        <span className="text-xs font-bold">{creator?.email || "No Email"}</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Contact Name</p>
+                    <p className="text-sm font-black uppercase">{creator?.name || "Unknown Host"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Official Email</p>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3 w-3 text-teal-600" />
+                      <p className="text-xs font-bold">{item.email || creator?.email || "No Email"}</p>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-600">
-                        <Phone className="h-4 w-4 text-[#008080]" />
-                        <span className="text-xs font-bold">{creator?.phone_number || "No Phone"}</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Official Phone</p>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3 w-3 text-teal-600" />
+                      <p className="text-xs font-bold">{item.phone_number || creator?.phone_number || "No Phone"}</p>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-600">
-                        <MapPin className="h-4 w-4 text-[#FF7F50]" />
-                        <span className="text-xs font-bold">{creator?.country || item?.country || "No Country"}</span>
-                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
+          {/* --- SIDEBAR: PRICING & ACTIONS --- */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100 lg:sticky lg:top-24">
               
               <div className="mb-8">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing / Fee</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black" style={{ color: COLORS.RED }}>
-                    KSh {item.price || item.entry_fee || item.price_adult || 0}
-                  </span>
-                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-tighter">/ unit</span>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" style={{ color: COLORS.TEAL }} />
-                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-500">Location</span>
-                  </div>
-                  <span className="text-xs font-black uppercase text-slate-700">{item.location || item.location_name}</span>
-                </div>
-
-                {item.date && (
-                  <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" style={{ color: COLORS.CORAL }} />
-                      <span className="text-[10px] font-black uppercase tracking-tight text-slate-500">Scheduled</span>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">Pricing Policy</p>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-end p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Adult Rate</p>
+                      <p className="text-3xl font-black text-red-600">KSh {item.price || item.entry_fee || item.price_adult || 0}</p>
                     </div>
-                    <span className="text-xs font-black uppercase text-slate-700">
-                      {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                    </span>
+                    <Tag className="h-5 w-5 text-slate-200" />
                   </div>
-                )}
+                  
+                  {item.price_child !== undefined && (
+                    <div className="flex justify-between items-end p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Child Rate</p>
+                        <p className="text-xl font-black text-slate-800">KSh {item.price_child}</p>
+                      </div>
+                      <Tag className="h-4 w-4 text-slate-200" />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Utility Grid */}
               <div className="grid grid-cols-2 gap-3 mb-8">
-                <Button variant="ghost" onClick={openInMaps} className="flex-col h-auto py-3 bg-[#F0E68C]/10 text-[#857F3E] rounded-2xl border border-[#F0E68C]/20">
-                  <MapPin className="h-4 w-4 mb-1" />
-                  <span className="text-[9px] font-black uppercase">View Map</span>
+                <Button variant="ghost" onClick={openInMaps} className="flex-col h-auto py-4 bg-teal-50 text-teal-700 rounded-3xl border border-teal-100">
+                  <Navigation className="h-5 w-5 mb-1" />
+                  <span className="text-[9px] font-black uppercase">Verify Map</span>
                 </Button>
                 <Button 
-                    variant="ghost" 
-                    onClick={() => window.open(`/${type}/${id}`, '_blank')}
-                    className="flex-col h-auto py-3 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200"
+                  variant="ghost" 
+                  onClick={() => window.open(`/${type}/${id}`, '_blank')}
+                  className="flex-col h-auto py-4 bg-slate-50 text-slate-600 rounded-3xl border border-slate-200"
                 >
-                  <Eye className="h-4 w-4 mb-1" />
+                  <Eye className="h-5 w-5 mb-1" />
                   <span className="text-[9px] font-black uppercase">Live View</span>
                 </Button>
               </div>
 
-              {/* Approval Controls */}
+              {/* Approval Buttons */}
               <div className="space-y-3">
                 <Button 
                   onClick={() => updateApprovalStatus("approved")}
                   disabled={item.approval_status === "approved"}
-                  className="w-full py-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
+                  className="w-full py-8 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
                   style={{ 
                     background: item.approval_status === 'approved' ? '#94a3b8' : `linear-gradient(135deg, #2dd4bf 0%, ${COLORS.TEAL} 100%)`,
                   }}
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
                   Approve Entry
                 </Button>
 
@@ -295,19 +367,28 @@ const AdminReviewDetail = () => {
                    <Button 
                     variant="ghost"
                     onClick={() => updateApprovalStatus("rejected")}
-                    className="w-full py-4 text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50"
+                    className="w-full py-4 text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-2xl"
                   >
                     <XCircle className="mr-2 h-4 w-4" />
                     Reject Submission
                   </Button>
                 )}
               </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-50">
+                <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                  <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                  <p className="text-[10px] font-bold text-blue-700 leading-tight italic">
+                    Approving this entry will make it visible to all users across the platform.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Floating Admin Badge for Mobile */}
+      {/* Mobile Floating Bar */}
       <div className="fixed bottom-24 left-4 right-4 md:hidden z-[100]">
         <div className="bg-black/90 backdrop-blur-xl p-4 rounded-3xl flex items-center justify-between border border-white/10 shadow-2xl">
             <div className="flex items-center gap-3">
@@ -315,13 +396,13 @@ const AdminReviewDetail = () => {
                     <ShieldAlert className="h-4 w-4 text-black" />
                 </div>
                 <div>
-                    <p className="text-[8px] font-black text-white/50 uppercase">Admin Mode</p>
-                    <p className="text-[10px] font-black text-white uppercase">{item.approval_status}</p>
+                    <p className="text-[8px] font-black text-white/50 uppercase tracking-widest">Admin Control</p>
+                    <p className="text-[10px] font-black text-white uppercase tracking-tight">{item.approval_status}</p>
                 </div>
             </div>
             <div className="flex gap-2">
-                <Button size="sm" onClick={() => updateApprovalStatus("approved")} className="bg-teal-500 h-8 rounded-xl text-[10px] font-black">APPROVE</Button>
-                <Button size="sm" variant="destructive" onClick={() => updateApprovalStatus("rejected")} className="h-8 rounded-xl text-[10px] font-black">REJECT</Button>
+                <Button size="sm" onClick={() => updateApprovalStatus("approved")} className="bg-teal-500 h-9 rounded-xl text-[10px] font-black px-4">APPROVE</Button>
+                <Button size="sm" variant="destructive" onClick={() => updateApprovalStatus("rejected")} className="h-9 rounded-xl text-[10px] font-black px-4">REJECT</Button>
             </div>
         </div>
       </div>
