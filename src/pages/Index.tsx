@@ -55,6 +55,27 @@ const Index = () => {
   
   // Responsive fetch limits: 4 for mobile, 16 for desktop
   const { cardLimit, isLargeScreen } = useResponsiveLimit();
+  
+  // Responsive display limits: show only 4 on mobile, fit screen on desktop
+  const [displayLimit, setDisplayLimit] = useState(4);
+  
+  useEffect(() => {
+    const updateDisplayLimit = () => {
+      if (window.innerWidth < 640) {
+        setDisplayLimit(4); // Mobile: show only 4
+      } else if (window.innerWidth < 1024) {
+        setDisplayLimit(6); // Tablet: show 6
+      } else if (window.innerWidth < 1280) {
+        setDisplayLimit(8); // Small desktop: show 8
+      } else {
+        setDisplayLimit(12); // Large desktop: show 12
+      }
+    };
+    
+    updateDisplayLimit();
+    window.addEventListener('resize', updateDisplayLimit);
+    return () => window.removeEventListener('resize', updateDisplayLimit);
+  }, []);
 
   const [isSearchVisible, setIsSearchVisible] = useState(true);
   const [showSearchIcon, setShowSearchIcon] = useState(false);
@@ -894,12 +915,15 @@ const Index = () => {
                 <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-primary">
                   Places to adventure
                 </h2>
-                <Link to="/category/campsite" className="text-primary text-xs md:text-sm font-bold hover:underline bg-primary/10 px-2 py-1 rounded-full">
-                  View All
-                </Link>
+                {displayCampsites.length > displayLimit && (
+                  <Link to="/category/campsite" className="text-primary text-xs md:text-sm font-bold hover:underline bg-primary/10 px-2 py-1 rounded-full">
+                    View All
+                  </Link>
+                )}
               </div>
               <div className="relative">
-                {scrollableRows.campsites.length > 0 && (
+                {/* Show scroll buttons only on larger screens */}
+                {displayCampsites.length > 0 && !window.matchMedia('(max-width: 640px)').matches && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Scroll left" onClick={() => scrollSection(featuredCampsitesRef, 'left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
                       <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -909,7 +933,15 @@ const Index = () => {
                     </Button>
                   </>
                 )}
-                <div ref={featuredCampsitesRef} onScroll={handleScroll('featuredCampsites')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredCampsitesRef)} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
+                {/* Mobile: Grid view with 4 items, Desktop: Horizontal scroll */}
+                <div 
+                  ref={featuredCampsitesRef} 
+                  onScroll={handleScroll('featuredCampsites')} 
+                  onTouchStart={onTouchStart} 
+                  onTouchMove={onTouchMove} 
+                  onTouchEnd={() => onTouchEnd(featuredCampsitesRef)} 
+                  className="sm:flex sm:gap-4 sm:overflow-x-auto grid grid-cols-2 gap-3 pb-4 scrollbar-hide pl-1 pr-1 sm:pr-8 md:pl-2 md:pr-12 scroll-smooth"
+                >
                   {loadingScrollable ? (
                     <div className="flex gap-4">
                       {[...Array(5)].map((_, i) => (
@@ -919,15 +951,15 @@ const Index = () => {
                       ))}
                     </div>
                   ) : displayCampsites.length === 0 ? (
-                    <div className="flex-1 text-center py-8 text-muted-foreground">
+                    <div className="col-span-2 text-center py-8 text-muted-foreground">
                       No adventure places available
                     </div>
                   ) : (
-                    displayCampsites.map((place, index) => {
+                    displayCampsites.slice(0, displayLimit).map((place, index) => {
                       const itemDistance = position && place.latitude && place.longitude ? calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude) : undefined;
                       const ratingData = ratings.get(place.id);
                       return (
-                        <div key={place.id} className="flex-shrink-0 w-[75vw] sm:w-[320px] md:w-[380px]">
+                        <div key={place.id} className="sm:flex-shrink-0 sm:w-[75vw] sm:min-w-[320px] md:w-[380px]">
                           <ListingCard 
                             id={place.id} 
                             type="ADVENTURE PLACE" 
@@ -964,12 +996,14 @@ const Index = () => {
                 <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#008080]">
                   Hotels and accommodations
                 </h2>
-                <Link to="/category/hotels" className="text-[#008080] text-xs md:text-sm font-bold hover:underline bg-[#008080]/10 px-2 py-1 rounded-full">
-                  View All
-                </Link>
+                {displayHotels.length > displayLimit && (
+                  <Link to="/category/hotels" className="text-[#008080] text-xs md:text-sm font-bold hover:underline bg-[#008080]/10 px-2 py-1 rounded-full">
+                    View All
+                  </Link>
+                )}
               </div>
               <div className="relative">
-                {scrollableRows.hotels.length > 0 && (
+                {displayHotels.length > 0 && !window.matchMedia('(max-width: 640px)').matches && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Scroll left" onClick={() => scrollSection(featuredHotelsRef, 'left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
                       <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -979,7 +1013,14 @@ const Index = () => {
                     </Button>
                   </>
                 )}
-                <div ref={featuredHotelsRef} onScroll={handleScroll('featuredHotels')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredHotelsRef)} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
+                <div 
+                  ref={featuredHotelsRef} 
+                  onScroll={handleScroll('featuredHotels')} 
+                  onTouchStart={onTouchStart} 
+                  onTouchMove={onTouchMove} 
+                  onTouchEnd={() => onTouchEnd(featuredHotelsRef)} 
+                  className="sm:flex sm:gap-4 sm:overflow-x-auto grid grid-cols-2 gap-3 pb-4 scrollbar-hide pl-1 pr-1 sm:pr-8 md:pl-2 md:pr-12 scroll-smooth"
+                >
                   {loadingScrollable ? (
                     <div className="flex gap-4">
                       {[...Array(5)].map((_, i) => (
@@ -989,15 +1030,15 @@ const Index = () => {
                       ))}
                     </div>
                   ) : displayHotels.length === 0 ? (
-                    <div className="flex-1 text-center py-8 text-muted-foreground">
+                    <div className="col-span-2 text-center py-8 text-muted-foreground">
                       No hotels available
                     </div>
                   ) : (
-                    displayHotels.map((hotel, index) => {
+                    displayHotels.slice(0, displayLimit).map((hotel, index) => {
                       const itemDistance = position && hotel.latitude && hotel.longitude ? calculateDistance(position.latitude, position.longitude, hotel.latitude, hotel.longitude) : undefined;
                       const ratingData = ratings.get(hotel.id);
                       return (
-                        <div key={hotel.id} className="flex-shrink-0 w-[75vw] sm:w-[320px] md:w-[380px]">
+                        <div key={hotel.id} className="sm:flex-shrink-0 sm:w-[75vw] sm:min-w-[320px] md:w-[380px]">
                           <ListingCard 
                             id={hotel.id} 
                             type="HOTEL" 
@@ -1034,12 +1075,14 @@ const Index = () => {
                 <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#FF0000]">
                   Trips and tours
                 </h2>
-                <Link to="/category/trips" className="text-[#FF0000] text-xs md:text-sm font-bold hover:underline bg-[#FF0000]/10 px-2 py-1 rounded-full">
-                  View All
-                </Link>
+                {displayTrips.length > displayLimit && (
+                  <Link to="/category/trips" className="text-[#FF0000] text-xs md:text-sm font-bold hover:underline bg-[#FF0000]/10 px-2 py-1 rounded-full">
+                    View All
+                  </Link>
+                )}
               </div>
               <div className="relative">
-                {scrollableRows.trips.length > 0 && (
+                {displayTrips.length > 0 && !window.matchMedia('(max-width: 640px)').matches && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Scroll left" onClick={() => scrollSection(featuredTripsRef, 'left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
                       <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -1049,7 +1092,14 @@ const Index = () => {
                     </Button>
                   </>
                 )}
-                <div ref={featuredTripsRef} onScroll={handleScroll('featuredTrips')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredTripsRef)} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
+                <div 
+                  ref={featuredTripsRef} 
+                  onScroll={handleScroll('featuredTrips')} 
+                  onTouchStart={onTouchStart} 
+                  onTouchMove={onTouchMove} 
+                  onTouchEnd={() => onTouchEnd(featuredTripsRef)} 
+                  className="sm:flex sm:gap-4 sm:overflow-x-auto grid grid-cols-2 gap-3 pb-4 scrollbar-hide pl-1 pr-1 sm:pr-8 md:pl-2 md:pr-12 scroll-smooth"
+                >
                   {loadingScrollable ? (
                     <div className="flex gap-4">
                       {[...Array(5)].map((_, i) => (
@@ -1059,17 +1109,17 @@ const Index = () => {
                       ))}
                     </div>
                   ) : displayTrips.length === 0 ? (
-                    <div className="flex-1 text-center py-8 text-muted-foreground">
+                    <div className="col-span-2 text-center py-8 text-muted-foreground">
                       No trips available
                     </div>
                   ) : (
-                    displayTrips.map((trip, index) => {
+                    displayTrips.slice(0, displayLimit).map((trip, index) => {
                       const isEvent = trip.type === "event";
                       const today = new Date().toISOString().split('T')[0];
                       const isOutdated = trip.date && !trip.is_flexible_date && trip.date < today;
                       const ratingData = ratings.get(trip.id);
                       return (
-                        <div key={trip.id} className="flex-shrink-0 w-[75vw] sm:w-[320px] md:w-[380px]">
+                        <div key={trip.id} className="sm:flex-shrink-0 sm:w-[75vw] sm:min-w-[320px] md:w-[380px]">
                           <ListingCard 
                             id={trip.id} 
                             type={isEvent ? "EVENT" : "TRIP"} 
@@ -1108,12 +1158,14 @@ const Index = () => {
                 <h2 className="text-[0.9rem] sm:text-2xl font-bold whitespace-nowrap overflow-hidden text-ellipsis min-w-max text-[#FF7F50]">
                   Sports and events
                 </h2>
-                <Link to="/category/events" className="text-[#FF7F50] text-xs md:text-sm font-bold hover:underline bg-[#FF7F50]/10 px-2 py-1 rounded-full">
-                  View All
-                </Link>
+                {displayEvents.length > displayLimit && (
+                  <Link to="/category/events" className="text-[#FF7F50] text-xs md:text-sm font-bold hover:underline bg-[#FF7F50]/10 px-2 py-1 rounded-full">
+                    View All
+                  </Link>
+                )}
               </div>
               <div className="relative">
-                {scrollableRows.events.length > 0 && (
+                {displayEvents.length > 0 && !window.matchMedia('(max-width: 640px)').matches && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Scroll left" onClick={() => scrollSection(featuredEventsRef, 'left')} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 hover:bg-black/70 text-white">
                       <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
@@ -1123,7 +1175,14 @@ const Index = () => {
                     </Button>
                   </>
                 )}
-                <div ref={featuredEventsRef} onScroll={handleScroll('featuredEvents')} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => onTouchEnd(featuredEventsRef)} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
+                <div 
+                  ref={featuredEventsRef} 
+                  onScroll={handleScroll('featuredEvents')} 
+                  onTouchStart={onTouchStart} 
+                  onTouchMove={onTouchMove} 
+                  onTouchEnd={() => onTouchEnd(featuredEventsRef)} 
+                  className="sm:flex sm:gap-4 sm:overflow-x-auto grid grid-cols-2 gap-3 pb-4 scrollbar-hide pl-1 pr-1 sm:pr-8 md:pl-2 md:pr-12 scroll-smooth"
+                >
                   {loadingScrollable ? (
                     <div className="flex gap-4">
                       {[...Array(5)].map((_, i) => (
@@ -1133,16 +1192,16 @@ const Index = () => {
                       ))}
                     </div>
                   ) : displayEvents.length === 0 ? (
-                    <div className="flex-1 text-center py-8 text-muted-foreground">
+                    <div className="col-span-2 text-center py-8 text-muted-foreground">
                       No events available
                     </div>
                   ) : (
-                    displayEvents.map((event, index) => {
+                    displayEvents.slice(0, displayLimit).map((event, index) => {
                       const ratingData = ratings.get(event.id);
                       const today = new Date().toISOString().split('T')[0];
                       const isOutdated = event.date && !event.is_flexible_date && event.date < today;
                       return (
-                        <div key={event.id} className="flex-shrink-0 w-[75vw] sm:w-[320px] md:w-[380px]">
+                        <div key={event.id} className="sm:flex-shrink-0 sm:w-[75vw] sm:min-w-[320px] md:w-[380px]">
                           <ListingCard 
                             id={event.id} 
                             type="EVENT" 
@@ -1186,7 +1245,9 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide pl-1 pr-8 md:pl-2 md:pr-12 scroll-smooth">
+                  <div 
+                    className="sm:flex sm:gap-4 sm:overflow-x-auto grid grid-cols-2 gap-3 pb-4 scrollbar-hide pl-1 pr-1 sm:pr-8 md:pl-2 md:pr-12 scroll-smooth"
+                  >
                     {loadingNearby ? (
                       <div className="flex gap-4">
                         {[...Array(5)].map((_, i) => (
@@ -1196,14 +1257,14 @@ const Index = () => {
                         ))}
                       </div>
                     ) : (
-                      sortedNearbyPlaces.slice(0, 8).map((item, index) => {
+                      sortedNearbyPlaces.slice(0, displayLimit).map((item, index) => {
                         const itemAny = item as any;
                         const itemDistance = itemAny.latitude && itemAny.longitude && position
                           ? calculateDistance(position.latitude, position.longitude, itemAny.latitude, itemAny.longitude)
                           : undefined;
                         const ratingData = ratings.get(item.id);
                         return (
-                          <div key={item.id} className="flex-shrink-0 w-[75vw] sm:w-[320px] md:w-[380px]">
+                          <div key={item.id} className="sm:flex-shrink-0 sm:w-[75vw] sm:min-w-[320px] md:w-[380px]">
                             <MemoizedListingCard
                               id={item.id}
                               type={itemAny.type || itemAny.table === 'hotels' ? 'HOTEL' : 'ADVENTURE PLACE'}
