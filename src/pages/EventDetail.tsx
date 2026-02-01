@@ -18,7 +18,6 @@ import { useBookingSubmit } from "@/hooks/useBookingSubmit";
 import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 import { Header } from "@/components/Header";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const COLORS = {
   TEAL: "#008080",
@@ -59,7 +58,6 @@ const EventDetail = () => {
   const isSaved = savedItems.has(id || "");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -156,31 +154,30 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* Header - Desktop Only */}
-      {!isMobile && <Header showSearchIcon={false} />}
-
-      {/* Action Bar - Below Header */}
-      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <Button 
-          onClick={() => navigate(-1)} 
-          className="rounded-full w-10 h-10 p-0 border-none bg-slate-100 text-slate-900 hover:bg-slate-200 transition-all"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-
-        <Button 
-          onClick={handleSave} 
-          className={`rounded-full w-10 h-10 p-0 border-none shadow-lg transition-all ${
-            isSaved ? "bg-red-500 hover:bg-red-600" : "bg-slate-100 text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-slate-900"}`} />
-        </Button>
-      </div>
+      {/* Header - All Screens */}
+      <Header showSearchIcon={false} />
 
       {/* HERO / IMAGE GALLERY */}
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4 pt-3">
         <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900 rounded-3xl">
+          {/* Action Buttons - Overlaid on Gallery */}
+          <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
+            <Button 
+              onClick={() => navigate(-1)} 
+              className="rounded-full w-10 h-10 p-0 border-none bg-white/90 backdrop-blur-sm text-slate-900 hover:bg-white shadow-lg transition-all"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+
+            <Button 
+              onClick={handleSave} 
+              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-sm transition-all ${
+                isSaved ? "bg-red-500 hover:bg-red-600" : "bg-white/90 text-slate-900 hover:bg-white"
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-slate-900"}`} />
+            </Button>
+          </div>
           <Carousel plugins={[Autoplay({ delay: 4000 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.map((img, idx) => (

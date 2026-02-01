@@ -17,7 +17,6 @@ import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
 import { trackReferralClick, generateReferralLink } from "@/lib/referralUtils";
 import { Header } from "@/components/Header";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const AdventurePlaceDetail = () => {
   const { slug } = useParams();
@@ -33,7 +32,6 @@ const AdventurePlaceDetail = () => {
 
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
-  const isMobile = useIsMobile();
 
   const distance = position && place?.latitude && place?.longitude
     ? calculateDistance(position.latitude, position.longitude, place.latitude, place.longitude)
@@ -163,31 +161,30 @@ const AdventurePlaceDetail = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      {/* Header - Desktop Only */}
-      {!isMobile && <Header showSearchIcon={false} />}
-
-      {/* Action Bar - Below Header */}
-      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <Button
-          onClick={() => navigate(-1)}
-          className="rounded-full w-10 h-10 p-0 border-none bg-slate-100 text-slate-900 hover:bg-slate-200 transition-all"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-
-        <Button
-          onClick={() => id && handleSaveItem(id, "adventure_place")}
-          className={`rounded-full w-10 h-10 p-0 border-none shadow-lg transition-all ${
-            isSaved ? "bg-red-500 hover:bg-red-600" : "bg-slate-100 text-slate-900 hover:bg-slate-200"
-          }`}
-        >
-          <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-slate-900"}`} />
-        </Button>
-      </div>
+      {/* Header - All Screens */}
+      <Header showSearchIcon={false} />
 
       {/* HERO / IMAGE GALLERY */}
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4 pt-3">
         <div className="relative w-full h-[45vh] md:h-[65vh] bg-slate-900 overflow-hidden rounded-3xl">
+          {/* Action Buttons - Overlaid on Gallery */}
+          <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
+            <Button
+              onClick={() => navigate(-1)}
+              className="rounded-full w-10 h-10 p-0 border-none bg-white/90 backdrop-blur-sm text-slate-900 hover:bg-white shadow-lg transition-all"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+
+            <Button
+              onClick={() => id && handleSaveItem(id, "adventure_place")}
+              className={`rounded-full w-10 h-10 p-0 border-none shadow-lg backdrop-blur-sm transition-all ${
+                isSaved ? "bg-red-500 hover:bg-red-600" : "bg-white/90 text-slate-900 hover:bg-white"
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${isSaved ? "fill-white text-white" : "text-slate-900"}`} />
+            </Button>
+          </div>
           <Carousel plugins={[Autoplay({ delay: 3500 })]} className="w-full h-full">
             <CarouselContent className="h-full ml-0">
               {allImages.length > 0 ? allImages.map((img, idx) => (
@@ -243,8 +240,22 @@ const AdventurePlaceDetail = () => {
             <div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-100 lg:hidden">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Starting Price</p>
-                  <span className="text-4xl font-black text-red-600">KSh {startingPrice.toLocaleString()}</span>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrance Fee</p>
+                  {place.entry_fee && place.entry_fee > 0 ? (
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-red-600">KSh {Number(place.entry_fee).toLocaleString()}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">/ adult</span>
+                      </div>
+                      {place.child_entry_fee !== undefined && (
+                        <div className="text-sm font-bold text-slate-500">
+                          Child: KSh {Number(place.child_entry_fee || 0).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-3xl font-black text-emerald-600">Free Entry</span>
+                  )}
                 </div>
                 <div className="text-right">
                     <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
@@ -338,9 +349,21 @@ const AdventurePlaceDetail = () => {
           <div className="hidden lg:block">
             <div className="sticky top-24 bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100 space-y-6">
                 <div className="text-center">
-                  <p className="text-xs font-black uppercase text-slate-400 mb-1">Starting from</p>
-                  <h3 className="text-5xl font-black text-red-600 mb-2">KSh {startingPrice.toLocaleString()}</h3>
-                  <div className="flex items-center justify-center gap-1.5 text-amber-500 font-black">
+                  <p className="text-xs font-black uppercase text-slate-400 mb-1">Entrance Fee</p>
+                  {place.entry_fee && place.entry_fee > 0 ? (
+                    <div className="space-y-1">
+                      <h3 className="text-4xl font-black text-red-600">KSh {Number(place.entry_fee).toLocaleString()}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">per adult</p>
+                      {place.child_entry_fee !== undefined && (
+                        <p className="text-sm font-bold text-slate-500">
+                          Child: KSh {Number(place.child_entry_fee || 0).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <h3 className="text-4xl font-black text-emerald-600 mb-2">Free Entry</h3>
+                  )}
+                  <div className="flex items-center justify-center gap-1.5 text-amber-500 font-black mt-2">
                     <Star className="h-4 w-4 fill-current" />
                     <span className="text-lg">{liveRating.avg || "0"}</span>
                   </div>
