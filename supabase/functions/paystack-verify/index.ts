@@ -86,7 +86,7 @@ serve(async (req) => {
             booking_type: bookingData.booking_type,
             total_amount: bookingData.total_amount,
             status: "confirmed",
-            payment_status: "completed", // Use 'completed' to match the check constraint
+            payment_status: "completed",
             payment_method: "card",
             is_guest_booking: bookingData.is_guest_booking || false,
             guest_name: bookingData.guest_name,
@@ -125,7 +125,6 @@ serve(async (req) => {
 
           // Send notification email to the host
           try {
-            // Get host email from the item
             let hostEmail = null;
             let hostId = null;
             
@@ -175,6 +174,36 @@ serve(async (req) => {
           } catch (hostEmailError) {
             console.error("Error sending host notification email:", hostEmailError);
           }
+
+          // Return full booking details for PDF download
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: {
+                status: transaction.status,
+                reference: transaction.reference,
+                amount: transaction.amount / 100,
+                paid_at: transaction.paid_at,
+                channel: transaction.channel,
+                currency: transaction.currency,
+                isSuccessful,
+                // Booking details for PDF download
+                bookingId: booking?.id,
+                guestName: bookingData.guest_name,
+                guestEmail: bookingData.guest_email,
+                guestPhone: bookingData.guest_phone,
+                itemName: bookingData.emailData?.itemName || "Booking",
+                bookingType: bookingData.booking_type,
+                visitDate: bookingData.visit_date,
+                slotsBooked: bookingData.slots_booked,
+                adults: bookingData.booking_details?.adults,
+                children: bookingData.booking_details?.children,
+                facilities: bookingData.booking_details?.facilities,
+                activities: bookingData.booking_details?.activities,
+              },
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
       }
     }
@@ -185,7 +214,7 @@ serve(async (req) => {
         data: {
           status: transaction.status,
           reference: transaction.reference,
-          amount: transaction.amount / 100, // Convert back from kobo/cents
+          amount: transaction.amount / 100,
           paid_at: transaction.paid_at,
           channel: transaction.channel,
           currency: transaction.currency,

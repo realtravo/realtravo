@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, XCircle, Loader2, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookingDownloadButton } from "@/components/booking/BookingDownloadButton";
+import { BookingPDFData } from "@/lib/pdfBookingExport";
 
 const COLORS = {
   TEAL: "#008080",
@@ -17,13 +19,13 @@ const PaymentVerify = () => {
   const [status, setStatus] = useState<VerificationStatus>('loading');
   const [message, setMessage] = useState('');
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [bookingPDFData, setBookingPDFData] = useState<BookingPDFData | null>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       const reference = searchParams.get('reference') || searchParams.get('trxref');
       
       if (!reference) {
-        // Try to get reference from session storage
         const storedReference = sessionStorage.getItem('paystack_reference');
         if (storedReference) {
           await processVerification(storedReference);
@@ -52,7 +54,27 @@ const PaymentVerify = () => {
           setMessage('Payment successful! Your booking has been confirmed.');
           setBookingDetails(data.data);
           
-          // Clear session storage
+          // Prepare booking PDF data for download
+          if (data.data.bookingId) {
+            const pdfData: BookingPDFData = {
+              bookingId: data.data.bookingId,
+              guestName: data.data.guestName || 'Guest',
+              guestEmail: data.data.guestEmail || '',
+              guestPhone: data.data.guestPhone,
+              itemName: data.data.itemName || 'Booking',
+              bookingType: data.data.bookingType || 'booking',
+              visitDate: data.data.visitDate || new Date().toISOString(),
+              totalAmount: data.data.amount || 0,
+              adults: data.data.adults,
+              children: data.data.children,
+              slotsBooked: data.data.slotsBooked,
+              paymentStatus: 'completed',
+              facilities: data.data.facilities,
+              activities: data.data.activities,
+            };
+            setBookingPDFData(pdfData);
+          }
+          
           sessionStorage.removeItem('paystack_reference');
           sessionStorage.removeItem('paystack_booking_data');
         } else {
@@ -78,7 +100,7 @@ const PaymentVerify = () => {
   };
 
   const handleRetry = () => {
-    navigate(-2); // Go back to booking page
+    navigate(-2);
   };
 
   return (
@@ -125,6 +147,16 @@ const PaymentVerify = () => {
             )}
             
             <div className="space-y-3">
+              {/* Download Booking Button - Important for guests */}
+              {bookingPDFData && (
+                <BookingDownloadButton 
+                  booking={bookingPDFData}
+                  variant="default"
+                  size="lg"
+                  className="w-full h-12 rounded-2xl font-black uppercase tracking-widest"
+                />
+              )}
+              
               <Button
                 onClick={handleGoToBookings}
                 className="w-full h-12 rounded-2xl font-black uppercase tracking-widest text-white"
