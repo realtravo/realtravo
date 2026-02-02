@@ -396,43 +396,43 @@ export const MultiStepBooking = ({
     const isGloballySoldOut = slotLimitType === 'inventory' && isSoldOut && totalCapacity > 0;
 
     return (
-        <div className="flex flex-col bg-gradient-to-br from-white via-white to-slate-50 rounded-[32px] overflow-y-auto overscroll-contain touch-pan-y max-h-[90vh] shadow-2xl border border-slate-100">
+        <div className="flex flex-col bg-gradient-to-br from-white via-white to-slate-50 rounded-2xl sm:rounded-[32px] overflow-hidden max-h-[90vh] sm:max-h-[85vh] shadow-2xl border border-slate-100">
             {/* Sold Out Banner - Shows real-time if item becomes sold out during booking */}
             {isGloballySoldOut && (
-                <div className="px-6 py-3 bg-red-50 border-b border-red-200 flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-200 flex items-center gap-2 sm:gap-3">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 flex-shrink-0" />
                     <div>
-                        <p className="text-sm font-bold text-red-700">This item is now fully booked</p>
-                        <p className="text-xs text-red-600">All slots have been reserved. Please try another date or item.</p>
+                        <p className="text-xs sm:text-sm font-bold text-red-700">This item is now fully booked</p>
+                        <p className="text-[10px] sm:text-xs text-red-600">All slots have been reserved. Please try another date or item.</p>
                     </div>
                 </div>
             )}
 
-            {/* Header - scrolls with content */}
-            <div className="p-6 pb-4 border-b border-slate-100">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: primaryColor }}>
+            {/* Header */}
+            <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-100 flex-shrink-0">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight" style={{ color: primaryColor }}>
                         Book Your Visit
                     </h2>
                 </div>
-                <p className="text-sm text-slate-500 font-medium">{itemName}</p>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">{itemName}</p>
                 
                 {/* Flexible Date Indicator */}
                 {isFlexibleDate && (
-                    <div className="mt-2 inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
+                    <div className="mt-2 inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold">
                         <Calendar className="h-3 w-3" />
                         Flexible Date Trip
                     </div>
                 )}
                 
                 {/* Progress Indicator - Page dots */}
-                <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-3 sm:mt-4">
                     {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
                         <div
                             key={step}
                             className={cn(
-                                "h-2 rounded-full transition-all duration-300",
-                                step === currentStep ? "w-6" : "w-2"
+                                "h-1.5 sm:h-2 rounded-full transition-all duration-300",
+                                step === currentStep ? "w-5 sm:w-6" : "w-1.5 sm:w-2"
                             )}
                             style={{ 
                                 backgroundColor: step <= currentStep ? primaryColor : '#e2e8f0'
@@ -440,25 +440,25 @@ export const MultiStepBooking = ({
                         />
                     ))}
                 </div>
-                <p className="text-xs text-center text-slate-400 mt-2 font-medium">Step {currentStep} of {totalSteps}</p>
+                <p className="text-[10px] sm:text-xs text-center text-slate-400 mt-2 font-medium">Step {currentStep} of {totalSteps}</p>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-6">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Step 1: Visit Date */}
                 {currentStep === dateStepNum && !skipDateSelection && (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
-                                <Calendar className="h-5 w-5" style={{ color: primaryColor }} />
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
+                                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Visit Date</h3>
-                                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Choose your preferred date</p>
+                                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Visit Date</h3>
+                                <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Choose your preferred date</p>
                             </div>
                         </div>
-                        <div className="p-4 rounded-2xl border-2 border-[#008080]">
-                            <Label htmlFor="visit_date" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Visit Date</Label>
+                        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-[#008080]">
+                            <Label htmlFor="visit_date" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Visit Date</Label>
                             <Input
                                 id="visit_date"
                                 type="date"
@@ -480,11 +480,11 @@ export const MultiStepBooking = ({
                                     }
                                     setFormData({ ...formData, visit_date: selectedDate });
                                 }}
-                                className="border-none bg-white rounded-xl h-12 font-medium focus:ring-[#008080] focus:ring-2"
+                                className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 font-medium focus:ring-[#008080] focus:ring-2 text-sm sm:text-base"
                             />
-                            {!formData.visit_date && <p className="text-xs text-red-500 mt-2 font-medium">Please select a date to proceed.</p>}
+                            {!formData.visit_date && <p className="text-[10px] sm:text-xs text-red-500 mt-2 font-medium">Please select a date to proceed.</p>}
                             {workingDays.length > 0 && (
-                                <p className="text-xs text-slate-400 mt-2 font-medium">
+                                <p className="text-[10px] sm:text-xs text-slate-400 mt-2 font-medium">
                                     Open on: {workingDays.join(', ')}
                                 </p>
                             )}
@@ -494,19 +494,19 @@ export const MultiStepBooking = ({
 
                 {/* Step 2: Number of People */}
                 {currentStep === guestsStepNum && (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
-                                <Users className="h-5 w-5" style={{ color: primaryColor }} />
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
+                                <Users className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Number of Guests</h3>
-                                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">How many people are attending?</p>
+                                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Number of Guests</h3>
+                                <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">How many people are attending?</p>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl border-2 border-[#008080]">
-                                <Label htmlFor="adults" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Adults (18+)</Label>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-[#008080]">
+                                <Label htmlFor="adults" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Adults (18+)</Label>
                                 <Input
                                     id="adults"
                                     type="number"
@@ -514,14 +514,14 @@ export const MultiStepBooking = ({
                                     max={slotLimitType === 'per_booking' ? totalCapacity : undefined}
                                     value={formData.num_adults}
                                     onChange={(e) => setFormData({ ...formData, num_adults: parseInt(e.target.value) || 0 })}
-                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg focus:ring-[#008080] focus:ring-2"
+                                    className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 font-bold text-base sm:text-lg focus:ring-[#008080] focus:ring-2"
                                 />
                                 {entranceType !== 'free' && priceAdult > 0 && (
-                                    <p className="text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceAdult.toLocaleString()} each</p>
+                                    <p className="text-[10px] sm:text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceAdult.toLocaleString()} each</p>
                                 )}
                             </div>
-                            <div className="p-4 rounded-2xl border-2 border-[#008080]">
-                                <Label htmlFor="children" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Children</Label>
+                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-[#008080]">
+                                <Label htmlFor="children" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Children</Label>
                                 <Input
                                     id="children"
                                     type="number"
@@ -529,22 +529,22 @@ export const MultiStepBooking = ({
                                     max={slotLimitType === 'per_booking' ? totalCapacity : undefined}
                                     value={formData.num_children}
                                     onChange={(e) => setFormData({ ...formData, num_children: parseInt(e.target.value) || 0 })}
-                                    className="border-none bg-white rounded-xl h-12 font-bold text-lg focus:ring-[#008080] focus:ring-2"
+                                    className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 font-bold text-base sm:text-lg focus:ring-[#008080] focus:ring-2"
                                 />
                                 {entranceType !== 'free' && priceChild > 0 && (
-                                    <p className="text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceChild.toLocaleString()} each</p>
+                                    <p className="text-[10px] sm:text-xs font-bold mt-2" style={{ color: accentColor }}>KES {priceChild.toLocaleString()} each</p>
                                 )}
                             </div>
                         </div>
-                        <div className="p-4 rounded-2xl border-2 border-dashed" style={{ borderColor: `${primaryColor}30`, backgroundColor: `${primaryColor}08` }}>
-                            <p className="text-sm font-black uppercase tracking-tight" style={{ color: primaryColor }}>
+                        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-dashed" style={{ borderColor: `${primaryColor}30`, backgroundColor: `${primaryColor}08` }}>
+                            <p className="text-xs sm:text-sm font-black uppercase tracking-tight" style={{ color: primaryColor }}>
                                 Total Guests: {formData.num_adults + formData.num_children}
                             </p>
                             {(formData.num_adults === 0 && formData.num_children === 0) && (
-                                <p className="text-xs text-red-500 font-medium mt-1">You must include at least one guest.</p>
+                                <p className="text-[10px] sm:text-xs text-red-500 font-medium mt-1">You must include at least one guest.</p>
                             )}
                             {insufficientSlots && (
-                                <p className="text-xs text-red-500 font-medium mt-1">
+                                <p className="text-[10px] sm:text-xs text-red-500 font-medium mt-1">
                                     {slotLimitType === 'per_booking' 
                                         ? `Maximum ${totalCapacity} guests per booking allowed.`
                                         : `Only ${remainingSlots} slots remaining. Please reduce your group size.`
@@ -557,18 +557,18 @@ export const MultiStepBooking = ({
 
                 {/* Step 3: Facilities (Separate step) */}
                 {currentStep === facilitiesStepNum && facilitiesStepNum > 0 && (
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
-                                <CheckCircle2 className="h-5 w-5" style={{ color: primaryColor }} />
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
+                                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Facilities</h3>
-                                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Choose facility rentals (optional)</p>
+                                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Facilities</h3>
+                                <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Choose facility rentals (optional)</p>
                             </div>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             {facilities.filter(f => f.price > 0).map((facility) => {
                                 const selected = formData.selectedFacilities.find(f => f.name === facility.name);
                                 const isDateInvalid = selected && (
@@ -578,55 +578,55 @@ export const MultiStepBooking = ({
                                 );
 
                                 return (
-                                    <div key={facility.name} className="p-4 rounded-2xl border border-slate-100 bg-white">
+                                    <div key={facility.name} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100 bg-white">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 sm:gap-3">
                                                 <Checkbox
                                                     id={`facility-${facility.name}`}
                                                     checked={!!selected}
                                                     onCheckedChange={() => toggleFacility(facility)}
                                                     className="rounded-lg"
                                                 />
-                                                <Label htmlFor={`facility-${facility.name}`} className="text-sm font-black uppercase tracking-tight cursor-pointer">
+                                                <Label htmlFor={`facility-${facility.name}`} className="text-xs sm:text-sm font-black uppercase tracking-tight cursor-pointer">
                                                     {facility.name}
                                                 </Label>
                                             </div>
-                                            <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                                            <span className="text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full whitespace-nowrap" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                                                 KES {facility.price.toLocaleString()}/day
                                             </span>
                                         </div>
                                         {selected && (
-                                            <div className="mt-4 pt-4 border-t border-slate-100">
-                                                <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Rental Period</p>
-                                                <div className="grid grid-cols-2 gap-3">
+                                            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100">
+                                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Rental Period</p>
+                                                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                                     <div>
-                                                        <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Start Date</Label>
+                                                        <Label className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400">Start Date</Label>
                                                         <Input
                                                             type="date"
                                                             value={selected.startDate || ""}
                                                             onChange={(e) => updateFacilityDates(facility.name, 'startDate', e.target.value)}
                                                             min={formData.visit_date || new Date().toISOString().split('T')[0]}
-                                                            className="mt-1 rounded-xl h-10 text-sm"
+                                                            className="mt-1 rounded-lg sm:rounded-xl h-9 sm:h-10 text-xs sm:text-sm"
                                                         />
                                                     </div>
                                                     <div>
-                                                        <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">End Date</Label>
+                                                        <Label className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400">End Date</Label>
                                                         <Input
                                                             type="date"
                                                             value={selected.endDate || ""}
                                                             onChange={(e) => updateFacilityDates(facility.name, 'endDate', e.target.value)}
                                                             min={selected.startDate || formData.visit_date || new Date().toISOString().split('T')[0]} 
-                                                            className="mt-1 rounded-xl h-10 text-sm"
+                                                            className="mt-1 rounded-lg sm:rounded-xl h-9 sm:h-10 text-xs sm:text-sm"
                                                         />
                                                     </div>
                                                 </div>
                                                 {isDateInvalid && (
-                                                    <p className="text-xs text-red-500 mt-2 font-medium">Please select valid dates.</p>
+                                                    <p className="text-[10px] sm:text-xs text-red-500 mt-2 font-medium">Please select valid dates.</p>
                                                 )}
                                                 {/* Availability Status Indicator */}
                                                 {selected.startDate && selected.endDate && !isDateInvalid && (
                                                     <div className={cn(
-                                                        "flex items-center gap-2 mt-3 p-2 rounded-lg text-sm font-medium",
+                                                        "flex items-center gap-2 mt-2 sm:mt-3 p-2 rounded-lg text-xs sm:text-sm font-medium",
                                                         facilityAvailabilityStatus[facility.name]?.isAvailable === true 
                                                             ? "bg-green-50 text-green-700"
                                                             : facilityAvailabilityStatus[facility.name]?.isAvailable === false
@@ -635,18 +635,18 @@ export const MultiStepBooking = ({
                                                     )}>
                                                         {checkingAvailability ? (
                                                             <>
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                                Checking availability...
+                                                                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                                                <span className="text-[10px] sm:text-xs">Checking availability...</span>
                                                             </>
                                                         ) : facilityAvailabilityStatus[facility.name]?.isAvailable === true ? (
                                                             <>
-                                                                <Check className="h-4 w-4" />
-                                                                Facility Available
+                                                                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                <span className="text-[10px] sm:text-xs">Facility Available</span>
                                                             </>
                                                         ) : facilityAvailabilityStatus[facility.name]?.isAvailable === false ? (
                                                             <>
-                                                                <X className="h-4 w-4" />
-                                                                {facilityAvailabilityStatus[facility.name]?.message || 'Dates not available'}
+                                                                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                <span className="text-[10px] sm:text-xs">{facilityAvailabilityStatus[facility.name]?.message || 'Dates not available'}</span>
                                                             </>
                                                         ) : null}
                                                     </div>
@@ -658,53 +658,53 @@ export const MultiStepBooking = ({
                             })}
                         </div>
                         
-                        <p className="text-xs text-slate-400 text-center">You can skip this step if you don't need any facilities</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400 text-center">You can skip this step if you don't need any facilities</p>
                     </div>
                 )}
 
                 {/* Step 4: Activities (Separate step) */}
                 {currentStep === activitiesStepNum && activitiesStepNum > 0 && (
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl" style={{ backgroundColor: `${accentColor}15` }}>
-                                <CheckCircle2 className="h-5 w-5" style={{ color: accentColor }} />
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 rounded-xl" style={{ backgroundColor: `${accentColor}15` }}>
+                                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: accentColor }} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Activities</h3>
-                                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Choose activities to participate in (optional)</p>
+                                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Select Activities</h3>
+                                <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Choose activities to participate in (optional)</p>
                             </div>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             {activities.filter(a => a.price > 0).map((activity) => {
                                 const selected = formData.selectedActivities.find(a => a.name === activity.name);
                                 return (
-                                    <div key={activity.name} className="p-4 rounded-2xl border border-slate-100 bg-white">
+                                    <div key={activity.name} className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100 bg-white">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 sm:gap-3">
                                                 <Checkbox
                                                     id={`activity-${activity.name}`}
                                                     checked={!!selected}
                                                     onCheckedChange={() => toggleActivity(activity)}
                                                     className="rounded-lg"
                                                 />
-                                                <Label htmlFor={`activity-${activity.name}`} className="text-sm font-black uppercase tracking-tight cursor-pointer">
+                                                <Label htmlFor={`activity-${activity.name}`} className="text-xs sm:text-sm font-black uppercase tracking-tight cursor-pointer">
                                                     {activity.name}
                                                 </Label>
                                             </div>
-                                            <span className="text-xs font-black px-3 py-1 rounded-full" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
+                                            <span className="text-[10px] sm:text-xs font-black px-2 sm:px-3 py-1 rounded-full whitespace-nowrap" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
                                                 KES {activity.price.toLocaleString()}/person
                                             </span>
                                         </div>
                                         {selected && (
-                                            <div className="mt-4 pt-4 border-t border-slate-100">
-                                                <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Number of People</Label>
+                                            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100">
+                                                <Label className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400">Number of People</Label>
                                                 <Input
                                                     type="number"
                                                     min="1"
                                                     value={selected.numberOfPeople}
                                                     onChange={(e) => updateActivityPeople(activity.name, parseInt(e.target.value) || 1)}
-                                                    className="mt-1 rounded-xl h-10 text-sm w-24"
+                                                    className="mt-1 rounded-lg sm:rounded-xl h-9 sm:h-10 text-xs sm:text-sm w-20 sm:w-24"
                                                 />
                                             </div>
                                         )}
@@ -713,55 +713,55 @@ export const MultiStepBooking = ({
                             })}
                         </div>
                         
-                        <p className="text-xs text-slate-400 text-center">You can skip this step if you don't want any activities</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400 text-center">You can skip this step if you don't want any activities</p>
                     </div>
                 )}
 
-                {/* Step 4: Summary */}
+                {/* Final Step: Summary */}
                 {currentStep === totalSteps && (
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         {!user && (
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
-                                        <Users className="h-5 w-5" style={{ color: primaryColor }} />
+                            <div className="space-y-3 sm:space-y-4">
+                                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                    <div className="p-1.5 sm:p-2 rounded-xl" style={{ backgroundColor: `${primaryColor}15` }}>
+                                        <Users className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Contact Details</h3>
-                                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">We'll send your booking confirmation here</p>
+                                        <h3 className="text-base sm:text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>Contact Details</h3>
+                                        <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">We'll send your booking confirmation here</p>
                                     </div>
                                 </div>
-                                <div className="space-y-4 p-4 rounded-2xl border-2 border-[#008080]">
+                                <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-[#008080]">
                                     <div>
-                                        <Label htmlFor="guest_name" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Full Name</Label>
+                                        <Label htmlFor="guest_name" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Full Name</Label>
                                         <Input
                                             id="guest_name"
                                             placeholder="Your full name"
                                             value={formData.guest_name}
                                             onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 text-sm sm:text-base"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="guest_email" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Email Address</Label>
+                                        <Label htmlFor="guest_email" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Email Address</Label>
                                         <Input
                                             id="guest_email"
                                             type="email"
                                             placeholder="your@email.com"
                                             value={formData.guest_email}
                                             onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 text-sm sm:text-base"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="guest_phone" className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Phone Number (Optional)</Label>
+                                        <Label htmlFor="guest_phone" className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 mb-2 block">Phone Number (Optional)</Label>
                                         <Input
                                             id="guest_phone"
                                             type="tel"
                                             placeholder="e.g. 0712345678"
                                             value={formData.guest_phone}
                                             onChange={(e) => setFormData({ ...formData, guest_phone: e.target.value })}
-                                            className="border-none bg-white rounded-xl h-12"
+                                            className="border-none bg-white rounded-lg sm:rounded-xl h-10 sm:h-12 text-sm sm:text-base"
                                         />
                                     </div>
                                 </div>
@@ -769,25 +769,25 @@ export const MultiStepBooking = ({
                         )}
                         
                         {/* Order Summary */}
-                        <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50 space-y-3">
-                            <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: primaryColor }}>Booking Summary</h3>
+                        <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-100 bg-slate-50 space-y-2 sm:space-y-3">
+                            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider mb-3 sm:mb-4" style={{ color: primaryColor }}>Booking Summary</h3>
                             
                             {formData.visit_date && (
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-xs sm:text-sm">
                                     <span className="text-slate-500">Visit Date</span>
                                     <span className="font-bold">{new Date(formData.visit_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                 </div>
                             )}
                             
                             {formData.num_adults > 0 && (
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-xs sm:text-sm">
                                     <span className="text-slate-500">{formData.num_adults} Adult{formData.num_adults > 1 ? 's' : ''}</span>
                                     <span className="font-bold">KES {(formData.num_adults * priceAdult).toLocaleString()}</span>
                                 </div>
                             )}
                             
                             {formData.num_children > 0 && (
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-xs sm:text-sm">
                                     <span className="text-slate-500">{formData.num_children} Child{formData.num_children > 1 ? 'ren' : ''}</span>
                                     <span className="font-bold">KES {(formData.num_children * priceChild).toLocaleString()}</span>
                                 </div>
@@ -797,7 +797,7 @@ export const MultiStepBooking = ({
                                 if (!f.startDate || !f.endDate) return null;
                                 const days = Math.ceil((new Date(f.endDate).getTime() - new Date(f.startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1;
                                 return (
-                                    <div key={f.name} className="flex justify-between text-sm">
+                                    <div key={f.name} className="flex justify-between text-xs sm:text-sm">
                                         <span className="text-slate-500">{f.name} ({days} day{days > 1 ? 's' : ''})</span>
                                         <span className="font-bold">KES {(f.price * days).toLocaleString()}</span>
                                     </div>
@@ -805,30 +805,30 @@ export const MultiStepBooking = ({
                             })}
                             
                             {formData.selectedActivities.map(a => (
-                                <div key={a.name} className="flex justify-between text-sm">
+                                <div key={a.name} className="flex justify-between text-xs sm:text-sm">
                                     <span className="text-slate-500">{a.name} ({a.numberOfPeople})</span>
                                     <span className="font-bold">KES {(a.price * a.numberOfPeople).toLocaleString()}</span>
                                 </div>
                             ))}
                             
-                            <div className="border-t pt-3 mt-3">
+                            <div className="border-t pt-2 sm:pt-3 mt-2 sm:mt-3">
                                 <div className="flex justify-between items-baseline">
-                                    <span className="text-sm font-black uppercase" style={{ color: primaryColor }}>Total</span>
-                                    <span className="text-2xl font-black" style={{ color: accentColor }}>KES {total.toLocaleString()}</span>
+                                    <span className="text-xs sm:text-sm font-black uppercase" style={{ color: primaryColor }}>Total</span>
+                                    <span className="text-xl sm:text-2xl font-black" style={{ color: accentColor }}>KES {total.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Payment Info */}
                         {total > 0 && (
-                            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#008080]/10 to-[#FF7F50]/10 border border-slate-200">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-white shadow-sm">
-                                        <CreditCard className="h-5 w-5" style={{ color: primaryColor }} />
+                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#008080]/10 to-[#FF7F50]/10 border border-slate-200">
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                    <div className="p-1.5 sm:p-2 rounded-xl bg-white shadow-sm">
+                                        <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black uppercase tracking-tight" style={{ color: primaryColor }}>Secure Payment</p>
-                                        <p className="text-xs text-slate-500">You'll be redirected to Paystack to complete payment</p>
+                                        <p className="text-xs sm:text-sm font-black uppercase tracking-tight" style={{ color: primaryColor }}>Secure Payment</p>
+                                        <p className="text-[10px] sm:text-xs text-slate-500">You'll be redirected to Paystack to complete payment</p>
                                     </div>
                                 </div>
                             </div>
@@ -837,14 +837,14 @@ export const MultiStepBooking = ({
                 )}
             </div>
 
-            {/* Footer with Navigation */}
-            <div className="p-6 pt-4 border-t border-slate-100 bg-white sticky bottom-0">
-                <div className="flex gap-3">
+            {/* Footer with Navigation - Fixed at bottom */}
+            <div className="p-3 sm:p-6 sm:pt-4 border-t border-slate-100 bg-white flex-shrink-0">
+                <div className="flex gap-2 sm:gap-3">
                     {currentStep > (skipDateSelection ? guestsStepNum : dateStepNum) && (
                         <Button
                             onClick={handlePrevious}
                             variant="outline"
-                            className="flex-1 h-14 rounded-2xl font-black uppercase tracking-wider border-2"
+                            className="flex-1 h-11 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider border-2 text-xs sm:text-sm"
                         >
                             Back
                         </Button>
@@ -860,7 +860,7 @@ export const MultiStepBooking = ({
                                 (currentStep === facilitiesStepNum && formData.selectedFacilities.length > 0 && !areFacilityDatesValid()) ||
                                 isGloballySoldOut
                             }
-                            className="flex-1 h-14 rounded-2xl font-black uppercase tracking-wider text-white"
+                            className="flex-1 h-11 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-white text-xs sm:text-sm"
                             style={{ backgroundColor: primaryColor }}
                         >
                             Continue
@@ -875,11 +875,11 @@ export const MultiStepBooking = ({
                                 insufficientSlots ||
                                 (!user && (!formData.guest_name || !formData.guest_email))
                             }
-                            className="flex-1 h-14 rounded-2xl font-black uppercase tracking-wider text-white"
+                            className="flex-1 h-11 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider text-white text-xs sm:text-sm"
                             style={{ backgroundColor: accentColor }}
                         >
                             {(isPaystackLoading || isCardPaymentLoading) ? (
-                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                             ) : total === 0 ? (
                                 "Confirm Booking"
                             ) : (
