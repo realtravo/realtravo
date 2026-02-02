@@ -722,11 +722,11 @@ const CreateHotel = () => {
                     Submit for Review
                   </>
                 )}
-              </> 
+              </>
             )}
           </Button>
         </div>
-      </main> 
+      </main>
       <MobileBottomBar />
     </div>
   );
