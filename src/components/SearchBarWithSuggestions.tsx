@@ -209,176 +209,180 @@ export const SearchBarWithSuggestions = ({ value, onChange, onSubmit, onSuggesti
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-4xl mx-auto" style={{ isolation: 'isolate' }}>
-      <div className="flex items-center gap-3">
-        {showBackButton && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full bg-white shadow-sm border border-slate-100 hover:text-[#008080]">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <div className="relative flex-1 group">
-          <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10 group-focus-within:text-[#008080] transition-colors" />
-          <Input
-            type="text"
-            placeholder="Where to next? Search countries, experiences, stays..."
-            value={value}
-            onChange={(e) => { onChange(e.target.value); setShowSuggestions(true); }}
-            onKeyDown={handleKeyPress}
-            onFocus={() => { setShowSuggestions(true); onFocus?.(); }}
-            className="pl-14 pr-32 h-14 md:h-16 text-sm md:text-base rounded-full border-none shadow-xl bg-white focus-visible:ring-2 focus-visible:ring-[#008080] placeholder:text-slate-400 placeholder:font-medium transition-all"
-          />
-          <Button
-            onClick={() => { saveToHistory(value); onSubmit(); setShowSuggestions(false); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-10 md:h-12 px-6 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 border-none"
-            style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
-          >
-            Search
-          </Button>
+    <div className="w-full">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8">
+        <div ref={wrapperRef} className="relative w-full max-w-4xl mx-auto" style={{ isolation: 'isolate' }}>
+          <div className="flex items-center gap-3">
+            {showBackButton && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full bg-white shadow-sm border border-slate-100 hover:text-[#008080]">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <div className="relative flex-1 group">
+              <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10 group-focus-within:text-[#008080] transition-colors" />
+              <Input
+                type="text"
+                placeholder="Where to next? Search countries, experiences, stays..."
+                value={value}
+                onChange={(e) => { onChange(e.target.value); setShowSuggestions(true); }}
+                onKeyDown={handleKeyPress}
+                onFocus={() => { setShowSuggestions(true); onFocus?.(); }}
+                className="pl-14 pr-32 h-14 md:h-16 text-sm md:text-base rounded-full border-none shadow-xl bg-white focus-visible:ring-2 focus-visible:ring-[#008080] placeholder:text-slate-400 placeholder:font-medium transition-all"
+              />
+              <Button
+                onClick={() => { saveToHistory(value); onSubmit(); setShowSuggestions(false); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-10 md:h-12 px-6 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 border-none"
+                style={{ background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)` }}
+              >
+                Search
+              </Button>
+            </div>
+          </div>
+
+          {showSuggestions && (
+            <div 
+              className="absolute left-0 right-0 top-full mt-3 bg-white border border-slate-100 rounded-[32px] shadow-2xl max-h-[70vh] md:max-h-[500px] overflow-y-auto z-[999] animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              {/* History / Trending / Most Popular Section (Shown when input is empty) */}
+              {!value.trim() && (
+                <div className="p-2 min-h-[100px]">
+                  {/* Most Popular Section - Always shown first on focus */}
+                  {mostPopular.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 px-5 py-3">
+                        <Sparkles className="h-4 w-4 text-[#FF7F50]" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Most Popular</p>
+                      </div>
+                      <div className="space-y-1">
+                        {mostPopular.slice(0, 4).map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => handleSuggestionClick(item)}
+                            className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
+                          >
+                            <div className="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden shadow-sm">
+                              <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center min-w-0">
+                              <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{item.name}</h4>
+                              <div className="flex items-center gap-1 text-slate-400">
+                                <MapPin className="h-3 w-3" />
+                                <span className="text-[10px] font-bold uppercase truncate">{item.location || item.country}</span>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchHistory.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-[#008080]" />
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Recent</p>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-[10px] font-black uppercase text-[#FF7F50] hover:underline">Clear</button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 px-4">
+                        {searchHistory.map((item, i) => (
+                          <Badge 
+                            key={i} 
+                            onClick={() => { onChange(item); saveToHistory(item); onSubmit(); setShowSuggestions(false); }} 
+                            className="cursor-pointer bg-slate-50 hover:bg-[#008080]/10 text-slate-600 border border-slate-100 py-2 px-4 rounded-xl text-xs font-bold transition-colors"
+                          >
+                            {item}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {trendingSearches.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 px-5 py-3">
+                        <TrendingUp className="h-4 w-4 text-[#FF7F50]" />
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trending Destinations</p>
+                      </div>
+                      {trendingSearches.slice(0, 5).map((item, index) => (
+                        <button 
+                          key={index} 
+                          onClick={() => { onChange(item.query); saveToHistory(item.query); onSubmit(); setShowSuggestions(false); }} 
+                          className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left rounded-[20px]"
+                        >
+                          <span className="text-sm font-black text-slate-700 uppercase tracking-tight group-hover:text-[#008080]">{item.query}</span>
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">{item.search_count} explores</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Result Suggestions (Shown when typing) */}
+              {value.trim() && (
+                <div className="p-2">
+                  {/* Loading State */}
+                  {isSearching && (
+                    <div className="p-10 flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#008080]" />
+                      <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Searching...</span>
+                    </div>
+                  )}
+
+                  {/* Results */}
+                  {!isSearching && suggestions.length > 0 && (
+                    <>
+                      <p className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Top Matches</p>
+                      {suggestions.map((result) => (
+                        <button
+                          key={result.id}
+                          onClick={() => handleSuggestionClick(result)}
+                          className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
+                        >
+                          <div className="relative w-16 h-16 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
+                            <img src={result.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                          </div>
+
+                          <div className="flex-1 flex flex-col justify-center min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                               <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: COLORS.TEAL }}>
+                                {getTypeLabel(result.type)}
+                              </span>
+                              {result.date && (
+                                <span className="text-[9px] font-black text-[#FF7F50] uppercase tracking-widest">
+                                  • {new Date(result.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{result.name}</h4>
+                            <div className="flex items-center gap-1 text-slate-400 group-hover:text-[#008080] transition-colors">
+                              <MapPin className="h-3 w-3" />
+                              <span className="text-[10px] font-bold uppercase truncate">
+                                {result.location || result.country}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Not Available - Only show after search completes with no results */}
+                  {!isSearching && hasSearched && suggestions.length === 0 && (
+                    <div className="p-10 text-center">
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Not Available</p>
+                      <p className="text-slate-300 text-[10px]">No results found for "{value}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
-
-      {showSuggestions && (
-        <div 
-          className="absolute left-0 right-0 top-full mt-3 bg-white border border-slate-100 rounded-[32px] shadow-2xl max-h-[70vh] md:max-h-[500px] overflow-y-auto z-[999] animate-in fade-in slide-in-from-top-2 duration-200"
-        >
-          {/* History / Trending / Most Popular Section (Shown when input is empty) */}
-          {!value.trim() && (
-            <div className="p-2 min-h-[100px]">
-              {/* Most Popular Section - Always shown first on focus */}
-              {mostPopular.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 px-5 py-3">
-                    <Sparkles className="h-4 w-4 text-[#FF7F50]" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Most Popular</p>
-                  </div>
-                  <div className="space-y-1">
-                    {mostPopular.slice(0, 4).map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => handleSuggestionClick(item)}
-                        className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
-                      >
-                        <div className="relative w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden shadow-sm">
-                          <img src={item.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 flex flex-col justify-center min-w-0">
-                          <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{item.name}</h4>
-                          <div className="flex items-center gap-1 text-slate-400">
-                            <MapPin className="h-3 w-3" />
-                            <span className="text-[10px] font-bold uppercase truncate">{item.location || item.country}</span>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {searchHistory.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-[#008080]" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Recent</p>
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); clearHistory(); }} className="text-[10px] font-black uppercase text-[#FF7F50] hover:underline">Clear</button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 px-4">
-                    {searchHistory.map((item, i) => (
-                      <Badge 
-                        key={i} 
-                        onClick={() => { onChange(item); saveToHistory(item); onSubmit(); setShowSuggestions(false); }} 
-                        className="cursor-pointer bg-slate-50 hover:bg-[#008080]/10 text-slate-600 border border-slate-100 py-2 px-4 rounded-xl text-xs font-bold transition-colors"
-                      >
-                        {item}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {trendingSearches.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 px-5 py-3">
-                    <TrendingUp className="h-4 w-4 text-[#FF7F50]" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trending Destinations</p>
-                  </div>
-                  {trendingSearches.slice(0, 5).map((item, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => { onChange(item.query); saveToHistory(item.query); onSubmit(); setShowSuggestions(false); }} 
-                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left rounded-[20px]"
-                    >
-                      <span className="text-sm font-black text-slate-700 uppercase tracking-tight group-hover:text-[#008080]">{item.query}</span>
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">{item.search_count} explores</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Result Suggestions (Shown when typing) */}
-          {value.trim() && (
-            <div className="p-2">
-              {/* Loading State */}
-              {isSearching && (
-                <div className="p-10 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#008080]" />
-                  <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Searching...</span>
-                </div>
-              )}
-
-              {/* Results */}
-              {!isSearching && suggestions.length > 0 && (
-                <>
-                  <p className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Top Matches</p>
-                  {suggestions.map((result) => (
-                    <button
-                      key={result.id}
-                      onClick={() => handleSuggestionClick(result)}
-                      className="w-full p-3 flex gap-4 hover:bg-slate-50 transition-all group text-left rounded-[24px]"
-                    >
-                      <div className="relative w-16 h-16 flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
-                        <img src={result.image_url || "/placeholder.svg"} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                      </div>
-
-                      <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                           <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: COLORS.TEAL }}>
-                            {getTypeLabel(result.type)}
-                          </span>
-                          {result.date && (
-                            <span className="text-[9px] font-black text-[#FF7F50] uppercase tracking-widest">
-                              • {new Date(result.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-black text-slate-800 uppercase tracking-tight text-sm truncate">{result.name}</h4>
-                        <div className="flex items-center gap-1 text-slate-400 group-hover:text-[#008080] transition-colors">
-                          <MapPin className="h-3 w-3" />
-                          <span className="text-[10px] font-bold uppercase truncate">
-                            {result.location || result.country}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </>
-              )}
-
-              {/* Not Available - Only show after search completes with no results */}
-              {!isSearching && hasSearched && suggestions.length === 0 && (
-                <div className="p-10 text-center">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Not Available</p>
-                  <p className="text-slate-300 text-[10px]">No results found for "{value}"</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
