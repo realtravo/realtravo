@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getReferralTrackingId } from "@/lib/referralUtils";
 
 interface PaystackPaymentOptions {
   onSuccess?: (reference: string) => void;
@@ -20,6 +21,7 @@ interface BookingData {
   visit_date: string;
   slots_booked: number;
   host_id?: string;
+  referral_tracking_id?: string | null;
   emailData?: {
     itemName: string;
   };
@@ -43,11 +45,17 @@ export const usePaystackPayment = (options: PaystackPaymentOptions = {}) => {
       // Get the current origin for callback URL
       const callbackUrl = `${window.location.origin}/payment/verify`;
 
+      // Add referral tracking ID to booking data
+      const bookingDataWithReferral = {
+        ...bookingData,
+        referral_tracking_id: getReferralTrackingId(),
+      };
+
       const { data, error } = await supabase.functions.invoke('paystack-initialize', {
         body: {
           email,
           amount,
-          bookingData,
+          bookingData: bookingDataWithReferral,
           callbackUrl,
         },
       });
