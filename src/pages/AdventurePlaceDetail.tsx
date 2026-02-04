@@ -166,7 +166,8 @@ const AdventurePlaceDetail = () => {
 
       {/* HERO / IMAGE GALLERY */}
       <div className="max-w-6xl mx-auto px-4 pt-3">
-        <div className="relative w-full h-[45vh] md:h-[65vh] bg-slate-900 overflow-hidden rounded-3xl">
+        {/* Mobile Carousel View */}
+        <div className="relative w-full h-[45vh] bg-slate-900 overflow-hidden rounded-3xl md:hidden">
           {/* Action Buttons - Overlaid on Gallery */}
           <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
             <Button
@@ -189,7 +190,7 @@ const AdventurePlaceDetail = () => {
             <CarouselContent className="h-full ml-0">
               {allImages.length > 0 ? allImages.map((img, idx) => (
                 <CarouselItem key={idx} className="h-full pl-0 basis-full">
-                  <img src={img} alt={place.name} className="w-full h-full object-cover" />
+                  <img src={img} alt={`${place.name} - ${idx + 1}`} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10" />
                 </CarouselItem>
               )) : (
@@ -220,10 +221,108 @@ const AdventurePlaceDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Desktop Grid View */}
+        <div className="hidden md:block relative">
+          {/* Action Buttons - Overlaid on Gallery */}
+          <div className="absolute top-6 left-6 right-6 z-50 flex justify-between items-center">
+            <Button
+              onClick={() => navigate(-1)}
+              className="rounded-full w-12 h-12 p-0 border-none bg-white/90 backdrop-blur-sm text-slate-900 hover:bg-white shadow-lg transition-all"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+
+            <Button
+              onClick={() => id && handleSaveItem(id, "adventure_place")}
+              className={`rounded-full w-12 h-12 p-0 border-none shadow-lg backdrop-blur-sm transition-all ${
+                isSaved ? "bg-red-500 hover:bg-red-600" : "bg-white/90 text-slate-900 hover:bg-white"
+              }`}
+            >
+              <Heart className={`h-6 w-6 ${isSaved ? "fill-white text-white" : "text-slate-900"}`} />
+            </Button>
+          </div>
+
+          {/* Image Grid Layout */}
+          <div className="grid grid-cols-4 gap-2 h-[500px]">
+            {allImages.length > 0 ? (
+              <>
+                {/* Main Large Image - Takes 2 columns and full height */}
+                <div className="col-span-2 row-span-2 rounded-3xl overflow-hidden relative group">
+                  <img 
+                    src={allImages[0]} 
+                    alt={place.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  
+                  {/* Place Info Overlay */}
+                  <div className="absolute bottom-6 left-6 right-6 z-20">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="bg-amber-400 text-black border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5 shadow-lg">
+                          <Star className="h-3.5 w-3.5 fill-current" />
+                          {liveRating.avg > 0 ? liveRating.avg : "New"}
+                        </Badge>
+                        <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5`}>
+                          <Circle className={`h-2.5 w-2.5 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
+                          {isOpenNow ? "open now" : "closed"}
+                        </Badge>
+                      </div>
+                      <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">{place.name}</h1>
+                      <div className="flex items-center gap-2 text-white">
+                        <MapPin className="h-4 w-4" />
+                        <span className="text-sm font-bold uppercase">
+                          {[place.place, place.location, place.country].filter(Boolean).join(', ')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Right Image */}
+                {allImages[1] && (
+                  <div className="col-span-2 rounded-3xl overflow-hidden relative group">
+                    <img 
+                      src={allImages[1]} 
+                      alt={`${place.name} - Gallery 2`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                )}
+
+                {/* Bottom Right - 3 Small Images */}
+                <div className="col-span-2 grid grid-cols-3 gap-2">
+                  {allImages.slice(2, 5).map((img, idx) => (
+                    <div key={idx} className="rounded-2xl overflow-hidden relative group">
+                      <img 
+                        src={img} 
+                        alt={`${place.name} - Gallery ${idx + 3}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {idx === 2 && allImages.length > 5 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                          <div className="text-center">
+                            <span className="text-white text-2xl font-black">+{allImages.length - 5}</span>
+                            <p className="text-white text-xs font-bold uppercase mt-1">More</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="col-span-4 rounded-3xl bg-slate-200 flex items-center justify-center">
+                <p className="text-slate-400 font-black uppercase text-sm">No Images Available</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 3. MAIN BODY */}
-      <main className="container px-4 -mt-4 relative z-30 max-w-6xl mx-auto">
+      <main className="container px-4 mt-6 relative z-30 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[1.8fr,1fr] gap-4">
           <div className="space-y-4">
             {/* Description */}
