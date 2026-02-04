@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   MapPin, Clock, ArrowLeft, 
-  Heart, Star, Circle, ShieldCheck, Tent, Zap, Calendar, Loader2, Share2, Copy, Navigation, AlertCircle, Phone, Mail
+  Heart, Star, Circle, Calendar, Loader2, Share2, Copy, Navigation, AlertCircle, Phone, Mail
 } from "lucide-react";
 import { SimilarItems } from "@/components/SimilarItems";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,9 @@ import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
 import { trackReferralClick, generateReferralLink } from "@/lib/referralUtils";
 import { Header } from "@/components/Header";
+import { ImageGalleryModal } from "@/components/detail/ImageGalleryModal";
+import { QuickNavigationBar } from "@/components/detail/QuickNavigationBar";
+import { AmenitiesSection } from "@/components/detail/AmenitiesSection";
 
 const AdventurePlaceDetail = () => {
   const { slug } = useParams();
@@ -301,17 +304,12 @@ const AdventurePlaceDetail = () => {
                         alt={`${place.name} - Gallery ${idx + 3}`}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      {idx === 2 && allImages.length > 5 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                          <div className="text-center">
-                            <span className="text-white text-2xl font-black">+{allImages.length - 5}</span>
-                            <p className="text-white text-xs font-bold uppercase mt-1">More</p>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
+
+                {/* See All Button */}
+                <ImageGalleryModal images={allImages} name={place.name} />
               </>
             ) : (
               <div className="col-span-4 rounded-3xl bg-slate-200 flex items-center justify-center">
@@ -320,6 +318,15 @@ const AdventurePlaceDetail = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Quick Navigation - Mobile Only */}
+      <div className="md:hidden container px-4 mt-4 max-w-6xl mx-auto">
+        <QuickNavigationBar 
+          hasFacilities={place.facilities?.length > 0} 
+          hasActivities={place.activities?.length > 0}
+          hasContact={place.phone_numbers?.length > 0 || !!place.email}
+        />
       </div>
 
       {/* 3. MAIN BODY */}
@@ -336,42 +343,36 @@ const AdventurePlaceDetail = () => {
               )}
             </section>
 
-            {/* Amenities */}
-            {place.amenities?.length > 0 && (
-              <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-2 mb-4">
-                  <ShieldCheck className="h-5 w-5 text-red-600" />
-                  <h2 className="text-sm font-black uppercase tracking-widest text-red-600">Amenities</h2>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(Array.isArray(place.amenities) ? place.amenities : []).map((amenity: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 p-3 bg-red-50/50 rounded-xl border border-red-100">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                      <span className="text-[10px] font-black uppercase text-red-700 truncate">{typeof amenity === 'string' ? amenity : amenity.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            {/* Operating Hours - Mobile Only (below description) */}
+            <div className="md:hidden">
+              <OperatingHoursInfo />
+            </div>
+
+            {/* Amenities - Using new component */}
+            <AmenitiesSection amenities={place.amenities || []} />
 
             {/* Facilities with Images */}
             {place.facilities?.length > 0 && (
-              <FacilitiesGrid 
-                facilities={place.facilities} 
-                itemId={place.id} 
-                itemType="adventure_place"
-                accentColor="#008080"
-              />
+              <div id="facilities-section">
+                <FacilitiesGrid 
+                  facilities={place.facilities} 
+                  itemId={place.id} 
+                  itemType="adventure_place"
+                  accentColor="#008080"
+                />
+              </div>
             )}
 
             {/* Activities with Images */}
             {place.activities?.length > 0 && (
-              <ActivitiesGrid 
-                activities={place.activities} 
-                itemId={place.id} 
-                itemType="adventure_place"
-                accentColor="#FF7F50"
-              />
+              <div id="activities-section">
+                <ActivitiesGrid 
+                  activities={place.activities} 
+                  itemId={place.id} 
+                  itemType="adventure_place"
+                  accentColor="#FF7F50"
+                />
+              </div>
             )}
 
             {/* Mobile Booking Card - Below Activities */}
@@ -403,8 +404,8 @@ const AdventurePlaceDetail = () => {
                     <p className="text-[9px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
                 </div>
               </div>
-              <OperatingHoursInfo />
-              <Button onClick={() => navigate(`/booking/adventure_place/${place.id}`)} className="w-full mt-6 py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-lg transition-all active:scale-95">Book Now</Button>
+              {/* Operating hours removed from mobile price card - now shown below description */}
+              <Button onClick={() => navigate(`/booking/adventure_place/${place.id}`)} className="w-full py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-lg transition-all active:scale-95">Book Now</Button>
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <UtilityButton
                    icon={<Navigation className="h-5 w-5" />}
@@ -426,6 +427,31 @@ const AdventurePlaceDetail = () => {
                    onClick={() => navigator.share && navigator.share({ title: place.name, url: window.location.href })}
                 />
               </div>
+            </div>
+
+            {/* Contact Section - Mobile (for quick nav link) */}
+            <div id="contact-section" className="lg:hidden">
+              {(place.phone_numbers?.length > 0 || place.email) && (
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-3">
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Contact</h3>
+                  {place.phone_numbers?.map((phone: string, idx: number) => (
+                    <a key={idx} href={`tel:${phone}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
+                      <div className="p-2 rounded-lg bg-slate-50">
+                        <Phone className="h-4 w-4 text-[#008080]" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-tight">{phone}</span>
+                    </a>
+                  ))}
+                  {place.email && (
+                    <a href={`mailto:${place.email}`} className="flex items-center gap-3 text-slate-600 hover:text-[#008080] transition-colors">
+                      <div className="p-2 rounded-lg bg-slate-50">
+                        <Mail className="h-4 w-4 text-[#008080]" />
+                      </div>
+                      <span className="text-xs font-bold tracking-tight">{place.email}</span>
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
