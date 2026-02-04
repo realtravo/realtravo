@@ -60,7 +60,7 @@ serve(async (req) => {
     }
 
     if (paymentData) {
-      // Update payment status - use 'completed' or 'failed' to match the check constraint
+      // Update payment status
       await supabase
         .from("payments")
         .update({
@@ -72,11 +72,78 @@ serve(async (req) => {
         })
         .eq("checkout_request_id", reference);
 
-      // If successful, create booking
+      // If successful, create booking with payment distribution
       if (isSuccessful && paymentData.booking_data) {
         const bookingData = paymentData.booking_data as any;
         
         console.log("Creating booking with data:", bookingData);
+
+        // Get referral settings for service fee rates
+        const { data: settings } = await supabase
+          .from("referral_settings")
+          .select("*")
+          .single();
+
+        // Calculate service fee based on booking type
+        let serviceFeeRate = 20.0; // Default 20%
+        let commissionRate = 5.0; // Default 5%
+
+        if (settings) {
+          if (bookingData.booking_type === 'trip') {
+            serviceFeeRate = Number(settings.trip_service_fee);
+            commissionRate = Number(settings.trip_commission_rate);
+          } else if (bookingData.booking_type === 'event') {
+            serviceFeeRate = Number(settings.event_service_fee);
+            commissionRate = Number(settings.event_commission_rate);
+          } else if (bookingData.booking_type === 'hotel') {
+            serviceFeeRate = Number(settings.hotel_service_fee);
+            commissionRate = Number(settings.hotel_commission_rate);
+          } else if (bookingData.booking_type === 'adventure' || bookingData.booking_type === 'adventure_place') {
+            serviceFeeRate = Number(settings.adventure_place_service_fee);
+            commissionRate = Number(settings.adventure_place_commission_rate);
+          } else if (bookingData.booking_type === 'attraction') {
+            serviceFeeRate = Number(settings.attraction_service_fee);
+            commissionRate = Number(settings.attraction_commission_rate);
+          }
+        }
+
+        const totalAmount = Number(bookingData.total_amount);
+        const serviceFeeAmount = (totalAmount * serviceFeeRate) / 100;
+        const hostPayoutAmount = totalAmount - serviceFeeAmount;
+
+        // Get host ID
+        let hostId = null;
+        if (bookingData.booking_type === 'trip' || bookingData.booking_type === 'event') {
+          const { data: tripData } = await supabase
+            .from('trips')
+            .select('created_by, email')
+            .eq('id', bookingData.item_id)
+            .single();
+          hostId = tripData?.created_by;
+        } else if (bookingData.booking_type === 'hotel') {
+          const { data: hotelData } = await supabase
+            .from('hotels')
+            .select('created_by, email')
+            .eq('id', bookingData.item_id)
+            .single();
+          hostId = hotelData?.created_by;
+        } else if (bookingData.booking_type === 'adventure_place' || bookingData.booking_type === 'adventure') {
+          const { data: adventureData } = await supabase
+            .from('adventure_places')
+            .select('created_by, email')
+            .eq('id', bookingData.item_id)
+            .single();
+          hostId = adventureData?.created_by;
+        }
+
+        // Get referral tracking ID from session storage passed in booking data
+        const referralTrackingId = bookingData.referral_tracking_id || null;
+
+        // Create booking with payout info
+        const visitDate = bookingData.visit_date ? new Date(bookingData.visit_date) : null;
+        const payoutScheduledAt = visitDate 
+          ? new Date(visitDate.getTime() - (48 * 60 * 60 * 1000)).toISOString() // 48 hours before visit
+          : null;
 
         const { data: booking, error: bookingError } = await supabase
           .from("bookings")
@@ -84,7 +151,7 @@ serve(async (req) => {
             user_id: bookingData.user_id || null,
             item_id: bookingData.item_id,
             booking_type: bookingData.booking_type,
-            total_amount: bookingData.total_amount,
+            total_amount: totalAmount,
             status: "confirmed",
             payment_status: "completed",
             payment_method: "card",
@@ -95,6 +162,11 @@ serve(async (req) => {
             slots_booked: bookingData.slots_booked || 1,
             visit_date: bookingData.visit_date,
             booking_details: bookingData.booking_details,
+            service_fee_amount: serviceFeeAmount,
+            host_payout_amount: hostPayoutAmount,
+            payout_status: 'scheduled',
+            payout_scheduled_at: payoutScheduledAt,
+            referral_tracking_id: referralTrackingId,
           }])
           .select()
           .single();
@@ -103,6 +175,44 @@ serve(async (req) => {
           console.error("Error creating booking:", bookingError);
         } else {
           console.log("Booking created successfully:", booking?.id);
+          console.log("Payment distribution:", {
+            totalAmount,
+            serviceFeeAmount,
+            hostPayoutAmount,
+            serviceFeeRate,
+          });
+
+          // Create payout record for host (to be processed 48h before booking)
+          if (hostId && hostPayoutAmount > 0) {
+            // Get host bank details
+            const { data: bankDetails } = await supabase
+              .from('bank_details')
+              .select('*')
+              .eq('user_id', hostId)
+              .eq('verification_status', 'verified')
+              .single();
+
+            if (bankDetails) {
+              // Schedule host payout
+              await supabase.from('payouts').insert({
+                recipient_id: hostId,
+                recipient_type: 'host',
+                booking_id: booking?.id,
+                amount: hostPayoutAmount,
+                status: 'scheduled',
+                scheduled_for: payoutScheduledAt,
+                bank_code: bankDetails.bank_name, // Will need bank code mapping
+                account_number: bankDetails.account_number,
+                account_name: bankDetails.account_holder_name,
+              });
+              console.log("Host payout scheduled:", hostPayoutAmount);
+            } else {
+              console.log("No verified bank details found for host:", hostId);
+            }
+          }
+
+          // Process referral commission if applicable (done via database trigger)
+          // The award_referral_commission trigger handles this automatically
 
           // Send confirmation email to the user
           try {
@@ -126,7 +236,6 @@ serve(async (req) => {
           // Send notification email to the host
           try {
             let hostEmail = null;
-            let hostId = null;
             
             if (bookingData.booking_type === 'trip' || bookingData.booking_type === 'event') {
               const { data: tripData } = await supabase
@@ -135,7 +244,6 @@ serve(async (req) => {
                 .eq('id', bookingData.item_id)
                 .single();
               hostEmail = tripData?.email;
-              hostId = tripData?.created_by;
             } else if (bookingData.booking_type === 'hotel') {
               const { data: hotelData } = await supabase
                 .from('hotels')
@@ -143,7 +251,6 @@ serve(async (req) => {
                 .eq('id', bookingData.item_id)
                 .single();
               hostEmail = hotelData?.email;
-              hostId = hotelData?.created_by;
             } else if (bookingData.booking_type === 'adventure_place' || bookingData.booking_type === 'adventure') {
               const { data: adventureData } = await supabase
                 .from('adventure_places')
@@ -151,7 +258,6 @@ serve(async (req) => {
                 .eq('id', bookingData.item_id)
                 .single();
               hostEmail = adventureData?.email;
-              hostId = adventureData?.created_by;
             }
 
             if (hostEmail) {
@@ -165,6 +271,8 @@ serve(async (req) => {
                   bookingType: bookingData.booking_type,
                   itemName: bookingData.emailData?.itemName || "Booking",
                   totalAmount: bookingData.total_amount,
+                  hostPayoutAmount: hostPayoutAmount,
+                  serviceFee: serviceFeeAmount,
                   bookingDetails: bookingData.booking_details,
                   visitDate: bookingData.visit_date,
                 },
@@ -187,7 +295,6 @@ serve(async (req) => {
                 channel: transaction.channel,
                 currency: transaction.currency,
                 isSuccessful,
-                // Booking details for PDF download
                 bookingId: booking?.id,
                 guestName: bookingData.guest_name,
                 guestEmail: bookingData.guest_email,
@@ -200,6 +307,8 @@ serve(async (req) => {
                 children: bookingData.booking_details?.children,
                 facilities: bookingData.booking_details?.facilities,
                 activities: bookingData.booking_details?.activities,
+                serviceFee: serviceFeeAmount,
+                hostPayout: hostPayoutAmount,
               },
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
