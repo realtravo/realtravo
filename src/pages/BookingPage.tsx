@@ -3,7 +3,9 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MultiStepBooking, BookingFormData } from "@/components/booking/MultiStepBooking";
-import { useBookingSubmit } from "@/hooks/useBookingSubmit";
+ import { usePaystackPayment } from "@/hooks/usePaystackPayment";
+ import { useAuth } from "@/contexts/AuthContext";
+ import { getReferralTrackingId } from "@/lib/referralUtils";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -18,6 +20,7 @@ const BookingPage = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+   const { user } = useAuth();
   
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +28,12 @@ const BookingPage = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [searchParams] = useSearchParams();
   
-  const { submitBooking } = useBookingSubmit();
+   const { initiatePayment, isLoading: isPaymentLoading } = usePaystackPayment({
+     onError: (error) => {
+       toast({ title: "Payment Error", description: error, variant: "destructive" });
+       setIsProcessing(false);
+     },
+   });
 
   useEffect(() => {
     if (id && type) fetchItem();
@@ -129,32 +137,44 @@ const BookingPage = () => {
         visitDate = formData.selectedFacilities[0].startDate;
       }
       
-      await submitBooking({
-        itemId: item.id,
-        itemName: item.name,
-        bookingType,
-        totalAmount,
-        slotsBooked,
-        visitDate,
-        guestName: formData.guest_name,
-        guestEmail: formData.guest_email,
-        guestPhone: formData.guest_phone,
-        hostId: item.created_by,
-        bookingDetails: { 
-          ...formData, 
-          item_name: item.name,
-          is_facility_only: isFacilityOnly 
-        }
-      });
+       // Prepare booking data for Paystack
+       const bookingData = {
+         item_id: item.id,
+         booking_type: bookingType,
+         total_amount: totalAmount,
+         booking_details: { 
+           ...formData, 
+           item_name: item.name,
+           is_facility_only: isFacilityOnly,
+           adults: formData.num_adults,
+           children: formData.num_children,
+           facilities: formData.selectedFacilities,
+           activities: formData.selectedActivities,
+         },
+         user_id: user?.id || null,
+         is_guest_booking: !user,
+         guest_name: formData.guest_name,
+         guest_email: formData.guest_email,
+         guest_phone: formData.guest_phone || "",
+         visit_date: visitDate,
+         slots_booked: slotsBooked,
+         host_id: item.created_by,
+         referral_tracking_id: getReferralTrackingId(),
+         emailData: {
+           itemName: item.name,
+         },
+       };
       
-      setIsCompleted(true);
-      toast({ title: "Booking confirmed!" });
-      
-      setTimeout(() => navigate(-1), 2000);
+       // Initiate Paystack payment - will redirect to Paystack checkout
+       await initiatePayment(formData.guest_email, totalAmount, bookingData);
+       
+       // Note: The function will redirect to Paystack, so we don't set isCompleted here
+       // The payment verification happens on return via /payment/verify
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+       setIsProcessing(false);
     } finally {
-      setIsProcessing(false);
+       // Don't set isProcessing to false here since we're redirecting
     }
   };
 
