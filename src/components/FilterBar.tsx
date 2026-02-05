@@ -36,7 +36,6 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
   // 2. LOCATION STATE
   const [locationQuery, setLocationQuery] = useState("");
   const [suggestions, setSuggestions] = useState<LocationResult[]>([]);
-  const [defaultSuggestions, setDefaultSuggestions] = useState<LocationResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
@@ -55,80 +54,6 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch 5 default suggestions on mount
-  useEffect(() => {
-    const fetchDefaultSuggestions = async () => {
-      try {
-        let allSuggestions: LocationResult[] = [];
-        
-        if (type === "trips-events") {
-          const { data } = await supabase
-            .from("trips")
-            .select("id, name, location, place, country")
-            .eq("approval_status", "approved")
-            .limit(5);
-          if (data) {
-            allSuggestions = data.map(item => ({
-              id: item.id,
-              name: item.name,
-              location: item.location || item.place,
-              country: item.country
-            }));
-          }
-        } else if (type === "hotels") {
-          const { data } = await supabase
-            .from("hotels")
-            .select("id, name, location, place, country")
-            .eq("approval_status", "approved")
-            .limit(5);
-          if (data) {
-            allSuggestions = data.map(item => ({
-              id: item.id,
-              name: item.name,
-              location: item.location || item.place,
-              country: item.country
-            }));
-          }
-        } else if (type === "accommodation") {
-          const { data } = await supabase
-            .from("hotels")
-            .select("id, name, location, place, country")
-            .eq("approval_status", "approved")
-            .eq("establishment_type", "accommodation_only")
-            .limit(5);
-          if (data) {
-            allSuggestions = data.map(item => ({
-              id: item.id,
-              name: item.name,
-              location: item.location || item.place,
-              country: item.country
-            }));
-          }
-        } else if (type === "adventure") {
-          const { data } = await supabase
-            .from("adventure_places")
-            .select("id, name, location, place, country")
-            .eq("approval_status", "approved")
-            .limit(5);
-          if (data) {
-            allSuggestions = data.map(item => ({
-              id: item.id,
-              name: item.name,
-              location: item.location || item.place,
-              country: item.country
-            }));
-          }
-        }
-        
-        setDefaultSuggestions(allSuggestions);
-      } catch (err) {
-        console.error("Error fetching default suggestions:", err);
-      }
-    };
-    
-    fetchDefaultSuggestions();
-  }, [type]);
-
   // 3. LOCATION FETCH LOGIC - queries appropriate tables based on category type
   useEffect(() => {
     const fetchLocations = async () => {
@@ -140,13 +65,14 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
       setIsSearching(true);
       try {
         let allSuggestions: LocationResult[] = [];
+      const searchLower = locationQuery.toLowerCase();
         if (type === "trips-events") {
           // Query trips table for trips and events
           const { data, error } = await supabase
             .from("trips")
-            .select("id, name, location, place, country")
+          .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
+          .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
             .limit(10);
 
           if (!error && data) {
@@ -163,7 +89,7 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
             .from("hotels")
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
+          .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
             .limit(10);
 
           if (!error && data) {
@@ -181,7 +107,7 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
             .eq("establishment_type", "accommodation_only")
-            .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
+          .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
             .limit(10);
 
           if (!error && data) {
@@ -198,7 +124,7 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
             .from("adventure_places")
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
+          .or(`name.ilike.%${locationQuery}%,location.ilike.%${locationQuery}%,place.ilike.%${locationQuery}%,country.ilike.%${locationQuery}%`)
             .limit(10);
 
           if (!error && data) {
@@ -231,9 +157,6 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
     const debounceTimer = setTimeout(fetchLocations, 300);
     return () => clearTimeout(debounceTimer);
   }, [locationQuery, type]);
-
-  // Display suggestions: show typed results or default suggestions
-  const displaySuggestions = locationQuery.trim() ? suggestions : defaultSuggestions;
 
   // Apply filters when search button is clicked
   const handleApplyFilters = useCallback(() => {
@@ -276,17 +199,17 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
 
           {/* SUGGESTIONS DROPDOWN */}
           {showSuggestions && (
-            <div className="absolute top-[115%] left-0 w-full md:w-[400px] bg-white dark:bg-slate-800 rounded-[24px] shadow-2xl border border-slate-50 dark:border-slate-700 z-[100] py-4 animate-in fade-in slide-in-from-top-1">
+          <div className="absolute top-[115%] left-0 w-full md:w-[400px] bg-white dark:bg-slate-800 rounded-[24px] shadow-2xl border border-slate-50 dark:border-slate-700 z-[100] py-4 animate-in fade-in slide-in-from-top-1">
               <p className="px-5 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                {isSearching ? "Searching..." : locationQuery ? "Top Matches" : "Popular Destinations"}
+                {isSearching ? "Searching..." : locationQuery ? "Top Matches" : "Start typing..."}
               </p>
               
-              <div className="flex flex-col max-h-[340px] overflow-y-auto">
+            <div className="flex flex-col max-h-[340px] overflow-y-auto">
                 {isSearching && (
                   <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-teal-600" /></div>
                 )}
                 
-                {!isSearching && displaySuggestions.map((dest) => (
+                {!isSearching && suggestions.map((dest) => (
                   <button
                     key={dest.id}
                     onClick={() => {
@@ -294,20 +217,20 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
                       setShowSuggestions(false);
                       handleApplyFilters();
                     }}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 text-left group"
+                  className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 text-left group"
                   >
-                    <div className="bg-slate-100 dark:bg-slate-600 p-3 rounded-xl group-hover:bg-teal-50 dark:group-hover:bg-teal-900 transition-colors">
-                      <MapPin className="h-5 w-5 text-slate-500 dark:text-slate-300 group-hover:text-teal-600" />
+                  <div className="bg-slate-100 dark:bg-slate-600 p-3 rounded-xl group-hover:bg-teal-50 dark:group-hover:bg-teal-900 transition-colors">
+                    <MapPin className="h-5 w-5 text-slate-500 dark:text-slate-300 group-hover:text-teal-600" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-base font-bold text-slate-700 dark:text-slate-200 truncate">{dest.name}</p>
-                      <p className="text-sm text-slate-400 font-medium">{dest.location}, {dest.country}</p>
+                    <p className="text-base font-bold text-slate-700 dark:text-slate-200 truncate">{dest.name}</p>
+                    <p className="text-sm text-slate-400 font-medium">{dest.location}, {dest.country}</p>
                     </div>
                   </button>
                 ))}
 
-                {!isSearching && locationQuery && displaySuggestions.length === 0 && (
-                  <p className="px-5 py-6 text-sm font-bold text-slate-400 italic text-center">No matches found</p>
+                {!isSearching && locationQuery && suggestions.length === 0 && (
+                 <p className="px-5 py-6 text-sm font-bold text-slate-400 italic text-center">No matches found</p>
                 )}
               </div>
             </div>
