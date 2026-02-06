@@ -26,7 +26,7 @@ const About = () => {
             </p>
             <p className="font-semibold text-foreground">
               Start exploring today and create memories that last a lifetime!
-            </p>
+            </p> 
           </div>
         </Card>
       </main>
