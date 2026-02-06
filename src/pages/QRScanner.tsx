@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Camera, CheckCircle, XCircle, AlertCircle, 
   User, Calendar, Mail, Phone, Users, WifiOff, Wifi, 
-  ChevronRight, QrCode, ShieldCheck
+  ChevronRight, QrCode, ShieldCheck, UserCheck, ChevronDown, ChevronUp
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useOfflineBookings } from "@/hooks/useOfflineBookings";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const COLORS = {
   TEAL: "#008080",
@@ -50,6 +51,17 @@ interface VerifiedBooking {
   checked_in_at?: string;
 }
 
+interface CheckedInGuest {
+  id: string;
+  guest_name: string;
+  guest_email: string;
+  visit_date: string;
+  slots_booked: number;
+  checked_in_at: string;
+  total_amount: number;
+  item_name?: string;
+}
+
 const QRScanner = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +77,9 @@ const QRScanner = () => {
   const [isOfflineScan, setIsOfflineScan] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
+  const [arrivedGuests, setArrivedGuests] = useState<CheckedInGuest[]>([]);
+  const [showArrived, setShowArrived] = useState(false);
+  const [loadingArrived, setLoadingArrived] = useState(false);
 
   useEffect(() => {
     const syncOfflineCheckIns = async () => {
@@ -106,6 +121,70 @@ const QRScanner = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
+
+  // Fetch arrived guests (checked-in bookings for host's items)
+  const fetchArrivedGuests = useCallback(async () => {
+    if (!user || !isOnline) return;
+    setLoadingArrived(true);
+    try {
+      // First get all items created by this user
+      const [tripsRes, hotelsRes, adventuresRes] = await Promise.all([
+        supabase.from("trips").select("id, name").eq("created_by", user.id),
+        supabase.from("hotels").select("id, name").eq("created_by", user.id),
+        supabase.from("adventure_places").select("id, name").eq("created_by", user.id)
+      ]);
+
+      const itemIds: string[] = [];
+      const itemNameMap: Record<string, string> = {};
+
+      tripsRes.data?.forEach(item => { itemIds.push(item.id); itemNameMap[item.id] = item.name; });
+      hotelsRes.data?.forEach(item => { itemIds.push(item.id); itemNameMap[item.id] = item.name; });
+      adventuresRes.data?.forEach(item => { itemIds.push(item.id); itemNameMap[item.id] = item.name; });
+
+      if (itemIds.length === 0) {
+        setArrivedGuests([]);
+        return;
+      }
+
+      // Fetch checked-in bookings for today
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data: bookings, error } = await supabase
+        .from("bookings")
+        .select("id, guest_name, guest_email, visit_date, slots_booked, checked_in_at, total_amount, item_id")
+        .in("item_id", itemIds)
+        .eq("checked_in", true)
+        .eq("visit_date", today)
+        .order("checked_in_at", { ascending: false });
+
+      if (error) throw error;
+
+      const guests: CheckedInGuest[] = (bookings || []).map(b => ({
+        ...b,
+        item_name: itemNameMap[b.item_id] || "Unknown"
+      }));
+      
+      setArrivedGuests(guests);
+    } catch (error) {
+      console.error("Error fetching arrived guests:", error);
+    } finally {
+      setLoadingArrived(false);
+    }
+  }, [user, isOnline]);
+
+  // Fetch arrived guests when component mounts and after check-in
+  useEffect(() => {
+    if (user && isOnline) {
+      fetchArrivedGuests();
+    }
+  }, [user, isOnline, fetchArrivedGuests]);
+
+  // Re-fetch after successful check-in
+  useEffect(() => {
+    if (checkedIn && isOnline) {
+      fetchArrivedGuests();
+    }
+  }, [checkedIn, isOnline, fetchArrivedGuests]);
+
 
   const verifyBookingOnline = async (bookingId: string, email: string, visitDate: string) => {
     const { data: booking, error } = await supabase.from("bookings").select("*").eq("id", bookingId).single();
@@ -362,6 +441,102 @@ const QRScanner = () => {
             </Button>
           </div>
         )}
+
+        {/* Arrived Guests Section */}
+        <div className="mt-6">
+          <button
+            onClick={() => setShowArrived(!showArrived)}
+            className="w-full bg-white rounded-[24px] p-5 shadow-sm border border-slate-100 flex items-center justify-between group hover:border-[#008080]/30 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-green-50 group-hover:bg-green-100 transition-colors">
+                <UserCheck className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-black uppercase tracking-tight text-slate-800">Arrived Today</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {arrivedGuests.length} guest{arrivedGuests.length !== 1 ? 's' : ''} checked in
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[10px] font-black">
+                {arrivedGuests.length}
+              </Badge>
+              {showArrived ? (
+                <ChevronUp className="h-5 w-5 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-slate-400" />
+              )}
+            </div>
+          </button>
+
+          {showArrived && (
+            <div className="mt-4 space-y-3">
+              {loadingArrived ? (
+                <div className="bg-white rounded-[20px] p-6 text-center">
+                  <div className="h-8 w-8 border-2 border-[#008080]/20 border-t-[#008080] rounded-full animate-spin mx-auto" />
+                </div>
+              ) : arrivedGuests.length === 0 ? (
+                <div className="bg-white rounded-[20px] p-8 text-center border border-slate-100">
+                  <UserCheck className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">No guests checked in yet</p>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-3 pr-2">
+                    {arrivedGuests.map((guest) => (
+                      <div
+                        key={guest.id}
+                        className="bg-white rounded-[20px] p-5 border border-slate-100 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-black uppercase tracking-tight text-slate-800">
+                              {guest.guest_name || "Guest"}
+                            </h4>
+                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                              {guest.guest_email}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded-lg">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            <span className="text-[9px] font-black text-green-700 uppercase">Arrived</span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-slate-50 rounded-xl p-2">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Guests</p>
+                            <p className="text-sm font-black text-slate-700">{guest.slots_booked || 1}</p>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-2">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Amount</p>
+                            <p className="text-sm font-black text-[#008080]">KSh {guest.total_amount?.toLocaleString() ?? '0'}</p>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-2">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Time</p>
+                            <p className="text-sm font-black text-slate-700">
+                              {guest.checked_in_at ? format(new Date(guest.checked_in_at), "HH:mm") : "-"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {guest.item_name && (
+                          <div className="mt-3 pt-3 border-t border-slate-50">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                              {guest.item_name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

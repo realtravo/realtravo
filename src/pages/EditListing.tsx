@@ -748,24 +748,46 @@ const EditListing = () => {
             )}
           </div>
 
-          {/* Location */}
+          {/* Location - Now editable */}
           <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="h-4 w-4 text-[#FF7F50]" />
-              <span className="text-sm font-bold text-slate-500 uppercase tracking-tight">Location</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-[#FF7F50]" />
+                <span className="text-sm font-bold text-slate-500 uppercase tracking-tight">Location</span>
+              </div>
+              <EditButton field="location" onSave={() => handleSaveField("location")} />
             </div>
-            <p className="font-bold text-[#008080] truncate">{location || "Not set"}</p>
-            <p className="text-xs text-slate-400 mt-1">Cannot be changed</p>
+            {editMode.location ? (
+              <Input 
+                value={location} 
+                onChange={(e) => setLocation(e.target.value)} 
+                placeholder="Enter location"
+                className="border-[#008080]/30 focus:border-[#008080]"
+              />
+            ) : (
+              <p className="font-bold text-[#008080] truncate">{location || "Not set"}</p>
+            )}
           </div>
 
-          {/* Map Link */}
+          {/* Map Link - Now editable */}
           <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="h-4 w-4 text-[#FF7F50]" />
-              <span className="text-sm font-bold text-slate-500 uppercase tracking-tight">Map Link</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-[#FF7F50]" />
+                <span className="text-sm font-bold text-slate-500 uppercase tracking-tight">Map Link</span>
+              </div>
+              <EditButton field="mapLink" onSave={() => handleSaveField("mapLink")} />
             </div>
-            <p className="font-bold text-[#008080] truncate text-sm">{mapLink || "Not set"}</p>
-            <p className="text-xs text-slate-400 mt-1">Cannot be changed</p>
+            {editMode.mapLink ? (
+              <Input 
+                value={mapLink} 
+                onChange={(e) => setMapLink(e.target.value)} 
+                placeholder="Google Maps link"
+                className="border-[#008080]/30 focus:border-[#008080]"
+              />
+            ) : (
+              <p className="font-bold text-[#008080] truncate text-sm">{mapLink || "Not set"}</p>
+            )}
           </div>
 
           {/* Contact Email - Editable without verification */}
