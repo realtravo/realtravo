@@ -23,7 +23,7 @@ const COLORS = {
   RED: "#FF0000",
   SOFT_GRAY: "#F8F9FA"
 };
-
+ 
 export default function Account() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
