@@ -18,7 +18,7 @@ const COLORS = {
   RED: "#FF0000",
   SOFT_GRAY: "#F8F9FA"
 };
-1
+
 const AdminBookings = () => {
   const { type, id } = useParams();
   const { user } = useAuth();
