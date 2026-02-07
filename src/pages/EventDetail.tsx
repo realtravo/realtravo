@@ -94,6 +94,7 @@ const EventDetail = () => {
   const handleSave = () => id && handleSaveItem(id, "event");
   const handleCopyLink = async () => {
     if (!event) return;
+    toast({ title: "Copying link..." });
     const refLink = await generateReferralLink(event.id, "event", event.id);
     await navigator.clipboard.writeText(refLink);
     toast({ title: "Link Copied!" });
@@ -101,10 +102,14 @@ const EventDetail = () => {
 
   const handleShare = async () => {
     if (!event) return;
+    toast({ title: "Preparing share..." });
     const refLink = await generateReferralLink(event.id, "event", event.id);
     if (navigator.share) {
       try { await navigator.share({ title: event.name, url: refLink }); } catch (e) {}
-    } else { handleCopyLink(); }
+    } else { 
+      await navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied!" });
+    }
   };
 
   const openInMaps = () => {

@@ -32,12 +32,10 @@ export default function AdminReferralSettings() {
     tripCommissionRate: 5.0,
     eventCommissionRate: 5.0,
     hotelCommissionRate: 5.0,
-    attractionCommissionRate: 5.0,
     adventurePlaceCommissionRate: 5.0,
     tripServiceFee: 20.0,
     eventServiceFee: 20.0,
     hotelServiceFee: 20.0,
-    attractionServiceFee: 20.0,
     adventurePlaceServiceFee: 20.0,
   });
 
@@ -74,12 +72,10 @@ export default function AdminReferralSettings() {
             tripCommissionRate: Number(settingsData.trip_commission_rate || 5.0),
             eventCommissionRate: Number(settingsData.event_commission_rate || 5.0),
             hotelCommissionRate: Number(settingsData.hotel_commission_rate || 5.0),
-            attractionCommissionRate: Number(settingsData.attraction_commission_rate || 5.0),
             adventurePlaceCommissionRate: Number(settingsData.adventure_place_commission_rate || 5.0),
             tripServiceFee: Number(settingsData.trip_service_fee || 20.0),
             eventServiceFee: Number(settingsData.event_service_fee || 20.0),
             hotelServiceFee: Number(settingsData.hotel_service_fee || 20.0),
-            attractionServiceFee: Number(settingsData.attraction_service_fee || 20.0),
             adventurePlaceServiceFee: Number(settingsData.adventure_place_service_fee || 20.0),
           });
         }
@@ -99,7 +95,6 @@ export default function AdminReferralSettings() {
     if (settings.tripCommissionRate > settings.tripServiceFee) validationErrors.push("Trip");
     if (settings.eventCommissionRate > settings.eventServiceFee) validationErrors.push("Event");
     if (settings.hotelCommissionRate > settings.hotelServiceFee) validationErrors.push("Hotel");
-    if (settings.attractionCommissionRate > settings.attractionServiceFee) validationErrors.push("Attraction");
     if (settings.adventurePlaceCommissionRate > settings.adventurePlaceServiceFee) validationErrors.push("Campsite/Experience");
 
     if (validationErrors.length > 0) {
@@ -124,12 +119,10 @@ export default function AdminReferralSettings() {
         trip_commission_rate: settings.tripCommissionRate,
         event_commission_rate: settings.eventCommissionRate,
         hotel_commission_rate: settings.hotelCommissionRate,
-        attraction_commission_rate: settings.attractionCommissionRate,
         adventure_place_commission_rate: settings.adventurePlaceCommissionRate,
         trip_service_fee: settings.tripServiceFee,
         event_service_fee: settings.eventServiceFee,
         hotel_service_fee: settings.hotelServiceFee,
-        attraction_service_fee: settings.attractionServiceFee,
         adventure_place_service_fee: settings.adventurePlaceServiceFee,
       };
 
@@ -237,7 +230,6 @@ export default function AdminReferralSettings() {
                 { id: 'trip', label: 'Trips & Tours' },
                 { id: 'event', label: 'Events & Experiences' },
                 { id: 'hotel', label: 'Hotels & Stays' },
-                { id: 'attraction', label: 'Attractions' },
                 { id: 'adventurePlace', label: 'Campsites' }
               ].map((cat) => (
                 <div key={cat.id} className="space-y-5 p-6 bg-slate-50/50 rounded-[22px] border border-slate-100 transition-all hover:shadow-md">

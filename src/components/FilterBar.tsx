@@ -188,9 +188,17 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
                   <button
                     key={dest.id}
                     onClick={() => {
-                      setLocationQuery(dest.location || dest.name);
+                      const locationName = dest.location || dest.name;
+                      setLocationQuery(locationName);
                       setShowSuggestions(false);
-                      handleApplyFilters();
+                      // Immediately apply filter with the selected location
+                      if (onApplyFilters) {
+                        onApplyFilters({
+                          location: locationName,
+                          dateFrom: dateFrom,
+                          dateTo: dateTo
+                        });
+                      }
                     }}
                     className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 text-left group"
                   >

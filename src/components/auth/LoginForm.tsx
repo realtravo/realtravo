@@ -51,6 +51,11 @@ export const LoginForm = () => {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
+    toast({
+      title: "Connecting to Google...",
+      description: "Please wait while we redirect you",
+    });
     const redirectUrl = `${window.location.origin}/`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -60,6 +65,7 @@ export const LoginForm = () => {
     });
 
     if (error) {
+      setLoading(false);
       toast({
         title: "Google login failed",
         description: error.message,

@@ -328,16 +328,6 @@ export default function MyReferrals() {
 
         {/* Stats Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {/* Host Earnings */}
-          <StatCard 
-            icon={<Users className="h-6 w-6" />}
-            label="From Hosts"
-            value={`KES ${stats.hostEarnings.toLocaleString()}`}
-            subLabel="Host Referral Earnings"
-            color={COLORS.TEAL}
-            isCash
-          />
-
           {/* Booking Commissions */}
           <StatCard 
             icon={<TrendingUp className="h-6 w-6" />}
@@ -384,32 +374,6 @@ export default function MyReferrals() {
             color={COLORS.TEAL}
             isCash
           />
-        </div>
-
-        {/* Promotional Banner */}
-        <div 
-          className="rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl mb-12"
-          style={{ background: `linear-gradient(135deg, ${COLORS.TEAL} 0%, #004d4d 100%)` }}
-        >
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="space-y-4 text-center md:text-left">
-              <h2 className="text-3xl font-black uppercase tracking-tighter">Share the Adventure</h2>
-              <p className="text-teal-50/80 max-w-md text-sm font-medium leading-relaxed">
-                Invite your friends to explore world-class experiences. You earn {stats.avgServiceFeeRate}% commission on every booking they make through your unique link.
-              </p>
-              <Button 
-                className="bg-white text-[#008080] hover:bg-slate-100 rounded-2xl px-8 py-6 h-auto font-black uppercase tracking-widest text-xs"
-                onClick={() => navigate("/account")} 
-              >
-                Generate Link
-              </Button>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md p-6 rounded-[32px] border border-white/20">
-              <Award className="h-16 w-16 text-[#F0E68C]" />
-            </div>
-          </div>
-          {/* Decorative Circle */}
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
         </div>
       </main>
 

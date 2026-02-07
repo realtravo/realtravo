@@ -72,16 +72,21 @@ const TripDetail = () => {
   const handleSave = () => id && handleSaveItem(id, "trip");
   
   const handleCopyLink = async () => {
+    toast({ title: "Copying link..." });
     const refLink = await generateReferralLink(trip.id, "trip", trip.id);
     await navigator.clipboard.writeText(refLink);
     toast({ title: "Link Copied!" });
   };
 
   const handleShare = async () => {
+    toast({ title: "Preparing share..." });
     const refLink = await generateReferralLink(trip.id, "trip", trip.id);
     if (navigator.share) {
       try { await navigator.share({ title: trip.name, url: refLink }); } catch (e) {}
-    } else { handleCopyLink(); }
+    } else { 
+      await navigator.clipboard.writeText(refLink);
+      toast({ title: "Link Copied!" });
+    }
   };
 
   const openInMaps = () => {

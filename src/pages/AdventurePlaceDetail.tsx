@@ -416,6 +416,7 @@ const AdventurePlaceDetail = () => {
                    icon={<Copy className="h-5 w-5" />}
                    label="Copy"
                    onClick={async () => {
+                     toast({ title: "Copying link..." });
                      const refLink = await generateReferralLink(id!, "adventure_place", id!);
                      await navigator.clipboard.writeText(refLink);
                      toast({ title: "Link Copied!" });
@@ -424,7 +425,16 @@ const AdventurePlaceDetail = () => {
                 <UtilityButton
                    icon={<Share2 className="h-5 w-5" />}
                    label="Share"
-                   onClick={() => navigator.share && navigator.share({ title: place.name, url: window.location.href })}
+                   onClick={async () => {
+                     toast({ title: "Preparing share..." });
+                     const refLink = await generateReferralLink(id!, "adventure_place", id!);
+                     if (navigator.share) {
+                       try { await navigator.share({ title: place.name, url: refLink }); } catch (e) {}
+                     } else {
+                       await navigator.clipboard.writeText(refLink);
+                       toast({ title: "Link Copied!" });
+                     }
+                   }}
                 />
               </div>
             </div>
@@ -493,6 +503,7 @@ const AdventurePlaceDetail = () => {
                      icon={<Copy className="h-5 w-5" />}
                      label="Copy"
                      onClick={async () => {
+                       toast({ title: "Copying link..." });
                        const refLink = await generateReferralLink(id!, "adventure_place", id!);
                        await navigator.clipboard.writeText(refLink);
                        toast({ title: "Link Copied!" });
@@ -501,7 +512,16 @@ const AdventurePlaceDetail = () => {
                   <UtilityButton
                      icon={<Share2 className="h-5 w-5" />}
                      label="Share"
-                     onClick={() => navigator.share && navigator.share({ title: place.name, url: window.location.href })}
+                     onClick={async () => {
+                       toast({ title: "Preparing share..." });
+                       const refLink = await generateReferralLink(id!, "adventure_place", id!);
+                       if (navigator.share) {
+                         try { await navigator.share({ title: place.name, url: refLink }); } catch (e) {}
+                       } else {
+                         await navigator.clipboard.writeText(refLink);
+                         toast({ title: "Link Copied!" });
+                       }
+                     }}
                   />
                 </div>
 
