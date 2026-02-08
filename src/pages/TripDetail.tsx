@@ -236,8 +236,8 @@ const TripDetail = () => {
       <Header showSearchIcon={false} />
 
       {/* HERO / IMAGE GALLERY */}
-      <div className="max-w-6xl mx-auto px-4 pt-3">
-        <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900 rounded-3xl">
+      <div className="max-w-6xl mx-auto md:px-4 md:pt-3">
+        <div className="relative w-full overflow-hidden h-[55vh] md:h-[70vh] bg-slate-900 md:rounded-3xl">
           {/* Action Buttons - Overlaid on Gallery */}
           <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
             <Button 
