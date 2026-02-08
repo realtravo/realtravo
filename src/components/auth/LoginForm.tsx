@@ -185,7 +185,7 @@ export const LoginForm = () => {
           }}
           className="text-primary hover:underline font-medium"
         >
-          Sign up
+          Join
         </button>
       </div>
     </form>

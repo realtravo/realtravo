@@ -171,9 +171,9 @@ const HotelDetail = () => {
       <Header showSearchIcon={false} />
 
       {/* HERO / IMAGE GALLERY */}
-      <div className="max-w-6xl mx-auto px-4 pt-3">
+      <div className="max-w-6xl mx-auto md:px-4 md:pt-3">
         {/* Mobile Carousel View */}
-        <div className="relative w-full h-[45vh] bg-slate-900 overflow-hidden rounded-3xl md:hidden">
+        <div className="relative w-full h-[45vh] bg-slate-900 overflow-hidden md:rounded-3xl md:hidden">
           {/* Action Buttons - Overlaid on Gallery */}
           <div className="absolute top-4 left-4 right-4 z-50 flex justify-between items-center">
             <Button 

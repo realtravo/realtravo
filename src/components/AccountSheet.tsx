@@ -123,37 +123,6 @@ export const AccountSheet = ({ children }: AccountSheetProps) => {
               </div>
             ) : (
               <>
-                {/* User Profile Card */}
-                <div className="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Crown size={60} style={{ color: COLORS.TEAL }} />
-                  </div>
-                  
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div 
-                      className="h-16 w-16 rounded-[20px] flex items-center justify-center shadow-inner"
-                      style={{ backgroundColor: `${COLORS.TEAL}15` }}
-                    >
-                      <span className="text-2xl font-black" style={{ color: COLORS.TEAL }}>
-                        {userName?.charAt(0) || "U"}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-[#FF7F50] uppercase tracking-[0.2em] mb-0.5">
-                        Welcome back
-                      </p>
-                      <h2 className="text-xl font-black uppercase tracking-tight text-slate-800">
-                        {userName || "Explorer"}
-                      </h2>
-                      {userRole === "admin" && (
-                        <span className="inline-block mt-1.5 px-2 py-0.5 bg-[#008080] text-white text-[8px] font-black uppercase tracking-widest rounded-full">
-                          Administrator
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Menu Sections */}
                 <div className="space-y-6">
                   {menuItems.map((section, idx) => {
