@@ -20,6 +20,7 @@ import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 import { Header } from "@/components/Header";
 import { ImageGalleryModal } from "@/components/detail/ImageGalleryModal";
 import { DetailMapSection } from "@/components/detail/DetailMapSection";
+import { DetailPageSkeleton } from "@/components/detail/DetailPageSkeleton";
 
 const COLORS = {
   TEAL: "#008080",
@@ -117,14 +118,7 @@ const TripDetail = () => {
 
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, trip?.available_tickets || 0);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
-      </div>
-    );
-  }
+  if (loading) return <DetailPageSkeleton />;
   if (!trip) return null;
 
   const today = new Date();

@@ -22,6 +22,7 @@ import { ImageGalleryModal } from "@/components/detail/ImageGalleryModal";
 import { QuickNavigationBar } from "@/components/detail/QuickNavigationBar";
 import { AmenitiesSection } from "@/components/detail/AmenitiesSection";
 import { DetailMapSection } from "@/components/detail/DetailMapSection";
+import { DetailPageSkeleton } from "@/components/detail/DetailPageSkeleton";
 
 const HotelDetail = () => {
   const { slug } = useParams();
@@ -128,15 +129,7 @@ const HotelDetail = () => {
     }
   };
 
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <Loader2 className="h-10 w-10 animate-spin text-teal-600 mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
-      </div>
-    );
-  }
+  if (loading) return <DetailPageSkeleton />;
 
   if (!hotel) return null;
 

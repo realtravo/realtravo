@@ -18,6 +18,7 @@ import { extractIdFromSlug } from "@/lib/slugUtils";
 import { useRealtimeItemAvailability } from "@/hooks/useRealtimeBookings";
 import { Header } from "@/components/Header";
 import { DetailMapSection } from "@/components/detail/DetailMapSection";
+import { DetailPageSkeleton } from "@/components/detail/DetailPageSkeleton";
 
 const COLORS = {
   TEAL: "#008080",
@@ -140,14 +141,7 @@ const EventDetail = () => {
 
   const { remainingSlots, isSoldOut } = useRealtimeItemAvailability(id || undefined, event?.available_tickets || 0);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <div className="w-10 h-10 border-4 border-[#008080] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-black uppercase tracking-tighter animate-pulse">Loading Details...</p>
-      </div>
-    );
-  }
+  if (loading) return <DetailPageSkeleton />;
   if (!event) return null;
 
   const today = new Date();

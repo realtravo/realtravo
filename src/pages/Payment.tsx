@@ -5,32 +5,20 @@ import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Wallet, CheckCircle, Clock, XCircle, AlertCircle, Building2, UserCircle, CreditCard } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle, Building2, UserCircle, CreditCard } from "lucide-react";
+import { WithdrawalDialog } from "@/components/referral/WithdrawalDialog";
 
 const COLORS = {
   TEAL: "#008080",
   CORAL: "#FF7F50",
   CORAL_LIGHT: "#FF9E7A",
-  KHAKI: "#F0E68C",
-  KHAKI_DARK: "#857F3E",
   RED: "#FF0000",
-  SOFT_GRAY: "#F8F9FA",
 };
 
 const POPULAR_BANKS = [
@@ -45,24 +33,16 @@ export default function Payment() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
-  const [bankDetails, setBankDetails] = useState({
-    accountName: "",
-    accountNumber: "",
-    bankName: "",
-  });
+  const [bankDetails, setBankDetails] = useState({ accountName: "", accountNumber: "", bankName: "" });
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(true);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [processing, setProcessing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) { navigate("/auth"); return; }
 
     const fetchData = async () => {
       try {
@@ -80,7 +60,6 @@ export default function Payment() {
           });
           setVerificationStatus(bankData.verification_status);
           setRejectionReason(bankData.rejection_reason);
-          
           if (bankData.last_updated) {
             const lastUpdate = new Date(bankData.last_updated);
             const oneMonthAgo = new Date();
@@ -98,28 +77,22 @@ export default function Payment() {
 
         if (bookings) {
           let total = 0;
+          const tableMap: Record<string, string> = { trip: "trips", hotel: "hotels", adventure: "adventure_places" };
           for (const booking of bookings) {
-            let isCreator = false;
-            const tableMap: any = { trip: "trips", hotel: "hotels", adventure: "adventure_places" };
             const tableName = tableMap[booking.booking_type];
-            
             if (tableName) {
               const { data: item } = await supabase.from(tableName as any).select("created_by").eq("id", booking.item_id).single();
-              isCreator = (item as any)?.created_by === user.id;
+              if ((item as any)?.created_by === user.id) total += Number(booking.total_amount);
             }
-
-            if (isCreator) total += Number(booking.total_amount);
           }
 
           const { data: commissions } = await supabase.from("referral_commissions").select("commission_amount").eq("referrer_id", user.id).eq("status", "paid");
-          if (commissions) {
-            total += commissions.reduce((sum, c) => sum + Number(c.commission_amount), 0);
-          }
+          if (commissions) total += commissions.reduce((sum, c) => sum + Number(c.commission_amount), 0);
           setBalance(total);
         }
-        setLoading(false);
       } catch (error) {
         console.error("Error:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -171,7 +144,20 @@ export default function Payment() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F8F9FA] animate-pulse" />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA]">
+        <Header />
+        <main className="container max-w-2xl mx-auto px-4 py-8 space-y-6">
+          <Skeleton className="h-8 w-40 rounded-full" />
+          <Skeleton className="h-12 w-3/4 rounded-3xl" />
+          <Skeleton className="h-32 rounded-[32px]" />
+          <Skeleton className="h-64 rounded-[32px]" />
+          <Skeleton className="h-16 rounded-2xl" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
@@ -186,7 +172,6 @@ export default function Payment() {
           Payout & <br /><span style={{ color: COLORS.CORAL }}>Earnings</span>
         </h1>
 
-        {/* Balance Card */}
         <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#008080]/5 rounded-full -mr-16 -mt-16" />
           <div className="relative z-10">
@@ -198,7 +183,6 @@ export default function Payment() {
           </div>
         </div>
 
-        {/* Bank Details Card */}
         <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 mb-8">
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -223,7 +207,6 @@ export default function Payment() {
               <DetailRow icon={<Building2 />} label="Bank" value={bankDetails.bankName} />
               <DetailRow icon={<UserCircle />} label="Account Holder" value={bankDetails.accountName} />
               <DetailRow icon={<CreditCard />} label="Account Number" value={bankDetails.accountNumber} />
-              
               {canEdit && (
                 <Button onClick={() => setIsEditing(true)} variant="outline" className="w-full mt-4 rounded-2xl border-slate-200 text-[11px] font-black uppercase tracking-widest h-12">
                   Update Payout Info
@@ -251,10 +234,9 @@ export default function Payment() {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Account Number</Label>
                 <Input value={bankDetails.accountNumber} onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} className="rounded-2xl h-12 border-slate-200" placeholder="10-12 Digit Number" />
               </div>
-              
               <div className="flex gap-3 pt-2">
-                <Button 
-                  onClick={handleSaveBankDetails} 
+                <Button
+                  onClick={handleSaveBankDetails}
                   disabled={processing}
                   className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-white shadow-lg shadow-[#008080]/20"
                   style={{ backgroundColor: COLORS.TEAL }}
@@ -269,49 +251,32 @@ export default function Payment() {
           )}
         </div>
 
-        <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
-          <DialogTrigger asChild>
-            <Button
-              disabled={verificationStatus !== "verified" || balance <= 0}
-              className="w-full h-16 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
-              style={{ 
-                background: `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`,
-                boxShadow: `0 12px 24px -8px ${COLORS.CORAL}88`
-              }}
-            >
-              Withdraw Funds
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-[32px] border-none p-8">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tight" style={{ color: COLORS.TEAL }}>Request Payout</DialogTitle>
-              <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Funds will be sent to your verified account</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="p-5 bg-slate-50 rounded-[24px] border border-slate-100 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Target Bank</span>
-                  <span className="text-xs font-black text-slate-700 uppercase">{bankDetails.bankName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Account</span>
-                  <span className="text-xs font-bold text-slate-700">{bankDetails.accountNumber}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Withdrawal Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">KSh</span>
-                  <Input type="number" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="h-14 pl-14 rounded-2xl border-slate-200 text-lg font-black" placeholder="0.00" />
-                </div>
-              </div>
-              <Button onClick={() => {}} disabled={processing} className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-white" style={{ backgroundColor: COLORS.TEAL }}>
-                Confirm Withdrawal
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button
+          onClick={() => setShowWithdrawDialog(true)}
+          disabled={balance <= 0}
+          className="w-full h-16 rounded-2xl text-md font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all active:scale-95 border-none"
+          style={{
+            background: balance > 0
+              ? `linear-gradient(135deg, ${COLORS.CORAL_LIGHT} 0%, ${COLORS.CORAL} 100%)`
+              : '#cbd5e1',
+            boxShadow: balance > 0 ? `0 12px 24px -8px ${COLORS.CORAL}88` : 'none'
+          }}
+        >
+          Withdraw Funds
+        </Button>
       </main>
+
+      <WithdrawalDialog
+        open={showWithdrawDialog}
+        onOpenChange={setShowWithdrawDialog}
+        availableBalance={balance}
+        userId={user?.id || ""}
+        onSuccess={() => {
+          setLoading(true);
+          window.location.reload();
+        }}
+      />
+
       <Footer />
       <MobileBottomBar />
     </div>
@@ -321,9 +286,7 @@ export default function Payment() {
 const DetailRow = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
   <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
     <div className="flex items-center gap-3">
-      <div className="p-2.5 rounded-xl bg-white shadow-sm text-[#008080]">
-        {icon}
-      </div>
+      <div className="p-2.5 rounded-xl bg-white shadow-sm text-[#008080]">{icon}</div>
       <div className="flex flex-col">
         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
         <span className="text-sm font-bold text-slate-700">{value}</span>
