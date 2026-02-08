@@ -52,24 +52,25 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
 
   useEffect(() => {
     const fetchLocations = async () => {
-      if (!locationQuery.trim()) {
-        setSuggestions([]);
-        return;
-      }
+      const isEmptyQuery = !locationQuery.trim();
 
       setIsSearching(true);
       try {
         let allSuggestions: LocationResult[] = [];
         const searchTerm = `%${locationQuery}%`;
+        const fetchLimit = isEmptyQuery ? 5 : 10;
 
         // Fetch from appropriate table based on type
         if (type === "trips-events") {
-          const { data, error } = await supabase
+          let query = supabase
             .from("trips")
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`)
-            .limit(10);
+            .limit(fetchLimit);
+          if (!isEmptyQuery) {
+            query = query.or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`);
+          }
+          const { data, error } = await query;
           if (!error && data) {
             allSuggestions = data.map(item => ({ id: item.id, name: item.name, location: item.location || item.place, country: item.country }));
           }
@@ -78,8 +79,10 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
             .from("hotels")
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`)
-            .limit(10);
+            .limit(fetchLimit);
+          if (!isEmptyQuery) {
+            query = query.or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`);
+          }
           if (type === "accommodation") {
             query = query.eq("establishment_type", "accommodation_only");
           }
@@ -88,18 +91,22 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
             allSuggestions = data.map(item => ({ id: item.id, name: item.name, location: item.location || item.place, country: item.country }));
           }
         } else if (type === "adventure") {
-          const { data, error } = await supabase
+          let query = supabase
             .from("adventure_places")
             .select("id, name, location, place, country")
             .eq("approval_status", "approved")
-            .or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`)
-            .limit(10);
+            .limit(fetchLimit);
+          if (!isEmptyQuery) {
+            query = query.or(`name.ilike.${searchTerm},location.ilike.${searchTerm},place.ilike.${searchTerm},country.ilike.${searchTerm}`);
+          }
+          const { data, error } = await query;
           if (!error && data) {
             allSuggestions = data.map(item => ({ id: item.id, name: item.name, location: item.location || item.place, country: item.country }));
           }
         }
 
         const uniqueLocations = allSuggestions.reduce((acc, curr) => {
+          if (acc.length >= 5 && isEmptyQuery) return acc;
           const key = `${curr.location}-${curr.country}`;
           if (!acc.find(item => `${item.location}-${item.country}` === key)) {
             acc.push(curr);
@@ -117,7 +124,7 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
 
     const debounceTimer = setTimeout(fetchLocations, 300);
     return () => clearTimeout(debounceTimer);
-  }, [locationQuery, type]);
+  }, [locationQuery, type, showSuggestions]);
 
   const handleApplyFilters = useCallback(() => {
     if (onApplyFilters) {
@@ -174,7 +181,7 @@ export const FilterBar = ({ type = "trips-events", onApplyFilters }: FilterBarPr
               )}
             >
               <p className="px-5 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                {isSearching ? "Searching..." : locationQuery ? "Top Matches" : "Start typing..."}
+                {isSearching ? "Searching..." : locationQuery ? "Top Matches" : "Popular Destinations"}
               </p>
               
               <div className="flex flex-col max-h-[340px] overflow-y-auto">
