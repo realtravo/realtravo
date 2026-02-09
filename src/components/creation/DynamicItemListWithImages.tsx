@@ -15,6 +15,7 @@ export interface DynamicItemWithImages {
   capacity?: string;
   images?: string[];
   tempImages?: File[];
+  bookingLink?: string;
 }
 
 interface DynamicItemListWithImagesProps {
@@ -24,6 +25,7 @@ interface DynamicItemListWithImagesProps {
   placeholder?: string;
   showCapacity?: boolean;
   showPrice?: boolean;
+  showBookingLink?: boolean;
   accentColor?: string;
   maxImages?: number;
   userId?: string;
@@ -36,6 +38,7 @@ export const DynamicItemListWithImages = ({
   placeholder = "Item name",
   showCapacity = false,
   showPrice = true,
+  showBookingLink = false,
   accentColor = "#008080",
   maxImages = 5,
 }: DynamicItemListWithImagesProps) => {
@@ -47,7 +50,8 @@ export const DynamicItemListWithImages = ({
     price: "0",
     capacity: "",
     images: [],
-    tempImages: []
+    tempImages: [],
+    bookingLink: ""
   });
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +106,8 @@ export const DynamicItemListWithImages = ({
       price: "0", 
       capacity: "",
       images: [],
-      tempImages: []
+      tempImages: [],
+      bookingLink: ""
     });
   };
 
@@ -197,6 +202,11 @@ export const DynamicItemListWithImages = ({
                       {showCapacity && item.capacity && (
                         <span className="text-[10px] font-bold text-muted-foreground">
                           Cap: {item.capacity}
+                        </span>
+                      )}
+                      {showBookingLink && item.bookingLink && (
+                        <span className="text-[10px] font-bold text-blue-500 truncate max-w-[200px]">
+                          🔗 {item.bookingLink}
                         </span>
                       )}
                     </div>
@@ -306,6 +316,15 @@ export const DynamicItemListWithImages = ({
           )}
         </div>
 
+        {showBookingLink && (
+          <Input
+            value={newItem.bookingLink}
+            onChange={(e) => setNewItem({ ...newItem, bookingLink: e.target.value })}
+            placeholder="External booking URL (https://...)"
+            className="rounded-xl border-border bg-background h-11 font-bold text-sm"
+          />
+        )}
+
         <div className="space-y-2">
           <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             Photos (max {maxImages})
@@ -393,6 +412,7 @@ export const formatItemsWithImagesForDB = (items: DynamicItemWithImages[]) => {
     price: item.priceType === "paid" ? parseFloat(item.price) || 0 : 0,
     is_free: item.priceType === "free",
     capacity: item.capacity ? parseInt(item.capacity) : null,
-    images: item.images || []
+    images: item.images || [],
+    ...(item.bookingLink ? { bookingLink: item.bookingLink } : {})
   }));
 };

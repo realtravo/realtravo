@@ -28,6 +28,7 @@ const COLORS = {
 };
 
 const TOTAL_STEPS = 7;
+const TOTAL_STEPS_ACCOMMODATION = 8; // Extra step for link source
 
 const CreateHotel = () => {
   const navigate = useNavigate();
@@ -36,6 +37,8 @@ const CreateHotel = () => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [formData, setFormData] = useState({
     registrationName: "",
@@ -49,8 +52,14 @@ const CreateHotel = () => {
     latitude: null as number | null,
     longitude: null as number | null,
     openingHours: "",
-    closingHours: ""
+    closingHours: "",
+    generalBookingLink: "",
+    linkSourceName: "",
+    linkSourceUrl: "",
   });
+
+  const isAccommodationOnly = formData.establishmentType === "accommodation_only";
+  const totalSteps = isAccommodationOnly ? TOTAL_STEPS_ACCOMMODATION : TOTAL_STEPS;
 
   const [workingDays, setWorkingDays] = useState({
     Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false, Sun: false
@@ -66,7 +75,11 @@ const CreateHotel = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('country, name, email, phone_number').eq('id', user.id).single();
+        const [profileRes, rolesRes] = await Promise.all([
+          supabase.from('profiles').select('country, name, email, phone_number').eq('id', user.id).single(),
+          supabase.from('user_roles').select('role').eq('user_id', user.id)
+        ]);
+        const profile = profileRes.data;
         if (profile?.country) setFormData(prev => ({ ...prev, country: profile.country }));
         if (profile) {
           setCreatorProfile({
@@ -75,6 +88,8 @@ const CreateHotel = () => {
             phone: profile.phone_number || ""
           });
         }
+        const hasAdminRole = rolesRes.data?.some(r => r.role === "admin");
+        setIsAdmin(!!hasAdminRole);
       }
     };
     fetchUserProfile();
@@ -88,7 +103,7 @@ const CreateHotel = () => {
 
     if (step === 1) {
       if (!formData.registrationName.trim()) newErrors.registrationName = true;
-      if (!formData.registrationNumber.trim()) newErrors.registrationNumber = true;
+      if (!isAccommodationOnly && !formData.registrationNumber.trim()) newErrors.registrationNumber = true;
     }
 
     if (step === 2) {
@@ -139,7 +154,7 @@ const CreateHotel = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -233,8 +248,11 @@ const CreateHotel = () => {
         activities: formatItemsWithImagesForDB(uploadedActivities),
         image_url: imageUrls[0] || '',
         gallery_images: imageUrls,
-        registration_number: formData.registrationNumber,
-        approval_status: 'pending'
+        registration_number: formData.registrationNumber || null,
+        approval_status: isAccommodationOnly ? 'approved' : 'pending',
+        general_booking_link: isAccommodationOnly ? formData.generalBookingLink : null,
+        link_source_name: isAccommodationOnly ? formData.linkSourceName : null,
+        link_source_url: isAccommodationOnly ? formData.linkSourceUrl : null,
       };
 
       const { error } = await supabase.from('hotels').insert([hotelData]);
@@ -243,7 +261,9 @@ const CreateHotel = () => {
 
       toast({ 
         title: "Success!", 
-        description: "Your hotel listing has been submitted for review.",
+        description: isAccommodationOnly 
+          ? "Your accommodation listing is now live."
+          : "Your hotel listing has been submitted for review.",
         variant: "default"
       });
       
@@ -274,7 +294,7 @@ const CreateHotel = () => {
           </Button>
         </div>
         <div className="absolute bottom-8 left-0 w-full px-8 container mx-auto">
-          <p className="text-[#FF7F50] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Step {currentStep} of {TOTAL_STEPS}</p>
+          <p className="text-[#FF7F50] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Step {currentStep} of {totalSteps}</p>
           <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
             List Your <span style={{ color: COLORS.TEAL }}>Property</span>
           </h1>
@@ -283,7 +303,7 @@ const CreateHotel = () => {
 
       <main className="container px-4 max-w-4xl mx-auto -mt-6 relative z-50">
         <div className="flex items-center gap-2 mb-8">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
             <div key={step} className={`h-2 flex-1 rounded-full transition-all duration-300 ${step <= currentStep ? 'bg-[#008080]' : 'bg-slate-200'}`} />
           ))}
         </div>
@@ -304,36 +324,42 @@ const CreateHotel = () => {
                   placeholder="As per official documents"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
-                <Input 
-                  className={`rounded-xl h-12 font-bold transition-all ${errorClass('registrationNumber')}`}
-                  value={formData.registrationNumber} 
-                  onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
-                  placeholder="e.g. BN-12345"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Property Type *</Label>
-                <Select 
-                  value={formData.establishmentType} 
-                  onValueChange={(v) => setFormData({...formData, establishmentType: v})}
-                >
-                  <SelectTrigger className={`rounded-xl h-12 font-bold ${errorClass('establishmentType')}`}>
-                    <SelectValue placeholder="Select property type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hotel">Hotel (Full Service)</SelectItem>
-                    <SelectItem value="accommodation_only">Accommodation Only (Rooms/Stays)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  {formData.establishmentType === "accommodation_only" 
-                    ? "Accommodation only focuses on room rentals without full hotel services."
-                    : "Full service hotel with amenities, restaurant, etc."
-                  }
-                </p>
-              </div>
+              {!isAccommodationOnly && (
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
+                  <Input 
+                    className={`rounded-xl h-12 font-bold transition-all ${errorClass('registrationNumber')}`}
+                    value={formData.registrationNumber} 
+                    onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
+                    placeholder="e.g. BN-12345"
+                  />
+                </div>
+              )}
+              {isAdmin ? (
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Property Type *</Label>
+                  <Select 
+                    value={formData.establishmentType} 
+                    onValueChange={(v) => setFormData({...formData, establishmentType: v})}
+                  >
+                    <SelectTrigger className={`rounded-xl h-12 font-bold ${errorClass('establishmentType')}`}>
+                      <SelectValue placeholder="Select property type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hotel">Hotel (Full Service)</SelectItem>
+                      <SelectItem value="accommodation_only">Accommodation Only (Rooms/Stays)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {isAccommodationOnly
+                      ? "Accommodation only focuses on room rentals without full hotel services."
+                      : "Full service hotel with amenities, restaurant, etc."
+                    }
+                  </p>
+                </div>
+              ) : (
+                <input type="hidden" value="hotel" />
+              )}
             </div>
           </Card>
         )}
@@ -433,7 +459,10 @@ const CreateHotel = () => {
               <DynamicItemList items={amenities} onChange={setAmenities} label="Amenities (Optional)" showPrice={false} accentColor={COLORS.TEAL} />
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <p className="text-[10px] font-bold text-orange-500 uppercase mb-4 underline">Note: Capacity is required for every facility added. Add photos to showcase facilities.</p>
+                <p className="text-[10px] font-bold text-orange-500 uppercase mb-4 underline">
+                  Note: Capacity is required for every facility added. Add photos to showcase facilities.
+                  {isAccommodationOnly && " Each facility can have its own external booking link."}
+                </p>
                 <DynamicItemListWithImages 
                   items={facilities} 
                   onChange={setFacilities} 
@@ -442,6 +471,7 @@ const CreateHotel = () => {
                   accentColor={COLORS.CORAL}
                   maxImages={5}
                   userId={user?.id}
+                  showBookingLink={isAccommodationOnly}
                 />
               </div>
 
@@ -554,8 +584,48 @@ const CreateHotel = () => {
           </Card>
         )}
 
-        {/* Step 7: Review & Submit */}
-        {currentStep === 7 && (
+        {/* Step 7: Link Source (Accommodation Only) or Review */}
+        {isAccommodationOnly && currentStep === 7 && (
+          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
+            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
+              <CheckCircle2 className="h-5 w-5" /> Booking Links & Source
+            </h2>
+            <div className="grid gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">General Booking Link (External Website)</Label>
+                <Input 
+                  className={`rounded-xl h-12 font-bold transition-all ${errorClass('generalBookingLink')}`}
+                  value={formData.generalBookingLink} 
+                  onChange={(e) => setFormData({...formData, generalBookingLink: e.target.value})}
+                  placeholder="https://booking.com/your-property"
+                />
+                <p className="text-[10px] text-slate-400">This link will be used for the main Reserve button on the detail page.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Link Source Name *</Label>
+                <Input 
+                  className={`rounded-xl h-12 font-bold transition-all ${errorClass('linkSourceName')}`}
+                  value={formData.linkSourceName} 
+                  onChange={(e) => setFormData({...formData, linkSourceName: e.target.value})}
+                  placeholder="e.g. Booking.com, Airbnb, Hotels.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Link Source URL</Label>
+                <Input 
+                  className="rounded-xl h-12 font-bold transition-all border-slate-100 bg-slate-50"
+                  value={formData.linkSourceUrl} 
+                  onChange={(e) => setFormData({...formData, linkSourceUrl: e.target.value})}
+                  placeholder="https://booking.com"
+                />
+                <p className="text-[10px] text-slate-400">The source website will be displayed as attribution on the listing detail page.</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Review & Submit (last step) */}
+        {currentStep === totalSteps && (
           <ReviewStep
             type="hotel"
             data={{
@@ -577,7 +647,8 @@ const CreateHotel = () => {
                 price: typeof f.price === 'string' ? parseFloat(f.price) || 0 : (f.price || 0),
                 capacity: f.capacity ? parseInt(f.capacity) : null,
                 is_free: f.priceType === 'free',
-                images: f.tempImages ? f.tempImages.map(img => URL.createObjectURL(img)) : (f.images || [])
+                images: f.tempImages ? f.tempImages.map(img => URL.createObjectURL(img)) : (f.images || []),
+                bookingLink: f.bookingLink || null
               })),
               activities: activities.filter(a => a.name.trim()).map(a => ({ 
                 name: a.name, 
@@ -586,6 +657,11 @@ const CreateHotel = () => {
                 images: a.tempImages ? a.tempImages.map(img => URL.createObjectURL(img)) : (a.images || [])
               })),
               imageCount: galleryImages.length,
+              ...(isAccommodationOnly && {
+                generalBookingLink: formData.generalBookingLink,
+                linkSourceName: formData.linkSourceName,
+                linkSourceUrl: formData.linkSourceUrl,
+              })
             }}
             creatorName={creatorProfile.name}
             creatorEmail={creatorProfile.email}
@@ -607,9 +683,9 @@ const CreateHotel = () => {
             </Button>
           )}
           <Button 
-            onClick={currentStep < TOTAL_STEPS ? handleNext : handleSubmit}
+            onClick={currentStep < totalSteps ? handleNext : handleSubmit}
             className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white"
-            style={{ background: currentStep < TOTAL_STEPS ? COLORS.CORAL : COLORS.TEAL }}
+            style={{ background: currentStep < totalSteps ? COLORS.CORAL : COLORS.TEAL }}
             disabled={loading}
           >
             {loading ? (
@@ -619,14 +695,14 @@ const CreateHotel = () => {
               </>
             ) : (
               <>
-                {currentStep < TOTAL_STEPS ? (
+                {currentStep < totalSteps ? (
                   <>
                     Next <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Submit for Review
+                    {isAccommodationOnly ? "Publish Listing" : "Submit for Review"}
                   </>
                 )}
               </>

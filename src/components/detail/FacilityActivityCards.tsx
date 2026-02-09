@@ -11,6 +11,7 @@ interface FacilityWithImages {
   capacity?: number;
   images?: string[];
   is_free?: boolean;
+  bookingLink?: string;
 }
 
 interface FacilityImageCardProps {
@@ -18,13 +19,15 @@ interface FacilityImageCardProps {
   itemId: string;
   itemType: "hotel" | "adventure_place";
   accentColor?: string;
+  useExternalLink?: boolean;
 }
 
 export const FacilityImageCard = ({ 
   facility, 
   itemId, 
   itemType,
-  accentColor = "#008080" 
+  accentColor = "#008080",
+  useExternalLink = false
 }: FacilityImageCardProps) => {
   const navigate = useNavigate();
   const [showGallery, setShowGallery] = useState(false);
@@ -33,8 +36,11 @@ export const FacilityImageCard = ({
   const mainImage = hasImages ? facility.images[0] : null;
   
   const handleReserve = () => {
-    // Navigate to booking page with pre-selected facility and skipToFacility flag
-    navigate(`/booking/${itemType}/${itemId}?facility=${encodeURIComponent(facility.name)}&skipToFacility=true`);
+    if (useExternalLink && facility.bookingLink) {
+      window.open(facility.bookingLink, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(`/booking/${itemType}/${itemId}?facility=${encodeURIComponent(facility.name)}&skipToFacility=true`);
+    }
   };
 
   return (
@@ -142,35 +148,93 @@ interface FacilitiesGridProps {
   itemId: string;
   itemType: "hotel" | "adventure_place";
   accentColor?: string;
+  useExternalLink?: boolean;
 }
 
 export const FacilitiesGrid = ({ 
   facilities, 
   itemId, 
   itemType,
-  accentColor = "#008080" 
+  accentColor = "#008080",
+  useExternalLink = false
 }: FacilitiesGridProps) => {
+  const [showAllGallery, setShowAllGallery] = useState(false);
+  const [selectedFacilityImages, setSelectedFacilityImages] = useState<{ name: string; images: string[] } | null>(null);
   const paidFacilities = facilities.filter(f => f.price > 0 || !f.is_free);
   
   if (paidFacilities.length === 0) return null;
 
+  const handleSeeAllImages = (facility: FacilityWithImages) => {
+    if (facility.images && facility.images.length > 0) {
+      setSelectedFacilityImages({ name: facility.name, images: facility.images });
+      setShowAllGallery(true);
+    }
+  };
+
   return (
-    <section className="bg-background rounded-3xl p-6 shadow-sm border border-border">
-      <h2 className="text-[11px] font-black uppercase tracking-widest mb-4 text-muted-foreground">
-        Facilities & Rooms
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {paidFacilities.map((facility, idx) => (
-          <FacilityImageCard
-            key={idx}
-            facility={facility}
-            itemId={itemId}
-            itemType={itemType}
-            accentColor={accentColor}
-          />
-        ))}
-      </div>
-    </section>
+    <>
+      <section className="bg-background rounded-3xl p-6 shadow-sm border border-border">
+        <h2 className="text-[11px] font-black uppercase tracking-widest mb-4 text-muted-foreground">
+          Facilities & Rooms
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {paidFacilities.map((facility, idx) => (
+            <div key={idx} className="relative">
+              <FacilityImageCard
+                facility={facility}
+                itemId={itemId}
+                itemType={itemType}
+                accentColor={accentColor}
+                useExternalLink={useExternalLink}
+              />
+              {/* See All Images Button */}
+              {facility.images && facility.images.length > 1 && (
+                <button
+                  onClick={() => handleSeeAllImages(facility)}
+                  className="absolute top-2 left-2 bg-black/70 text-white text-[9px] px-2 py-1 rounded-full flex items-center gap-1 hover:bg-black/80 transition-colors z-10"
+                >
+                  <Images className="h-3 w-3" />
+                  See All ({facility.images.length})
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Facility Images Gallery Popup */}
+      <Dialog open={showAllGallery} onOpenChange={setShowAllGallery}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="font-black uppercase tracking-tight">
+              {selectedFacilityImages?.name} - All Photos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <Carousel className="w-full">
+              <CarouselContent>
+                {selectedFacilityImages?.images?.map((img, idx) => (
+                  <CarouselItem key={idx}>
+                    <div className="aspect-video rounded-xl overflow-hidden">
+                      <img 
+                        src={img} 
+                        alt={`${selectedFacilityImages.name} - ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+            </Carousel>
+            <p className="text-center text-sm text-muted-foreground mt-3">
+              {selectedFacilityImages?.images?.length} photos
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

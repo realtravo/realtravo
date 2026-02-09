@@ -36,6 +36,8 @@ const HotelDetail = () => {
   const [isOpenNow, setIsOpenNow] = useState(false);
   const [liveRating, setLiveRating] = useState({ avg: 0, count: 0 });
 
+  const isAccommodationOnly = hotel?.establishment_type === 'accommodation_only';
+
   const { savedItems, handleSave: handleSaveItem } = useSavedItems();
   const isSaved = savedItems.has(id || "");
 
@@ -199,15 +201,17 @@ const HotelDetail = () => {
           <div className="absolute bottom-6 left-0 w-full px-4 z-20">
             <div className="bg-gradient-to-r from-black/70 via-black/50 to-transparent rounded-2xl p-4 max-w-xl">
               <div className="flex flex-wrap gap-2 mb-2">
-                   {hotel.establishment_type === 'accommodation_only' && (
+                   {isAccommodationOnly && (
                      <Badge className="bg-purple-500 text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
                        Accommodation Only
                      </Badge>
                    )}
-                   <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
-                     <Star className="h-3 w-3 fill-current" />
-                     {liveRating.avg > 0 ? liveRating.avg : "New"}
-                   </Badge>
+                   {!isAccommodationOnly && (
+                     <Badge className="bg-amber-400 text-black border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1 shadow-lg">
+                       <Star className="h-3 w-3 fill-current" />
+                       {liveRating.avg > 0 ? liveRating.avg : "New"}
+                     </Badge>
+                   )}
                    <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-2 py-0.5 text-[9px] font-black uppercase rounded-full flex items-center gap-1`}>
                      <Circle className={`h-2 w-2 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
                      {isOpenNow ? "open" : "closed"}
@@ -262,15 +266,17 @@ const HotelDetail = () => {
                   <div className="absolute bottom-6 left-6 right-6 z-20">
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        {hotel.establishment_type === 'accommodation_only' && (
+                        {isAccommodationOnly && (
                           <Badge className="bg-purple-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase rounded-full shadow-lg">
                             Accommodation Only
                           </Badge>
                         )}
-                        <Badge className="bg-amber-400 text-black border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5 shadow-lg">
-                          <Star className="h-3.5 w-3.5 fill-current" />
-                          {liveRating.avg > 0 ? liveRating.avg : "New"}
-                        </Badge>
+                        {!isAccommodationOnly && (
+                          <Badge className="bg-amber-400 text-black border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5 shadow-lg">
+                            <Star className="h-3.5 w-3.5 fill-current" />
+                            {liveRating.avg > 0 ? liveRating.avg : "New"}
+                          </Badge>
+                        )}
                         <Badge className={`${isOpenNow ? "bg-emerald-500" : "bg-red-500"} text-white border-none px-3 py-1 text-[10px] font-black uppercase rounded-full flex items-center gap-1.5`}>
                           <Circle className={`h-2.5 w-2.5 fill-current ${isOpenNow ? "animate-pulse" : ""}`} />
                           {isOpenNow ? "open now" : "closed"}
@@ -350,6 +356,26 @@ const HotelDetail = () => {
             {/* Amenities - Using new component */}
             <AmenitiesSection amenities={hotel.amenities || []} />
 
+            {/* Link Source Attribution - Accommodation Only */}
+            {isAccommodationOnly && hotel.link_source_name && (
+              <section className="bg-purple-50 rounded-3xl p-4 border border-purple-100">
+                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Source</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-purple-700">{hotel.link_source_name}</span>
+                  {hotel.link_source_url && (
+                    <a 
+                      href={hotel.link_source_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-purple-500 underline hover:text-purple-700"
+                    >
+                      Visit Source →
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
+
             {/* Facilities & Pricing with Images */}
             {hotel.facilities?.length > 0 && (
               <div id="facilities-section">
@@ -358,6 +384,7 @@ const HotelDetail = () => {
                   itemId={hotel.id} 
                   itemType="hotel"
                   accentColor="#008080"
+                  useExternalLink={isAccommodationOnly}
                 />
               </div>
             )}
@@ -391,15 +418,30 @@ const HotelDetail = () => {
                   )}
                 </div>
                 <div className="text-right">
-                    <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
-                        <Star className="h-4 w-4 fill-current" />
-                        <span>{liveRating.avg || "0"}</span>
-                    </div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
+                    {!isAccommodationOnly && (
+                      <>
+                        <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
+                            <Star className="h-4 w-4 fill-current" />
+                            <span>{liveRating.avg || "0"}</span>
+                        </div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase">{liveRating.count} reviews</p>
+                      </>
+                    )}
                 </div>
               </div>
               {/* Operating hours removed from mobile price card - now shown below description */}
-              <Button onClick={() => navigate(`/booking/hotel/${hotel.id}`)} className="w-full py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-lg transition-all active:scale-95">Book Now</Button>
+              <Button 
+                onClick={() => {
+                  if (isAccommodationOnly && hotel.general_booking_link) {
+                    window.open(hotel.general_booking_link, "_blank", "noopener,noreferrer");
+                  } else {
+                    navigate(`/booking/hotel/${hotel.id}`);
+                  }
+                }} 
+                className="w-full py-7 rounded-2xl text-md font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-lg transition-all active:scale-95"
+              >
+                {isAccommodationOnly ? "Reserve on " + (hotel.link_source_name || "External Site") : "Book Now"}
+              </Button>
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <UtilityButton 
                    icon={<Navigation className="h-5 w-5" />} 
@@ -472,15 +514,28 @@ const HotelDetail = () => {
                   ) : (
                     <h3 className="text-4xl font-black text-emerald-600 mb-2">Free Entry</h3>
                   )}
-                  <div className="flex items-center justify-center gap-1.5 text-amber-500 font-black mt-2">
-                    <Star className="h-4 w-4 fill-current" />
-                    <span className="text-lg">{liveRating.avg || "0"}</span>
-                  </div>
+                  {!isAccommodationOnly && (
+                    <div className="flex items-center justify-center gap-1.5 text-amber-500 font-black mt-2">
+                      <Star className="h-4 w-4 fill-current" />
+                      <span className="text-lg">{liveRating.avg || "0"}</span>
+                    </div>
+                  )}
                 </div>
 
                 <OperatingHoursInfo />
 
-                <Button onClick={() => navigate(`/booking/hotel/${hotel.id}`)} className="w-full py-8 rounded-3xl text-lg font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-xl hover:scale-[1.02] transition-transform active:scale-95">Reserve Now</Button>
+                <Button 
+                  onClick={() => {
+                    if (isAccommodationOnly && hotel.general_booking_link) {
+                      window.open(hotel.general_booking_link, "_blank", "noopener,noreferrer");
+                    } else {
+                      navigate(`/booking/hotel/${hotel.id}`);
+                    }
+                  }} 
+                  className="w-full py-8 rounded-3xl text-lg font-black uppercase tracking-widest bg-gradient-to-r from-[#FF7F50] to-[#FF4E50] border-none shadow-xl hover:scale-[1.02] transition-transform active:scale-95"
+                >
+                  {isAccommodationOnly ? "Reserve on " + (hotel.link_source_name || "External Site") : "Reserve Now"}
+                </Button>
 
                 <div className="grid grid-cols-3 gap-3">
                   <UtilityButton 
@@ -540,10 +595,12 @@ const HotelDetail = () => {
           </div>
         </div>
 
-        {/* Reviews */}
-        <div className="mt-8">
-          <ReviewSection itemId={hotel.id} itemType="hotel" />
-        </div>
+        {/* Reviews - Hidden for accommodation only */}
+        {!isAccommodationOnly && (
+          <div className="mt-8">
+            <ReviewSection itemId={hotel.id} itemType="hotel" />
+          </div>
+        )}
 
         {/* Map Section */}
         <DetailMapSection

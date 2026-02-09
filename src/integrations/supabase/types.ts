@@ -370,11 +370,14 @@ export type Database = {
           establishment_type: string | null
           facilities: Json | null
           gallery_images: string[] | null
+          general_booking_link: string | null
           id: string
           image_url: string
           images: string[] | null
           is_hidden: boolean | null
           latitude: number | null
+          link_source_name: string | null
+          link_source_url: string | null
           local_name: string | null
           location: string
           longitude: number | null
@@ -403,11 +406,14 @@ export type Database = {
           establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          general_booking_link?: string | null
           id?: string
           image_url: string
           images?: string[] | null
           is_hidden?: boolean | null
           latitude?: number | null
+          link_source_name?: string | null
+          link_source_url?: string | null
           local_name?: string | null
           location: string
           longitude?: number | null
@@ -436,11 +442,14 @@ export type Database = {
           establishment_type?: string | null
           facilities?: Json | null
           gallery_images?: string[] | null
+          general_booking_link?: string | null
           id?: string
           image_url?: string
           images?: string[] | null
           is_hidden?: boolean | null
           latitude?: number | null
+          link_source_name?: string | null
+          link_source_url?: string | null
           local_name?: string | null
           location?: string
           longitude?: number | null
