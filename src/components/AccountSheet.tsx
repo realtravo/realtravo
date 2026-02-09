@@ -10,7 +10,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   ChevronRight, User, Briefcase, CreditCard, Shield, 
   LogOut, UserCog, Users, Receipt, 
@@ -36,7 +35,6 @@ export const AccountSheet = ({ children }: AccountSheetProps) => {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   // IMMEDIATE DATA LOADING - Fetch as soon as user is available, not just when sheet opens
@@ -47,13 +45,12 @@ export const AccountSheet = ({ children }: AccountSheetProps) => {
       setLoading(true);
       try {
         const [profileRes, rolesRes] = await Promise.all([
-          supabase.from("profiles").select("name, avatar_url").eq("id", user.id).single(),
+          supabase.from("profiles").select("name").eq("id", user.id).single(),
           supabase.from("user_roles").select("role").eq("user_id", user.id)
         ]);
         
         if (profileRes.data) {
-          setUserName(profileRes.data.name);
-          setUserAvatar(profileRes.data.avatar_url);
+          setUserName(profileRes.data.name || "User");
         }
 
         if (rolesRes.data && rolesRes.data.length > 0) {
@@ -120,16 +117,15 @@ export const AccountSheet = ({ children }: AccountSheetProps) => {
           </SheetHeader>
           
           {/* User Profile Info */}
-          {!loading && (
+          {!loading && userName && (
             <div className="flex items-center gap-3 mt-4 p-3 bg-gradient-to-r from-[#008080]/5 to-transparent rounded-xl border border-[#008080]/10">
-              <Avatar className="h-12 w-12 border-2 border-[#008080]/20">
-                <AvatarImage src={userAvatar || undefined} alt={userName} />
-                <AvatarFallback className="bg-[#008080] text-white font-bold text-sm">
-                  {userName ? userName.charAt(0).toUpperCase() : "U"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="h-12 w-12 rounded-full bg-[#008080] flex items-center justify-center border-2 border-[#008080]/20">
+                <span className="text-white font-bold text-lg">
+                  {userName.charAt(0).toUpperCase()}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-800 truncate">{userName || "User"}</p>
+                <p className="text-sm font-bold text-slate-800 truncate">{userName}</p>
                 <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                   {userRole === "admin" ? "Administrator" : "Member"}
                 </p>
