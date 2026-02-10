@@ -1,23 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Mail, Phone, User, ArrowLeft, Hash, CreditCard, Users, CheckCircle2 } from "lucide-react";
-
-const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-  CORAL_LIGHT: "#FF9E7A",
-  KHAKI: "#F0E68C",
-  KHAKI_DARK: "#857F3E",
-  RED: "#FF0000",
-  SOFT_GRAY: "#F8F9FA"
-};
 
 const AdminBookings = () => {
   const { type, id } = useParams();
@@ -29,251 +17,87 @@ const AdminBookings = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    checkAdminStatus();
-  }, [user]);
+  useEffect(() => { checkAdmin(); }, [user]);
 
-  const checkAdminStatus = async () => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-
-    const hasAdminRole = roles?.some(r => r.role === "admin");
-    if (!hasAdminRole) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access this page",
-        variant: "destructive",
-      });
-      navigate("/");
-      return;
-    }
-
-    setIsAdmin(true);
-    fetchBookings();
+  const checkAdmin = async () => {
+    if (!user) { navigate("/auth"); return; }
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+    if (!data?.some(r => r.role === "admin")) { toast({ title: "Access Denied", variant: "destructive" }); navigate("/"); return; }
+    setIsAdmin(true); fetchBookings();
   };
 
   const fetchBookings = async () => {
     try {
-      let itemData: any = null;
-
-      if (type === "trip") {
-        const { data } = await supabase.from("trips").select("id, name, image_url").eq("id", id).single();
-        itemData = data;
-      } else if (type === "hotel") {
-        const { data } = await supabase.from("hotels").select("id, name, image_url").eq("id", id).single();
-        itemData = data;
-      } else if (type === "adventure") {
-        const { data } = await supabase.from("adventure_places").select("id, name, image_url").eq("id", id).single();
-        itemData = data;
-      }
-
+      const table = type === "trip" ? "trips" : type === "hotel" ? "hotels" : "adventure_places";
+      const { data: itemData } = await supabase.from(table as any).select("id,name,image_url").eq("id", id).single();
       setItem(itemData);
-
-      const { data: bookingsData, error } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("item_id", id)
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.from("bookings").select("*").eq("item_id", id).order("created_at", { ascending: false });
       if (error) throw error;
-      setBookings(bookingsData || []);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load bookings",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      setBookings(data || []);
+    } catch (e) { console.error(e); toast({ title: "Error", variant: "destructive" }); }
+    finally { setLoading(false); }
   };
 
-  const getStatusStyle = (status: string) => {
-    const statusMap: Record<string, { bg: string, text: string }> = {
-      pending: { bg: "#F0E68C20", text: "#857F3E" },
-      confirmed: { bg: "#00808015", text: "#008080" },
-      cancelled: { bg: "#FF000010", text: "#FF0000" },
-      completed: { bg: "#F8F9FA", text: "#64748b" }
-    };
-    return statusMap[status] || { bg: "#F8F9FA", text: "#64748b" };
+  const statusColor = (s: string) => {
+    if (s === "confirmed" || s === "completed") return "text-green-600 bg-green-50 border-green-200";
+    if (s === "cancelled") return "text-destructive bg-destructive/10 border-destructive/20";
+    return "text-yellow-600 bg-yellow-50 border-yellow-200";
   };
 
-  if (loading || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] animate-pulse flex flex-col">
-        <Header />
-        <div className="flex-1 container px-4 py-12 text-center font-black uppercase tracking-widest text-slate-400">
-          Loading Data...
-        </div>
-      </div>
-    );
-  }
+  if (loading || !isAdmin) return <div className="min-h-screen bg-background animate-pulse flex items-center justify-center"><p className="text-xs text-muted-foreground font-bold uppercase">Loading...</p></div>;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      <Header className="hidden md:block" />
-      
-      {/* Header Section */}
-      <div className="bg-white border-b border-slate-100 pt-8 pb-12">
-        <div className="container px-4 max-w-6xl mx-auto">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(`/admin/review/${type}/${id}`)} 
-            className="mb-6 rounded-full bg-slate-50 hover:bg-slate-100 font-black uppercase text-[10px] tracking-[0.15em] px-6"
-          >
-            <ArrowLeft className="h-3 w-3 mr-2" /> Back to Review
-          </Button>
+    <div className="min-h-screen bg-background">
+      <main className="container px-3 py-4 max-w-4xl mx-auto">
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/review/${type}/${id}`)} className="mb-3 rounded-lg text-[9px] font-bold uppercase tracking-widest px-3 h-7">
+          <ArrowLeft className="mr-1 h-3 w-3" /> Review
+        </Button>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Badge className="bg-[#FF7F50] hover:bg-[#FF7F50] border-none px-4 py-1 uppercase font-black tracking-[0.15em] text-[9px] rounded-full">
-                  Admin Panel
-                </Badge>
-                <div className="flex items-center gap-1.5 bg-[#F0E68C]/30 px-3 py-1 rounded-full border border-[#F0E68C]/50">
-                  <CheckCircle2 className="h-3 w-3 text-[#857F3E]" />
-                  <span className="text-[9px] font-black text-[#857F3E] uppercase tracking-wider">{bookings.length} Total Bookings</span>
-                </div>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-slate-900 drop-shadow-sm">
-                Bookings: <span style={{ color: COLORS.TEAL }}>{item?.name}</span>
-              </h1>
-            </div>
-          </div>
+        <div className="mb-4">
+          <Badge variant="secondary" className="text-[8px] mb-1">Admin</Badge>
+          <h1 className="text-lg font-black uppercase tracking-tight text-foreground">
+            Bookings: <span className="text-primary">{item?.name}</span>
+          </h1>
+          <p className="text-[9px] font-bold text-muted-foreground uppercase">{bookings.length} total bookings</p>
         </div>
-      </div>
 
-      <main className="container px-4 max-w-6xl mx-auto -mt-6 pb-24">
         {bookings.length === 0 ? (
-          <Card className="rounded-[28px] p-12 text-center border-none shadow-sm bg-white">
-            <p className="text-slate-400 font-black uppercase tracking-widest">No guest records found.</p>
-          </Card>
+          <div className="bg-card rounded-xl p-8 text-center border border-border">
+            <p className="text-xs text-muted-foreground font-bold uppercase">No records found</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {bookings.map((booking) => {
-              const status = getStatusStyle(booking.status);
-              return (
-                <Card key={booking.id} className="rounded-[28px] overflow-hidden border-none shadow-sm bg-white hover:shadow-md transition-shadow">
-                  <div className="p-1 flex flex-col">
-                    {/* Status Top Bar */}
-                    <div className="flex justify-between items-center px-7 py-3 border-b border-slate-50">
-                       <div className="flex items-center gap-2">
-                          <Hash className="h-3 w-3 text-slate-300" />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Ref: {booking.id.slice(0, 8)}
-                          </span>
-                       </div>
-                       <div className="flex gap-2">
-                          <span className="px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest" style={{ backgroundColor: status.bg, color: status.text }}>
-                            {booking.status}
-                          </span>
-                          <span className="px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 border border-slate-100">
-                            Paid: {booking.payment_status || "Pending"}
-                          </span>
-                       </div>
-                    </div>
-
-                    <div className="p-7">
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        
-                        {/* Guest Profile */}
-                        <div className="flex items-center gap-4">
-                          <div className="h-14 w-14 rounded-2xl flex items-center justify-center bg-slate-50 border border-slate-100">
-                            <User className="h-6 w-6 text-slate-400" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Guest Identity</p>
-                            <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 leading-none">
-                              {booking.guest_name || "Anonymous Guest"}
-                            </h3>
-                          </div>
-                        </div>
-
-                        {/* Booking Metrics */}
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="flex items-start gap-3">
-                              <Calendar className="h-4 w-4 text-[#FF7F50] mt-1" />
-                              <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Visit Date</p>
-                                <p className="text-xs font-bold text-slate-700 uppercase">
-                                  {new Date(booking.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </p>
-                              </div>
-                           </div>
-                           <div className="flex items-start gap-3">
-                              <Users className="h-4 w-4 text-[#FF7F50] mt-1" />
-                              <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Capacity</p>
-                                <p className="text-xs font-bold text-slate-700 uppercase">{booking.slots_booked || 1} Person(s)</p>
-                              </div>
-                           </div>
-                        </div>
-
-                        {/* Financials */}
-                        <div className="bg-slate-50 rounded-2xl p-4 flex flex-col justify-center border border-slate-100">
-                          <div className="flex justify-between items-center">
-                            <div>
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Revenue</p>
-                               <p className="text-xl font-black text-[#FF0000]">KSh {booking.total_amount}</p>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Method</p>
-                               <div className="flex items-center gap-1.5 text-slate-600">
-                                  <CreditCard className="h-3 w-3" />
-                                  <span className="text-[10px] font-bold uppercase tracking-tight">{booking.payment_method || "Stripe"}</span>
-                               </div>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* Contact & Technical Info */}
-                      <div className="mt-8 pt-6 border-t border-slate-50 flex flex-wrap gap-6">
-                        {booking.guest_email && (
-                          <a href={`mailto:${booking.guest_email}`} className="flex items-center gap-2 group">
-                            <div className="p-2 rounded-xl bg-[#008080]/10 group-hover:bg-[#008080] transition-colors">
-                              <Mail className="h-3.5 w-3.5 text-[#008080] group-hover:text-white" />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight group-hover:text-[#008080]">{booking.guest_email}</span>
-                          </a>
-                        )}
-                        {booking.guest_phone && (
-                          <a href={`tel:${booking.guest_phone}`} className="flex items-center gap-2 group">
-                            <div className="p-2 rounded-xl bg-[#008080]/10 group-hover:bg-[#008080] transition-colors">
-                              <Phone className="h-3.5 w-3.5 text-[#008080] group-hover:text-white" />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight group-hover:text-[#008080]">{booking.guest_phone}</span>
-                          </a>
-                        )}
-                      </div>
-
-                      {/* JSON Details Toggle Area */}
-                      {booking.booking_details && (
-                        <div className="mt-6">
-                          <details className="group">
-                            <summary className="list-none cursor-pointer flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#FF7F50] transition-colors">
-                              View Extended Metadata [+]
-                            </summary>
-                            <pre className="mt-4 text-[10px] bg-slate-900 text-slate-300 p-4 rounded-2xl overflow-auto border border-slate-800 shadow-inner max-h-48 leading-relaxed">
-                              {JSON.stringify(booking.booking_details, null, 2)}
-                            </pre>
-                          </details>
-                        </div>
-                      )}
+          <div className="space-y-1.5">
+            {bookings.map(b => (
+              <div key={b.id} className="bg-card rounded-xl border border-border px-3 py-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <Hash className="h-2.5 w-2.5 text-muted-foreground" />
+                    <span className="text-[8px] font-mono text-muted-foreground">{b.id.slice(0, 8)}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Badge variant="outline" className={`text-[7px] px-1.5 py-0 h-4 ${statusColor(b.status)}`}>{b.status}</Badge>
+                    <Badge variant="outline" className={`text-[7px] px-1.5 py-0 h-4 ${statusColor(b.payment_status || 'pending')}`}>{b.payment_status || 'pending'}</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground">{b.guest_name || "Anonymous"}</p>
+                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground mt-0.5">
+                      <span className="flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{new Date(b.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                      <span className="flex items-center gap-0.5"><Users className="h-2.5 w-2.5" />{b.slots_booked || 1}</span>
+                      {b.payment_method && <span className="flex items-center gap-0.5"><CreditCard className="h-2.5 w-2.5" />{b.payment_method}</span>}
                     </div>
                   </div>
-                </Card>
-              );
-            })}
+                  <p className="text-sm font-black text-destructive shrink-0">KSh {b.total_amount?.toLocaleString()}</p>
+                </div>
+                {(b.guest_email || b.guest_phone) && (
+                  <div className="flex gap-3 mt-1.5 pt-1.5 border-t border-border">
+                    {b.guest_email && <a href={`mailto:${b.guest_email}`} className="text-[9px] text-primary flex items-center gap-0.5"><Mail className="h-2.5 w-2.5" />{b.guest_email}</a>}
+                    {b.guest_phone && <a href={`tel:${b.guest_phone}`} className="text-[9px] text-primary flex items-center gap-0.5"><Phone className="h-2.5 w-2.5" />{b.guest_phone}</a>}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </main>

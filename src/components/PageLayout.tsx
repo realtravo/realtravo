@@ -1,32 +1,29 @@
 import { useLocation } from "react-router-dom";
 import { Footer } from "@/components/Footer";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { Header } from "@/components/Header";
 
 interface PageLayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * Layout wrapper that renders Footer and MobileBottomBar.
- * Header is rendered inside pages (to avoid accidental double-headers).
- */
 export const PageLayout = ({ children }: PageLayoutProps) => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Pages where footer should be visible
   const shouldShowFooter =
-    pathname === "/" || // Home page
-    pathname === "/contact" || // Contact page
-    pathname === "/about" || // About page
-    pathname.startsWith("/category/"); // Category pages
+    pathname === "/" || pathname === "/contact" || pathname === "/about" || pathname.startsWith("/category/");
 
-  // Pages where MobileBottomBar should be hidden
   const shouldHideMobileBar =
     pathname === "/host-verification" || pathname.startsWith("/booking/");
 
+  const shouldHideHeader =
+    pathname === "/auth" || pathname === "/reset-password" || pathname === "/forgot-password" ||
+    pathname === "/verify-email" || pathname === "/complete-profile";
+
   return (
     <div className="w-full min-h-screen flex flex-col">
+      {!shouldHideHeader && <Header __fromLayout />}
       <div className="flex-1 w-full pb-20 md:pb-0">{children}</div>
       {shouldShowFooter && <Footer />}
       {!shouldHideMobileBar && <MobileBottomBar />}

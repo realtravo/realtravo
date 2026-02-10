@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Header } from "@/components/Header";
-// MobileBottomBar moved to PageLayout for persistence across all pages
+// Header and MobileBottomBar are rendered in PageLayout
 import { SearchBarWithSuggestions } from "@/components/SearchBarWithSuggestions";
 import { ListingCard } from "@/components/ListingCard";
 import { Card } from "@/components/ui/card";
@@ -650,10 +649,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-0 md:pb-0">
-      {/* Header - Hidden when search is focused */}
-      {!isSearchFocused && (
-        <Header onSearchClick={handleSearchIconClick} showSearchIcon={showSearchIcon} hideIcons={isSearchFocused} />
-      )}
+      {/* Header is now rendered in PageLayout */}
             
       {/* Hero Section with Search Bar, Background Image, and Category Icons - Hidden when search focused */}
       {!isSearchFocused && (
