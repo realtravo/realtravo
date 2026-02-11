@@ -9,7 +9,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { SmallScreenInstallBanner } from "@/components/SmallScreenInstallBanner";
 import { DetailPageSkeleton } from "@/components/detail/DetailPageSkeleton";
 import { TealLoader } from "@/components/ui/teal-loader";
-
+ 
 // Only the Index page loads eagerly - everything else is lazy
 import Index from "./pages/Index";
 
