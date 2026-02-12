@@ -481,14 +481,16 @@ const CreateHotel = () => {
                 />
               </div>
 
-              <DynamicItemListWithImages 
-                items={activities} 
-                onChange={setActivities} 
-                label="Activities (with photos)" 
-                accentColor="#6366f1"
-                maxImages={5}
-                userId={user?.id}
-              />
+              {!isAccommodationOnly && (
+                <DynamicItemListWithImages 
+                  items={activities} 
+                  onChange={setActivities} 
+                  label="Activities (with photos)" 
+                  accentColor="#6366f1"
+                  maxImages={5}
+                  userId={user?.id}
+                />
+              )}
             </div>
           </Card>
         )}

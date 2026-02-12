@@ -51,7 +51,7 @@ export const Header = ({ onSearchClick, showSearchIcon = true, className, __from
             </SheetContent>
           </Sheet>
           <Link to="/" className="flex items-center gap-2 group ml-1">
-            <img src="/fulllogo.png" alt="Logo" className="h-8 w-8 rounded-full shadow-sm object-contain bg-muted p-1 border border-border" />
+            <img src="/fulllogo.png" alt="Logo" loading="eager" fetchPriority="high" className="h-8 w-8 rounded-full shadow-sm object-contain bg-muted p-1 border border-border" />
             <span className="font-bold text-lg tracking-tight italic leading-none" style={{ background: "linear-gradient(to right, #1a365d, #2b6cb0, #4fd1c5)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               RealTravo
             </span>

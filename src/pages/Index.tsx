@@ -683,7 +683,8 @@ const Index = () => {
           ref={searchRef}
           className="relative w-full h-[55vh] md:h-[45vh] lg:h-[50vh] mt-0 overflow-hidden"
         >
-          {/* Hero background image with high priority for LCP */}
+          {/* Hero background image with progressive loading */}
+          <div className="absolute inset-0 bg-slate-800" /> {/* Placeholder bg while loading */}
           <picture>
             <source 
               media="(max-width: 640px)" 
@@ -699,11 +700,11 @@ const Index = () => {
               src="/images/hero-background.webp" 
               alt="Travel destination background" 
               fetchPriority="high"
-              decoding="sync"
+              decoding="async"
               loading="eager"
               width={1920}
               height={1080}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover animate-in fade-in duration-700"
             />
           </picture>
           {/* Dark overlay for visibility */}

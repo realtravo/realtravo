@@ -66,7 +66,7 @@ export default function Payment() {
             const fee = (amount * serviceFeeRate) / 100;
             totalServiceFee += fee;
             
-            // Check if referral commission was deducted
+            // Check if referral commission was deducted from service fee
             if (b.referral_tracking_id) {
               let commRate = 5.0;
               if (settings) {
@@ -74,6 +74,7 @@ export default function Payment() {
                 else if (b.booking_type === 'hotel') commRate = Number(settings.hotel_commission_rate);
                 else if (b.booking_type === 'adventure' || b.booking_type === 'adventure_place') commRate = Number(settings.adventure_place_commission_rate);
               }
+              // Commission is calculated FROM service fee (not booking amount) - margin protection
               totalReferralDeducted += (fee * commRate) / 100;
             }
           }

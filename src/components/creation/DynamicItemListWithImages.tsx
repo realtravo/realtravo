@@ -111,6 +111,22 @@ export const DynamicItemListWithImages = ({
     });
   };
 
+  // Auto-save: when user has typed a name and blurs the name field, auto-add
+  const handleNameBlur = () => {
+    if (newItem.name.trim()) {
+      onChange([...items, { ...newItem }]);
+      setNewItem({ 
+        name: "", 
+        priceType: "free", 
+        price: "0", 
+        capacity: "",
+        images: [],
+        tempImages: [],
+        bookingLink: ""
+      });
+    }
+  };
+
   const removeItem = (index: number) => {
     onChange(items.filter((_, i) => i !== index));
   };
@@ -276,6 +292,7 @@ export const DynamicItemListWithImages = ({
           <Input
             value={newItem.name}
             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+            onBlur={handleNameBlur}
             placeholder={placeholder}
             className="rounded-xl border-border bg-background h-11 font-bold text-sm"
           />

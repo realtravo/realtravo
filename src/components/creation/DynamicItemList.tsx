@@ -45,6 +45,14 @@ export const DynamicItemList = ({
     setNewItem({ name: "", priceType: "free", price: "0", capacity: "" });
   };
 
+  // Auto-save: when user has typed a name and blurs the name field, auto-add
+  const handleNameBlur = () => {
+    if (newItem.name.trim()) {
+      onChange([...items, { ...newItem }]);
+      setNewItem({ name: "", priceType: "free", price: "0", capacity: "" });
+    }
+  };
+
   const removeItem = (index: number) => {
     onChange(items.filter((_, i) => i !== index));
   };
@@ -102,6 +110,7 @@ export const DynamicItemList = ({
           <Input
             value={newItem.name}
             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+            onBlur={handleNameBlur}
             placeholder={placeholder}
             className="rounded-xl border-slate-100 bg-white h-11 font-bold text-sm"
           />
