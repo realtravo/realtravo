@@ -1,830 +1,1089 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSafeBack } from "@/hooks/useSafeBack";
-import { Header } from "@/components/Header";
-import { MobileBottomBar } from "@/components/MobileBottomBar";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { MapPin, Navigation, X, CheckCircle2, Plus, Camera, ArrowLeft, ArrowRight, Loader2, Clock, DollarSign, Image as ImageIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CountrySelector } from "@/components/creation/CountrySelector";
-import { PhoneInput } from "@/components/creation/PhoneInput";
-import { compressImages } from "@/lib/imageCompression";
-import { DynamicItemList, DynamicItem } from "@/components/creation/DynamicItemList";
-// NOTE: Use the enhanced version from /mnt/user-data/outputs/DynamicItemListWithImages.tsx
-// This version disables "Add Another" until current item is complete
-import { DynamicItemListWithImages, DynamicItemWithImages, uploadItemImages, formatItemsWithImagesForDB } from "@/components/creation/DynamicItemListWithImages";
-import { OperatingHoursSection } from "@/components/creation/OperatingHoursSection";
-import { ReviewStep } from "@/components/creation/ReviewStep";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { DynamicItemListWithImages, uploadItemImages, formatItemsWithImagesForDB } from "./DynamicItemListWithImages";
+import { Upload, X, Loader2 } from "lucide-react";
+import type { DynamicItemWithImages } from "./DynamicItemListWithImages";
 
-const COLORS = {
-  TEAL: "#008080",
-  CORAL: "#FF7F50",
-  CORAL_LIGHT: "#FF9E7A",
-  SOFT_GRAY: "#F8F9FA"
-};
+// =====================================================
+// INTERFACES
+// =====================================================
+interface HotelFormData {
+  // Basic Information
+  name: string;
+  description: string;
+  hotelType: string;
+  starRating: number;
+  
+  // Location
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  latitude: string;
+  longitude: string;
+  
+  // Contact Information
+  phone: string;
+  email: string;
+  website: string;
+  
+  // Hotel Details
+  totalRooms: number;
+  checkInTime: string;
+  checkOutTime: string;
+  
+  // Policies
+  cancellationPolicy: string;
+  petPolicy: string;
+  smokingPolicy: string;
+  
+  // Media
+  mainImage: File | null;
+  additionalImages: File[];
+  videoUrl: string;
+}
 
-const TOTAL_STEPS = 9;
-const TOTAL_STEPS_ACCOMMODATION = 9;
+interface Room {
+  id: string;
+  name: string;
+  roomType: string;
+  description: string;
+  maxOccupancy: number;
+  numBeds: number;
+  bedType: string;
+  basePrice: string;
+  roomSize: string;
+  hasBalcony: boolean;
+  hasKitchen: boolean;
+  hasWorkspace: boolean;
+  viewType: string;
+  tempImages: File[];
+  amenities: string[];
+}
 
-const CreateHotel = () => {
-  const navigate = useNavigate();
-  const goBack = useSafeBack("/become-host");
+interface Amenity {
+  id: string;
+  name: string;
+  category: string;
+}
+
+export const CreateHotelForm: React.FC = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
 
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  const [formData, setFormData] = useState({
-    registrationName: "",
-    registrationNumber: "",
-    place: "",
-    country: "",
+  // =====================================================
+  // FORM STATE
+  // =====================================================
+  const [formData, setFormData] = useState<HotelFormData>({
+    name: "",
     description: "",
+    hotelType: "resort",
+    starRating: 3,
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+    latitude: "",
+    longitude: "",
+    phone: "",
     email: "",
-    phoneNumber: "",
-    establishmentType: "hotel",
-    latitude: null as number | null,
-    longitude: null as number | null,
-    openingHours: "",
-    closingHours: "",
-    generalBookingLink: "",
+    website: "",
+    totalRooms: 0,
+    checkInTime: "14:00",
+    checkOutTime: "11:00",
+    cancellationPolicy: "",
+    petPolicy: "not_allowed",
+    smokingPolicy: "not_allowed",
+    mainImage: null,
+    additionalImages: [],
+    videoUrl: ""
   });
 
-  const isAccommodationOnly = formData.establishmentType === "accommodation_only";
-  const totalSteps = isAccommodationOnly ? TOTAL_STEPS_ACCOMMODATION : TOTAL_STEPS;
-
-  const [workingDays, setWorkingDays] = useState({
-    Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false, Sun: false
-  });
-
-  const [amenities, setAmenities] = useState<DynamicItemWithImages[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [facilities, setFacilities] = useState<DynamicItemWithImages[]>([]);
   const [activities, setActivities] = useState<DynamicItemWithImages[]>([]);
-  const [galleryImages, setGalleryImages] = useState<File[]>([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-  const [creatorProfile, setCreatorProfile] = useState({ name: "", email: "", phone: "" });
+  const [mainImagePreview, setMainImagePreview] = useState<string>("");
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        const [profileRes, rolesRes] = await Promise.all([
-          supabase.from('profiles').select('country, name, email, phone_number').eq('id', user.id).single(),
-          supabase.from('user_roles').select('role').eq('user_id', user.id)
-        ]);
-        const profile = profileRes.data;
-        if (profile?.country) setFormData(prev => ({ ...prev, country: profile.country }));
-        if (profile) {
-          setCreatorProfile({
-            name: profile.name || "",
-            email: profile.email || user.email || "",
-            phone: profile.phone_number || ""
-          });
-        }
-        const hasAdminRole = rolesRes.data?.some(r => r.role === "admin");
-        setIsAdmin(!!hasAdminRole);
-      }
+  // =====================================================
+  // FORM HANDLERS
+  // =====================================================
+  const handleInputChange = (field: keyof HotelFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMainImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, mainImage: file }));
+      setMainImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAdditionalImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setFormData(prev => ({ ...prev, additionalImages: [...prev.additionalImages, ...files] }));
+    const previews = files.map(file => URL.createObjectURL(file));
+    setAdditionalImagePreviews(prev => [...prev, ...previews]);
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+    }));
+    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // =====================================================
+  // ROOM MANAGEMENT
+  // =====================================================
+  const addRoom = () => {
+    const newRoom: Room = {
+      id: Date.now().toString(),
+      name: "",
+      roomType: "double",
+      description: "",
+      maxOccupancy: 2,
+      numBeds: 1,
+      bedType: "queen",
+      basePrice: "",
+      roomSize: "",
+      hasBalcony: false,
+      hasKitchen: false,
+      hasWorkspace: false,
+      viewType: "city",
+      tempImages: [],
+      amenities: []
     };
-    fetchUserProfile();
-  }, [user]);
+    setRooms(prev => [...prev, newRoom]);
+  };
 
-  const errorClass = (field: string) => 
-    errors[field] ? "border-red-500 bg-red-50 focus:ring-red-500" : "border-slate-100 bg-slate-50";
+  const removeRoom = (id: string) => {
+    setRooms(prev => prev.filter(room => room.id !== id));
+  };
 
-  const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, boolean> = {};
+  const updateRoom = (id: string, field: keyof Room, value: any) => {
+    setRooms(prev => prev.map(room =>
+      room.id === id ? { ...room, [field]: value } : room
+    ));
+  };
 
-    if (step === 1) {
-      if (!formData.registrationName.trim()) newErrors.registrationName = true;
-      if (!isAccommodationOnly && !formData.registrationNumber.trim()) newErrors.registrationNumber = true;
-    }
+  const handleRoomImageUpload = (roomId: string, files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setRooms(prev => prev.map(room =>
+      room.id === roomId ? { ...room, tempImages: [...room.tempImages, ...newFiles] } : room
+    ));
+  };
 
-    if (step === 2) {
-      if (!formData.country) newErrors.country = true;
-      if (!formData.place.trim()) newErrors.place = true;
-      if (!isAccommodationOnly) {
-        if (!formData.latitude) newErrors.latitude = true;
-        if (!formData.email.trim()) newErrors.email = true;
-        if (!formData.phoneNumber.trim()) newErrors.phoneNumber = true;
+  // =====================================================
+  // AMENITY MANAGEMENT
+  // =====================================================
+  const addAmenity = () => {
+    const newAmenity: Amenity = {
+      id: Date.now().toString(),
+      name: "",
+      category: "general"
+    };
+    setAmenities(prev => [...prev, newAmenity]);
+  };
+
+  const removeAmenity = (id: string) => {
+    setAmenities(prev => prev.filter(amenity => amenity.id !== id));
+  };
+
+  const updateAmenity = (id: string, field: keyof Amenity, value: any) => {
+    setAmenities(prev => prev.map(amenity =>
+      amenity.id === id ? { ...amenity, [field]: value } : amenity
+    ));
+  };
+
+  // =====================================================
+  // IMAGE UPLOAD TO STORAGE
+  // =====================================================
+  const uploadImage = async (file: File, userId: string): Promise<string | null> => {
+    try {
+      const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('listing-images')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return null;
       }
-    }
 
-    if (step === 3) {
-      if (!formData.openingHours) newErrors.openingHours = true;
-      if (!formData.closingHours) newErrors.closingHours = true;
-      const hasDays = Object.values(workingDays).some(v => v);
-      if (!hasDays) newErrors.workingDays = true;
-    }
+      const { data: { publicUrl } } = supabase.storage
+        .from('listing-images')
+        .getPublicUrl(fileName);
 
-    if (step === 4) {
-      // Amenities validation: if any field is filled, all required fields must be filled
-      const invalidAmenity = amenities.some(a => {
-        const hasName = a.name.trim() !== "";
-        const hasPrice = a.priceType === 'free' || (a.price && parseFloat(a.price.toString()) > 0);
-        const hasImages = a.tempImages && a.tempImages.length > 0;
-        const hasBookingLink = !isAccommodationOnly || (a.bookingLink && a.bookingLink.trim() !== "");
-        
-        // If name is filled, price, images, and (for accommodation) booking link must be filled
-        if (hasName) {
-          return !hasPrice || !hasImages || !hasBookingLink;
-        }
-        return false;
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  // =====================================================
+  // FORM VALIDATION
+  // =====================================================
+  const validateStep1 = (): boolean => {
+    if (!formData.name || !formData.description || !formData.address || 
+        !formData.city || !formData.country || !formData.phone || !formData.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields in Basic Information.",
+        variant: "destructive"
       });
-
-      if (invalidAmenity) {
-        toast({ 
-          title: "Incomplete Amenity", 
-          description: `Each amenity must have: name, price, photos${isAccommodationOnly ? ', and booking link' : ''}.`, 
-          variant: "destructive" 
-        });
-        return false;
-      }
-    }
-
-    if (step === 5) {
-      // Facilities validation: if any field is filled, all required fields must be filled
-      const invalidFacility = facilities.some(f => {
-        const hasName = f.name.trim() !== "";
-        const hasCapacity = f.capacity && parseInt(f.capacity) > 0;
-        const hasPrice = f.priceType === 'free' || (f.price && parseFloat(f.price.toString()) > 0);
-        const hasImages = f.tempImages && f.tempImages.length > 0;
-        const hasBookingLink = !isAccommodationOnly || (f.bookingLink && f.bookingLink.trim() !== "");
-        
-        // If name is filled, all other required fields must be filled
-        if (hasName) {
-          return !hasCapacity || !hasPrice || !hasImages || !hasBookingLink;
-        }
-        return false;
-      });
-
-      if (invalidFacility) {
-        toast({ 
-          title: "Incomplete Facility", 
-          description: `Each facility must have: name, capacity, price, photos${isAccommodationOnly ? ', and booking link' : ''}.`, 
-          variant: "destructive" 
-        });
-        return false;
-      }
-    }
-
-    if (step === 6) {
-      // Activities validation: if any field is filled, all required fields must be filled
-      const invalidActivity = activities.some(a => {
-        const hasName = a.name.trim() !== "";
-        const hasPrice = a.priceType === 'free' || (a.price && parseFloat(a.price.toString()) > 0);
-        const hasImages = a.tempImages && a.tempImages.length > 0;
-        const hasBookingLink = !isAccommodationOnly || (a.bookingLink && a.bookingLink.trim() !== "");
-        
-        // If name is filled, price, images, and (for accommodation) booking link must be filled
-        if (hasName) {
-          return !hasPrice || !hasImages || !hasBookingLink;
-        }
-        return false;
-      });
-
-      if (invalidActivity) {
-        toast({ 
-          title: "Incomplete Activity", 
-          description: `Each activity must have: name, price, photos${isAccommodationOnly ? ', and booking link' : ''}.`, 
-          variant: "destructive" 
-        });
-        return false;
-      }
-    }
-
-    if (step === 7) {
-      if (galleryImages.length === 0) {
-        newErrors.galleryImages = true;
-        toast({ title: "Photos Required", description: "At least one photo is required", variant: "destructive" });
-        return false;
-      }
-    }
-
-    if (step === 8) {
-      if (!formData.description.trim()) newErrors.description = true;
-    }
-
-    setErrors(newErrors);
-    const hasErrors = Object.keys(newErrors).length > 0;
-
-    if (hasErrors) {
-      toast({ title: "Missing Details", description: "Please fill all required fields highlighted in red.", variant: "destructive" });
       return false;
     }
     return true;
   };
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const validateStep2 = (): boolean => {
+    if (rooms.length === 0) {
+      toast({
+        title: "No Rooms Added",
+        description: "Please add at least one room type.",
+        variant: "destructive"
+      });
+      return false;
     }
-  };
 
-  const handlePrevious = () => {
-    setErrors({});
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newImages = [...galleryImages, ...files];
-    setGalleryImages(newImages);
-
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-    setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
-
-    if (newImages.length > 0) {
-      setErrors(prev => ({ ...prev, galleryImages: false }));
+    for (const room of rooms) {
+      if (!room.name || !room.basePrice || room.tempImages.length === 0) {
+        toast({
+          title: "Incomplete Room",
+          description: `Room "${room.name || 'Unnamed'}" is missing required information.`,
+          variant: "destructive"
+        });
+        return false;
+      }
     }
+    return true;
   };
 
-  const removeImage = (index: number) => {
-    URL.revokeObjectURL(imagePreviewUrls[index]);
-    
-    setGalleryImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
+  // =====================================================
+  // FORM SUBMISSION
+  // =====================================================
   const handleSubmit = async () => {
-    if (!user) return navigate("/auth");
-    if (!validateStep(currentStep)) return;
-    
-    setLoading(true);
-    
+    if (!validateStep1() || !validateStep2()) return;
+
+    setIsSubmitting(true);
+
     try {
-      const compressedImages = await compressImages(galleryImages);
-      
-      const imageUrls: string[] = [];
-      for (const image of compressedImages) {
-        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('listing-images')
-          .upload(fileName, image.file);
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(fileName);
-        
-        imageUrls.push(publicUrl);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
       }
 
-      const selectedDays = Object.entries(workingDays)
-        .filter(([_, isSelected]) => isSelected)
-        .map(([day]) => day);
+      // Upload main image
+      let mainImageUrl = "";
+      if (formData.mainImage) {
+        mainImageUrl = await uploadImage(formData.mainImage, user.id) || "";
+      }
 
-      const uploadedAmenities = await uploadItemImages(amenities, user.id);
-      const uploadedFacilities = await uploadItemImages(facilities, user.id);
-      const uploadedActivities = await uploadItemImages(activities, user.id);
+      // Upload additional images
+      const additionalImageUrls: string[] = [];
+      for (const image of formData.additionalImages) {
+        const url = await uploadImage(image, user.id);
+        if (url) additionalImageUrls.push(url);
+      }
 
-      const hotelData = {
-        created_by: user.id,
-        name: formData.registrationName,
-        location: formData.place,
-        place: formData.place,
-        country: formData.country,
-        description: formData.description,
-        email: formData.email,
-        phone_numbers: formData.phoneNumber ? [formData.phoneNumber] : [],
-        establishment_type: formData.establishmentType,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        opening_hours: formData.openingHours,
-        closing_hours: formData.closingHours,
-        days_opened: selectedDays,
-        amenities: formatItemsWithImagesForDB(uploadedAmenities),
-        facilities: formatItemsWithImagesForDB(uploadedFacilities),
-        activities: formatItemsWithImagesForDB(uploadedActivities),
-        image_url: imageUrls[0] || '',
-        gallery_images: imageUrls,
-        registration_number: formData.registrationNumber || null,
-        approval_status: isAccommodationOnly ? 'approved' : 'pending',
-        general_booking_link: isAccommodationOnly ? formData.generalBookingLink : null,
-        link_source_name: null,
-        link_source_url: null,
-      };
+      // Insert hotel
+      const { data: hotel, error: hotelError } = await supabase
+        .from('hotels')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          description: formData.description,
+          hotel_type: formData.hotelType,
+          star_rating: formData.starRating,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          postal_code: formData.postalCode,
+          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+          longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+          phone: formData.phone,
+          email: formData.email,
+          website: formData.website,
+          total_rooms: formData.totalRooms,
+          check_in_time: formData.checkInTime,
+          check_out_time: formData.checkOutTime,
+          cancellation_policy: formData.cancellationPolicy,
+          pet_policy: formData.petPolicy,
+          smoking_policy: formData.smokingPolicy,
+          main_image_url: mainImageUrl,
+          images: additionalImageUrls,
+          video_url: formData.videoUrl,
+          is_published: false
+        })
+        .select()
+        .single();
 
-      const { error } = await supabase.from('hotels').insert([hotelData]);
-      
-      if (error) throw error;
+      if (hotelError) throw hotelError;
 
-      toast({ 
-        title: "Success!", 
-        description: isAccommodationOnly 
-          ? "Your accommodation listing is now live."
-          : "Your hotel listing has been submitted for review.",
-        variant: "default"
+      // Insert rooms
+      for (const room of rooms) {
+        const roomImageUrls: string[] = [];
+        for (const image of room.tempImages) {
+          const url = await uploadImage(image, user.id);
+          if (url) roomImageUrls.push(url);
+        }
+
+        const { data: insertedRoom, error: roomError } = await supabase
+          .from('rooms')
+          .insert({
+            hotel_id: hotel.id,
+            name: room.name,
+            room_type: room.roomType,
+            description: room.description,
+            max_occupancy: room.maxOccupancy,
+            num_beds: room.numBeds,
+            bed_type: room.bedType,
+            base_price: parseFloat(room.basePrice),
+            room_size: room.roomSize ? parseFloat(room.roomSize) : null,
+            has_balcony: room.hasBalcony,
+            has_kitchen: room.hasKitchen,
+            has_workspace: room.hasWorkspace,
+            view_type: room.viewType,
+            images: roomImageUrls
+          })
+          .select()
+          .single();
+
+        if (roomError) throw roomError;
+
+        // Insert room amenities
+        if (room.amenities.length > 0) {
+          const roomAmenities = room.amenities.map(amenityName => ({
+            room_id: insertedRoom.id,
+            name: amenityName,
+            category: 'room'
+          }));
+
+          const { error: amenityError } = await supabase
+            .from('room_amenities')
+            .insert(roomAmenities);
+
+          if (amenityError) throw amenityError;
+        }
+      }
+
+      // Insert amenities
+      if (amenities.length > 0) {
+        const amenityData = amenities
+          .filter(a => a.name.trim() !== "")
+          .map(amenity => ({
+            hotel_id: hotel.id,
+            name: amenity.name,
+            category: amenity.category
+          }));
+
+        if (amenityData.length > 0) {
+          const { error: amenityError } = await supabase
+            .from('amenities')
+            .insert(amenityData);
+
+          if (amenityError) throw amenityError;
+        }
+      }
+
+      // Insert facilities
+      if (facilities.length > 0) {
+        const uploadedFacilities = await uploadItemImages(facilities, user.id);
+        const facilityData = formatItemsWithImagesForDB(uploadedFacilities).map(f => ({
+          hotel_id: hotel.id,
+          name: f.name,
+          price: f.price,
+          is_free: f.is_free,
+          capacity: f.capacity,
+          booking_link: f.booking_link,
+          images: f.images
+        }));
+
+        if (facilityData.length > 0) {
+          const { error: facilityError } = await supabase
+            .from('facilities')
+            .insert(facilityData);
+
+          if (facilityError) throw facilityError;
+        }
+      }
+
+      // Insert activities
+      if (activities.length > 0) {
+        const uploadedActivities = await uploadItemImages(activities, user.id);
+        const activityData = formatItemsWithImagesForDB(uploadedActivities).map(a => ({
+          hotel_id: hotel.id,
+          name: a.name,
+          price: a.price,
+          is_free: a.is_free,
+          booking_link: a.booking_link,
+          images: a.images
+        }));
+
+        if (activityData.length > 0) {
+          const { error: activityError } = await supabase
+            .from('activities')
+            .insert(activityData);
+
+          if (activityError) throw activityError;
+        }
+      }
+
+      toast({
+        title: "Success!",
+        description: "Hotel created successfully.",
       });
-      
-      navigate('/become-host');
-    } catch (error) {
-      console.error('Submission error:', error);
-      toast({ 
-        title: "Submission Failed", 
-        description: "There was an error submitting your listing. Please try again.",
+
+      // Reset form or redirect
+      // You can add navigation here
+
+    } catch (error: any) {
+      console.error('Error creating hotel:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create hotel. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // =====================================================
+  // RENDER
+  // =====================================================
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-24">
-      <Header className="hidden md:block" />
-
-      {/* Hero Header */}
-      <div className="relative w-full h-[25vh] md:h-[35vh] bg-slate-900 overflow-hidden">
-        <img src="/images/category-hotels.webp" className="w-full h-full object-cover opacity-50" alt="Hotel Header" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] via-transparent to-transparent" />
-        <div className="absolute top-4 left-4">
-          <Button onClick={goBack} className="rounded-full bg-black/30 backdrop-blur-md text-white border-none w-10 h-10 p-0">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="absolute bottom-8 left-0 w-full px-8 container mx-auto">
-          <p className="text-[#FF7F50] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Step {currentStep} of {totalSteps}</p>
-          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
-            List Your <span style={{ color: COLORS.TEAL }}>Property</span>
-          </h1>
-        </div>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-black text-slate-900">Create Your Hotel</h1>
+        <p className="text-slate-600">Fill in the details to list your property</p>
       </div>
 
-      <main className="container px-4 max-w-4xl mx-auto -mt-6 relative z-50">
-        <div className="flex items-center gap-2 mb-8">
-          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-            <div key={step} className={`h-2 flex-1 rounded-full transition-all duration-300 ${step <= currentStep ? 'bg-[#008080]' : 'bg-slate-200'}`} />
-          ))}
-        </div>
+      {/* Step Indicator */}
+      <div className="flex items-center justify-center gap-4 mb-8">
+        {[1, 2, 3, 4].map(step => (
+          <div key={step} className="flex items-center gap-2">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                currentStep >= step ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {step}
+            </div>
+            {step < 4 && <div className="w-12 h-1 bg-slate-200" />}
+          </div>
+        ))}
+      </div>
 
-        {/* Step 1: Registration Details */}
-        {currentStep === 1 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <CheckCircle2 className="h-5 w-5" /> Registration Details
-            </h2>
-            <div className="grid gap-6">
+      {/* STEP 1: Basic Information */}
+      {currentStep === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>Tell us about your hotel</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Hotel Name */}
+            <div className="space-y-2">
+              <Label>Hotel Name *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="e.g., Grand Ocean Resort"
+                className="h-12"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label>Description *</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Describe your hotel..."
+                rows={4}
+              />
+            </div>
+
+            {/* Hotel Type and Star Rating */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Name *</Label>
-                <Input 
-                  className={`rounded-xl h-12 font-bold transition-all ${errorClass('registrationName')}`}
-                  value={formData.registrationName} 
-                  onChange={(e) => setFormData({...formData, registrationName: e.target.value})}
-                  placeholder="As per official documents"
+                <Label>Hotel Type</Label>
+                <Select
+                  value={formData.hotelType}
+                  onValueChange={(value) => handleInputChange('hotelType', value)}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="resort">Resort</SelectItem>
+                    <SelectItem value="boutique">Boutique</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="budget">Budget</SelectItem>
+                    <SelectItem value="luxury">Luxury</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Star Rating</Label>
+                <Select
+                  value={formData.starRating.toString()}
+                  onValueChange={(value) => handleInputChange('starRating', parseInt(value))}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(rating => (
+                      <SelectItem key={rating} value={rating.toString()}>
+                        {rating} Star{rating > 1 ? 's' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label>Address *</Label>
+              <Input
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Street address"
+                className="h-12"
+              />
+            </div>
+
+            {/* City, State, Country */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>City *</Label>
+                <Input
+                  value={formData.city}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="City"
+                  className="h-12"
                 />
               </div>
-              {!isAccommodationOnly && (
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registration Number *</Label>
-                  <Input 
-                    className={`rounded-xl h-12 font-bold transition-all ${errorClass('registrationNumber')}`}
-                    value={formData.registrationNumber} 
-                    onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
-                    placeholder="e.g. BN-12345"
+              <div className="space-y-2">
+                <Label>State/Province</Label>
+                <Input
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value)}
+                  placeholder="State"
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Country *</Label>
+                <Input
+                  value={formData.country}
+                  onChange={(e) => handleInputChange('country', e.target.value)}
+                  placeholder="Country"
+                  className="h-12"
+                />
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Phone *</Label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+1 234 567 8900"
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="contact@hotel.com"
+                  className="h-12"
+                />
+              </div>
+            </div>
+
+            {/* Website */}
+            <div className="space-y-2">
+              <Label>Website</Label>
+              <Input
+                type="url"
+                value={formData.website}
+                onChange={(e) => handleInputChange('website', e.target.value)}
+                placeholder="https://yourhotel.com"
+                className="h-12"
+              />
+            </div>
+
+            {/* Main Image Upload */}
+            <div className="space-y-2">
+              <Label>Main Hotel Image</Label>
+              {!mainImagePreview ? (
+                <label className="block">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleMainImageUpload}
                   />
-                </div>
-              )}
-              {isAdmin ? (
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Property Type *</Label>
-                  <Select 
-                    value={formData.establishmentType} 
-                    onValueChange={(v) => setFormData({...formData, establishmentType: v})}
-                  >
-                    <SelectTrigger className={`rounded-xl h-12 font-bold ${errorClass('establishmentType')}`}>
-                      <SelectValue placeholder="Select property type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hotel">Hotel (Full Service)</SelectItem>
-                      <SelectItem value="accommodation_only">Accommodation Only (Rooms/Stays)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {isAccommodationOnly
-                      ? "Accommodation only focuses on room rentals without full hotel services."
-                      : "Full service hotel with amenities, restaurant, etc."
-                    }
-                  </p>
-                </div>
+                  <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 cursor-pointer hover:border-teal-600 transition-colors flex flex-col items-center justify-center gap-2">
+                    <Upload className="h-8 w-8 text-teal-600" />
+                    <span className="text-sm font-bold text-teal-600">Upload Main Image</span>
+                  </div>
+                </label>
               ) : (
-                <input type="hidden" value="hotel" />
+                <div className="relative">
+                  <img
+                    src={mainImagePreview}
+                    alt="Main preview"
+                    className="w-full h-64 object-cover rounded-2xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, mainImage: null }));
+                      setMainImagePreview("");
+                    }}
+                    className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full bg-red-500"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
-          </Card>
-        )}
 
-        {/* Step 2: Location & Contact */}
-        {currentStep === 2 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <MapPin className="h-5 w-5" /> Location & Contact
-            </h2>
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country *</Label>
-                  <div className={errors.country ? "rounded-xl ring-2 ring-red-500" : ""}>
-                    <CountrySelector value={formData.country} onChange={(v) => setFormData({...formData, country: v})} />
-                  </div>
+            {/* Additional Images */}
+            <div className="space-y-2">
+              <Label>Additional Images</Label>
+              <label className="block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleAdditionalImagesUpload}
+                />
+                <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 cursor-pointer hover:border-teal-600 transition-colors flex items-center justify-center gap-2">
+                  <Upload className="h-5 w-5 text-teal-600" />
+                  <span className="text-xs font-bold text-teal-600">
+                    Upload More Images ({additionalImagePreviews.length})
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">City / Place *</Label>
-                  <Input className={`rounded-xl h-12 font-bold ${errorClass('place')}`} value={formData.place} onChange={(e) => setFormData({...formData, place: e.target.value})} />
-                </div>
-              </div>
+              </label>
 
-              {!isAccommodationOnly && (
-                <div className={`p-4 rounded-[24px] border-2 transition-colors ${errors.latitude ? "border-red-500 bg-red-50" : "border-dashed border-slate-200 bg-slate-50/50"}`}>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-full" style={{ backgroundColor: errors.latitude ? "#fee2e2" : `${COLORS.CORAL}15` }}>
-                        <Navigation className="h-6 w-6" style={{ color: errors.latitude ? "#ef4444" : COLORS.CORAL }} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-xs font-black uppercase tracking-widest" style={{ color: errors.latitude ? "#ef4444" : COLORS.CORAL }}>GPS Location *</h4>
-                        <p className="text-[10px] text-slate-400 font-bold">Tap the button to capture your current location</p>
-                      </div>
+              {additionalImagePreviews.length > 0 && (
+                <div className="grid grid-cols-4 gap-3 mt-3">
+                  {additionalImagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden group">
+                      <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeAdditionalImage(index)}
+                        className="absolute top-1 right-1 p-1.5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
-                    <Button 
-                      type="button" 
-                      onClick={() => {
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setFormData({...formData, latitude: pos.coords.latitude, longitude: pos.coords.longitude});
-                            setErrors(prev => ({ ...prev, latitude: false }));
-                          },
-                          () => toast({ title: "Location Error", description: "Unable to get location. Please enable GPS.", variant: "destructive" })
-                        );
-                      }} 
-                      className="w-full rounded-2xl px-6 h-14 font-black uppercase text-[11px] tracking-widest text-white shadow-lg active:scale-95 transition-all"
-                      style={{ background: formData.latitude ? COLORS.TEAL : COLORS.CORAL }}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={() => {
+                if (validateStep1()) setCurrentStep(2);
+              }}
+              className="w-full h-12 bg-teal-600 hover:bg-teal-700"
+            >
+              Continue to Rooms & Amenities
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* STEP 2: Rooms & Amenities */}
+      {currentStep === 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Rooms & Amenities</CardTitle>
+            <CardDescription>Add your room types and hotel amenities</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Rooms Section */}
+            <div className="space-y-4">
+              <Label className="text-lg font-bold">Rooms</Label>
+              {rooms.map((room, index) => (
+                <div key={room.id} className="p-6 rounded-2xl border-2 border-slate-100 bg-slate-50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black uppercase text-teal-600">Room {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeRoom(room.id)}
+                      className="h-8 w-8 p-0 rounded-full hover:bg-red-100"
                     >
-                      <Navigation className="h-5 w-5 mr-3" />
-                      {formData.latitude ? '✓ Location Captured Successfully' : 'Tap to Capture GPS Location'}
+                      <X className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
-                </div>
-              )}
 
-              {!isAccommodationOnly && (
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Email *</Label>
-                    <Input className={`rounded-xl h-12 font-bold ${errorClass('email')}`} value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Phone Number *</Label>
-                    <div className={errors.phoneNumber ? "rounded-xl ring-2 ring-red-500" : ""}>
-                      <PhoneInput value={formData.phoneNumber} onChange={(v) => setFormData({...formData, phoneNumber: v})} country={formData.country} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Room Name *</Label>
+                      <Input
+                        value={room.name}
+                        onChange={(e) => updateRoom(room.id, 'name', e.target.value)}
+                        placeholder="e.g., Deluxe Ocean View"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Room Type</Label>
+                      <Select
+                        value={room.roomType}
+                        onValueChange={(value) => updateRoom(room.id, 'roomType', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="single">Single</SelectItem>
+                          <SelectItem value="double">Double</SelectItem>
+                          <SelectItem value="suite">Suite</SelectItem>
+                          <SelectItem value="presidential">Presidential</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
 
-        {/* Step 3: Operating Hours */}
-        {currentStep === 3 && (
-          <Card className={`bg-white rounded-[28px] p-8 shadow-sm border-none ${errors.workingDays || errors.openingHours ? "ring-2 ring-red-500" : ""}`}>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <Clock className="h-5 w-5" /> Operating Hours *
-            </h2>
-            
-            {/* 24 Hours Quick Set Button */}
-            <div className="mb-6">
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={room.description}
+                      onChange={(e) => updateRoom(room.id, 'description', e.target.value)}
+                      placeholder="Describe this room..."
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Max Occupancy</Label>
+                      <Input
+                        type="number"
+                        value={room.maxOccupancy}
+                        onChange={(e) => updateRoom(room.id, 'maxOccupancy', parseInt(e.target.value))}
+                        min="1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Number of Beds</Label>
+                      <Input
+                        type="number"
+                        value={room.numBeds}
+                        onChange={(e) => updateRoom(room.id, 'numBeds', parseInt(e.target.value))}
+                        min="1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Bed Type</Label>
+                      <Select
+                        value={room.bedType}
+                        onValueChange={(value) => updateRoom(room.id, 'bedType', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="single">Single</SelectItem>
+                          <SelectItem value="twin">Twin</SelectItem>
+                          <SelectItem value="queen">Queen</SelectItem>
+                          <SelectItem value="king">King</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Base Price (per night) *</Label>
+                      <Input
+                        type="number"
+                        value={room.basePrice}
+                        onChange={(e) => updateRoom(room.id, 'basePrice', e.target.value)}
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Room Size (sqm)</Label>
+                      <Input
+                        type="number"
+                        value={room.roomSize}
+                        onChange={(e) => updateRoom(room.id, 'roomSize', e.target.value)}
+                        placeholder="25"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Room Images */}
+                  <div className="space-y-2">
+                    <Label>Room Images * (Required)</Label>
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleRoomImageUpload(room.id, e.target.files)}
+                      />
+                      <div className="p-4 rounded-xl border-2 border-dashed border-teal-300 bg-white cursor-pointer hover:border-teal-600 transition-colors flex items-center justify-center gap-2">
+                        <Upload className="h-5 w-5 text-teal-600" />
+                        <span className="text-xs font-bold text-teal-600">
+                          Upload Room Images ({room.tempImages.length})
+                        </span>
+                      </div>
+                    </label>
+
+                    {room.tempImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {room.tempImages.map((file, imgIndex) => (
+                          <div key={imgIndex} className="relative aspect-square rounded-lg overflow-hidden">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Room preview ${imgIndex + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
               <Button
-                type="button"
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    openingHours: "00:00",
-                    closingHours: "23:59"
-                  });
-                  toast({ 
-                    title: "24 Hours Set", 
-                    description: "Operating hours set to 24 hours (Open all day)",
-                    variant: "default" 
-                  });
-                }}
-                className="w-full rounded-2xl px-6 h-12 font-black uppercase text-[11px] tracking-widest"
-                style={{ background: COLORS.TEAL, color: 'white' }}
+                onClick={addRoom}
+                className="w-full h-12 bg-teal-600 hover:bg-teal-700"
               >
-                <Clock className="h-4 w-4 mr-2" />
-                Set as 24 Hours (Open All Day)
+                Add Room Type
               </Button>
             </div>
 
-            <OperatingHoursSection
-              openingHours={formData.openingHours}
-              closingHours={formData.closingHours}
-              workingDays={workingDays}
-              onOpeningChange={(v) => setFormData({...formData, openingHours: v})}
-              onClosingChange={(v) => setFormData({...formData, closingHours: v})}
-              onDaysChange={setWorkingDays}
-              accentColor={COLORS.TEAL}
-            />
-          </Card>
-        )}
-
-        {/* Step 4: Amenities (Separate) */}
-        {currentStep === 4 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <CheckCircle2 className="h-5 w-5" /> Amenities
-            </h2>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
-              <p className="text-[10px] font-bold text-orange-500 uppercase mb-2">
-                ⚠️ REQUIRED: Name, Price, and Photos must be filled for each amenity.
-                {isAccommodationOnly && " Booking link is also required."}
-              </p>
-            </div>
-            <DynamicItemListWithImages 
-              items={amenities} 
-              onChange={setAmenities} 
-              label="WiFi, Parking, Pool, Gym, etc." 
-              accentColor={COLORS.TEAL}
-              maxImages={5}
-              userId={user?.id}
-              showPrice={true}
-              showBookingLink={isAccommodationOnly}
-              defaultPriceType="paid"
-            />
-          </Card>
-        )}
-
-        {/* Step 5: Facilities (Separate) */}
-        {currentStep === 5 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.CORAL }}>
-              <DollarSign className="h-5 w-5" /> Facilities
-            </h2>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
-              <p className="text-[10px] font-bold text-orange-500 uppercase mb-2">
-                ⚠️ REQUIRED: Name, Capacity, Price, and Photos must be filled for each facility.
-                {isAccommodationOnly && " Booking link is also required."}
-              </p>
-            </div>
-            <DynamicItemListWithImages 
-              items={facilities} 
-              onChange={setFacilities} 
-              label="Conference Rooms, Restaurants, Spa, etc." 
-              showCapacity={true} 
-              accentColor={COLORS.CORAL}
-              maxImages={5}
-              userId={user?.id}
-              showBookingLink={isAccommodationOnly}
-              defaultPriceType="paid"
-            />
-          </Card>
-        )}
-
-        {/* Step 6: Activities (Separate) */}
-        {currentStep === 6 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: "#6366f1" }}>
-              <Camera className="h-5 w-5" /> Activities & Experiences
-            </h2>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
-              <p className="text-[10px] font-bold text-orange-500 uppercase mb-2">
-                ⚠️ REQUIRED: Name, Price, and Photos must be filled for each activity.
-                {isAccommodationOnly && " Booking link is also required."}
-              </p>
-            </div>
-            <DynamicItemListWithImages 
-              items={activities} 
-              onChange={setActivities} 
-              label="Tours, Sports, Entertainment, etc." 
-              accentColor="#6366f1"
-              maxImages={5}
-              userId={user?.id}
-              showPrice={true}
-              showBookingLink={isAccommodationOnly}
-              defaultPriceType="paid"
-            />
-          </Card>
-        )}
-
-        {/* Step 7: Gallery Images */}
-        {currentStep === 7 && (
-          <Card className={`bg-white rounded-[28px] p-8 shadow-sm border-none ${errors.galleryImages ? "ring-2 ring-red-500" : ""}`}>
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <Camera className="h-5 w-5" /> Property Photos *
-            </h2>
-            
-            <div className="space-y-6">
-              {/* Upload Button */}
-              <div className={`p-6 rounded-[24px] border-2 border-dashed transition-colors ${errors.galleryImages ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50/50"}`}>
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-full" style={{ backgroundColor: errors.galleryImages ? "#fee2e2" : `${COLORS.TEAL}15` }}>
-                    <ImageIcon className="h-8 w-8" style={{ color: errors.galleryImages ? "#ef4444" : COLORS.TEAL }} />
-                  </div>
-                  <div className="text-center">
-                    <h4 className="text-sm font-black uppercase tracking-widest mb-1" style={{ color: errors.galleryImages ? "#ef4444" : COLORS.TEAL }}>
-                      Upload Property Images *
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-bold">At least one photo is required. Add multiple photos to showcase your property.</p>
-                  </div>
-                  <label className="w-full">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple 
-                      className="hidden" 
-                      onChange={handleImageUpload}
-                    />
-                    <div 
-                      className="w-full rounded-2xl px-6 py-4 font-black uppercase text-[11px] tracking-widest text-white shadow-lg active:scale-95 transition-all cursor-pointer text-center"
-                      style={{ background: COLORS.CORAL }}
-                    >
-                      <Camera className="h-5 w-5 inline mr-2" />
-                      Choose Photos
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              {/* Image Preview Grid */}
-              {galleryImages.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                      Selected Photos ({galleryImages.length})
-                    </Label>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {imagePreviewUrls.map((url, index) => (
-                      <div key={index} className="relative group aspect-square rounded-2xl overflow-hidden bg-slate-100">
-                        <img 
-                          src={url} 
-                          alt={`Preview ${index + 1}`} 
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 p-2 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-white text-[10px] font-bold">Photo {index + 1}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* Step 8: Description */}
-        {currentStep === 8 && (
-          <Card className="bg-white rounded-[28px] p-8 shadow-sm border-none">
-            <h2 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-2" style={{ color: COLORS.TEAL }}>
-              <CheckCircle2 className="h-5 w-5" /> Property Description *
-            </h2>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Tell guests what makes your property special
-                </Label>
-                <Textarea 
-                  className={`rounded-[20px] min-h-[200px] mt-2 font-medium resize-none ${errorClass('description')}`}
-                  placeholder="Describe your property's unique features, amenities, nearby attractions, and what guests can expect during their stay..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                />
-                <p className="text-[10px] text-slate-400 mt-2">
-                  {formData.description.length} characters
-                </p>
-              </div>
-
-              {isAccommodationOnly && (
-                <div className="space-y-2 pt-4 border-t border-slate-100">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">General Booking Link (External Website)</Label>
-                  <Input 
-                    className={`rounded-xl h-12 font-bold transition-all ${errorClass('generalBookingLink')}`}
-                    value={formData.generalBookingLink} 
-                    onChange={(e) => setFormData({...formData, generalBookingLink: e.target.value})}
-                    placeholder="https://booking.com/your-property"
+            {/* Amenities Section */}
+            <div className="space-y-4">
+              <Label className="text-lg font-bold">Hotel Amenities (Optional)</Label>
+              {amenities.map((amenity, index) => (
+                <div key={amenity.id} className="flex items-center gap-4">
+                  <Input
+                    value={amenity.name}
+                    onChange={(e) => updateAmenity(amenity.id, 'name', e.target.value)}
+                    placeholder="e.g., Free WiFi"
+                    className="flex-1"
                   />
-                  <p className="text-[10px] text-slate-400">This link will be used for the main Reserve button on the detail page.</p>
+                  <Select
+                    value={amenity.category}
+                    onValueChange={(value) => updateAmenity(amenity.id, 'category', value)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="room">Room</SelectItem>
+                      <SelectItem value="bathroom">Bathroom</SelectItem>
+                      <SelectItem value="entertainment">Entertainment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAmenity(amenity.id)}
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
                 </div>
-              )}
+              ))}
+
+              <Button
+                onClick={addAmenity}
+                variant="outline"
+                className="w-full"
+              >
+                Add Amenity
+              </Button>
             </div>
-          </Card>
-        )}
 
-        {/* Step 9: Review & Submit */}
-        {currentStep === totalSteps && (
-          <ReviewStep
-            type="hotel"
-            data={{
-              name: formData.registrationName,
-              registrationName: formData.registrationName,
-              registrationNumber: formData.registrationNumber,
-              location: formData.place,
-              place: formData.place,
-              country: formData.country,
-              description: formData.description,
-              email: formData.email,
-              phoneNumber: formData.phoneNumber,
-              openingHours: formData.openingHours,
-              closingHours: formData.closingHours,
-              workingDays: Object.entries(workingDays).filter(([_, v]) => v).map(([d]) => d),
-              amenities: amenities.filter(a => a.name.trim()).map(a => ({ 
-                name: a.name, 
-                price: typeof a.price === 'string' ? parseFloat(a.price) || 0 : (a.price || 0),
-                is_free: a.priceType === 'free',
-                images: a.tempImages ? a.tempImages.map(img => URL.createObjectURL(img)) : (a.images || []),
-                bookingLink: a.bookingLink || null
-              })),
-              facilities: facilities.filter(f => f.name.trim()).map(f => ({ 
-                name: f.name, 
-                price: typeof f.price === 'string' ? parseFloat(f.price) || 0 : (f.price || 0),
-                capacity: f.capacity ? parseInt(f.capacity) : null,
-                is_free: f.priceType === 'free',
-                images: f.tempImages ? f.tempImages.map(img => URL.createObjectURL(img)) : (f.images || []),
-                bookingLink: f.bookingLink || null
-              })),
-              activities: activities.filter(a => a.name.trim()).map(a => ({ 
-                name: a.name, 
-                price: typeof a.price === 'string' ? parseFloat(a.price) || 0 : (a.price || 0),
-                is_free: a.priceType === 'free',
-                images: a.tempImages ? a.tempImages.map(img => URL.createObjectURL(img)) : (a.images || []),
-                bookingLink: a.bookingLink || null
-              })),
-              imageCount: galleryImages.length,
-              ...(isAccommodationOnly && {
-                generalBookingLink: formData.generalBookingLink,
-              })
-            }}
-            creatorName={creatorProfile.name}
-            creatorEmail={creatorProfile.email}
-            creatorPhone={creatorProfile.phone}
-            accentColor={COLORS.TEAL}
-          />
-        )}
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setCurrentStep(1)}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={() => {
+                  if (validateStep2()) setCurrentStep(3);
+                }}
+                className="flex-1 h-12 bg-teal-600 hover:bg-teal-700"
+              >
+                Continue to Facilities
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Navigation Buttons */}
-        <div className="flex gap-4 mt-8 mb-8">
-          {currentStep > 1 && (
-            <Button 
-              onClick={handlePrevious} 
-              variant="outline" 
-              className="flex-1 py-6 rounded-2xl font-black uppercase text-sm"
-              disabled={loading}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" /> Previous
-            </Button>
-          )}
-          <Button 
-            onClick={currentStep < totalSteps ? handleNext : handleSubmit}
-            className="flex-1 py-6 rounded-2xl font-black uppercase text-sm text-white"
-            style={{ background: currentStep < totalSteps ? COLORS.CORAL : COLORS.TEAL }}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                {currentStep < totalSteps ? (
+      {/* STEP 3: Facilities & Activities */}
+      {currentStep === 3 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Facilities & Activities</CardTitle>
+            <CardDescription>Add facilities and activities offered at your hotel</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Facilities */}
+            <DynamicItemListWithImages
+              items={facilities}
+              onChange={setFacilities}
+              label="Facilities"
+              showPrice={true}
+              showBookingLink={true}
+              showCapacity={true}
+              requireImages={true}
+              defaultPriceType="paid"
+              accentColor="#008080"
+              maxImages={3}
+            />
+
+            {/* Activities */}
+            <DynamicItemListWithImages
+              items={activities}
+              onChange={setActivities}
+              label="Activities"
+              showPrice={true}
+              showBookingLink={true}
+              requireImages={true}
+              defaultPriceType="paid"
+              accentColor="#008080"
+              maxImages={3}
+            />
+
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setCurrentStep(2)}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={() => setCurrentStep(4)}
+                className="flex-1 h-12 bg-teal-600 hover:bg-teal-700"
+              >
+                Continue to Review
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* STEP 4: Review & Submit */}
+      {currentStep === 4 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Review & Submit</CardTitle>
+            <CardDescription>Review your hotel information before submitting</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-bold text-lg mb-2">Hotel Information</h3>
+                <p><strong>Name:</strong> {formData.name}</p>
+                <p><strong>Type:</strong> {formData.hotelType}</p>
+                <p><strong>Location:</strong> {formData.city}, {formData.country}</p>
+                <p><strong>Rating:</strong> {formData.starRating} Stars</p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">Rooms</h3>
+                <p>{rooms.length} room type(s) added</p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">Amenities</h3>
+                <p>{amenities.filter(a => a.name).length} amenity/amenities added</p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">Facilities</h3>
+                <p>{facilities.filter(f => f.name).length} facility/facilities added</p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">Activities</h3>
+                <p>{activities.filter(a => a.name).length} activity/activities added</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setCurrentStep(3)}
+                variant="outline"
+                className="flex-1 h-12"
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                className="flex-1 h-12 bg-teal-600 hover:bg-teal-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
                   <>
-                    Next <ArrowRight className="h-4 w-4 ml-2" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating Hotel...
                   </>
                 ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    {isAccommodationOnly ? "Publish Listing" : "Submit for Review"}
-                  </>
+                  'Create Hotel'
                 )}
-              </>
-            )}
-          </Button>
-        </div>
-      </main>
-      <MobileBottomBar />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-export default CreateHotel;
+export default CreateHotelForm;
